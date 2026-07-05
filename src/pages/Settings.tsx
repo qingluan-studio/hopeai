@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { 
   Settings as SettingsIcon, 
   Palette, 
@@ -15,12 +15,18 @@ import {
   Gauge,
   FileText,
   ChevronRight,
-  AlertTriangle
+  AlertTriangle,
+  Key,
+  Brain,
+  Check,
+  X,
+  Eye,
+  EyeOff
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import MatrixBackground from '@/components/MatrixBackground'
 import { useThemeStore } from '@/store/useThemeStore'
 import type { Theme } from '@/types'
+import { callKimi, saveLLMConfig, clearLLMConfig } from '@/services/llmService'
 
 const themeConfigs: { id: Theme; name: string; icon: typeof Moon; color: string; glow: string }[] = [
   { 
@@ -298,6 +304,255 @@ function AgentSettings() {
   )
 }
 
+function LearningSettings() {
+  const { selfLearning, autoKnowledge, workflowSpeed, toggleSelfLearning, toggleAutoKnowledge, setWorkflowSpeed } = useThemeStore()
+
+  return (
+    <SettingSection icon={Sparkles} title="自我学习" description="知识沉淀与自动学习配置">
+      <div className="space-y-1">
+        <ToggleSwitch
+          enabled={selfLearning}
+          onChange={toggleSelfLearning}
+          label="自我学习"
+          description="任务完成后自动总结经验并学习"
+        />
+        <ToggleSwitch
+          enabled={autoKnowledge}
+          onChange={toggleAutoKnowledge}
+          label="自动知识沉淀"
+          description="自动将任务经验存入知识库"
+        />
+        <div className="py-3">
+          <div className="flex items-center justify-between mb-2">
+            <div>
+              <p className="text-sm font-mono text-gray-300">工作流速度</p>
+              <p className="text-xs font-mono text-gray-500 mt-0.5">调整Agent协作执行速度</p>
+            </div>
+            <span className="text-sm font-mono text-green-400">{workflowSpeed}x</span>
+          </div>
+          <input
+            type="range"
+            min="0.5"
+            max="5"
+            step="0.5"
+            value={workflowSpeed}
+            onChange={(e) => setWorkflowSpeed(parseFloat(e.target.value))}
+            className="w-full h-2 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-green-500"
+          />
+          <div className="flex justify-between text-[10px] font-mono text-gray-600 mt-1">
+            <span>0.5x</span>
+            <span>正常</span>
+            <span>5x</span>
+          </div>
+        </div>
+      </div>
+    </SettingSection>
+  )
+}
+
+function LLMSettings() {
+  const [apiKey, setApiKey] = useState('')
+  const [model, setModel] = useState('moonshot-v1-8k')
+  const [temperature, setTemperature] = useState(0.7)
+  const [maxTokens, setMaxTokens] = useState(2000)
+  const [showKey, setShowKey] = useState(false)
+  const [testing, setTesting] = useState(false)
+  const [testStatus, setTestStatus] = useState<'idle' | 'success' | 'fail'>('idle')
+  const [saved, setSaved] = useState(false)
+  const [useLLM, setUseLLM] = useState(false)
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('hopeai-llm-config')
+      if (stored) {
+        const config = JSON.parse(stored)
+        setApiKey(config.apiKey || '')
+        setModel(config.model || 'moonshot-v1-8k')
+        setTemperature(config.temperature ?? 0.7)
+        setMaxTokens(config.maxTokens || 2000)
+        setSaved(true)
+      }
+      const useLLMStored = localStorage.getItem('hopeai-use-llm')
+      if (useLLMStored === 'true') setUseLLM(true)
+    } catch {
+      // ignore
+    }
+  }, [])
+
+  const handleSave = () => {
+    if (!apiKey.trim()) {
+      alert('请输入API Key')
+      return
+    }
+    saveLLMConfig({ apiKey: apiKey.trim(), model, temperature, maxTokens })
+    setSaved(true)
+    setTestStatus('idle')
+  }
+
+  const handleClear = () => {
+    if (confirm('确定要清除API配置吗？')) {
+      clearLLMConfig()
+      setApiKey('')
+      setModel('moonshot-v1-8k')
+      setTemperature(0.7)
+      setMaxTokens(2000)
+      setSaved(false)
+      setTestStatus('idle')
+    }
+  }
+
+  const handleTest = async () => {
+    if (!apiKey.trim()) {
+      alert('请先输入API Key')
+      return
+    }
+    setTesting(true)
+    setTestStatus('idle')
+    try {
+      const result = await callKimi('analyst', '用一句话介绍你自己')
+      if (result && result.length > 0) {
+        setTestStatus('success')
+      } else {
+        setTestStatus('fail')
+      }
+    } catch (e) {
+      setTestStatus('fail')
+    } finally {
+      setTesting(false)
+    }
+  }
+
+  const handleToggleLLM = (enabled: boolean) => {
+    setUseLLM(enabled)
+    localStorage.setItem('hopeai-use-llm', enabled ? 'true' : 'false')
+  }
+
+  return (
+    <SettingSection icon={Brain} title="大模型配置" description="Kimi AI 大模型接口设置">
+      <div className="space-y-3">
+        <ToggleSwitch
+          enabled={useLLM}
+          onChange={handleToggleLLM}
+          label="启用AI大模型"
+          description="使用Kimi大模型生成Agent回答（需配置API Key）"
+        />
+
+        <div className="pt-2 border-t border-gray-800/50">
+          <div className="mb-2">
+            <label className="text-xs font-mono text-gray-400">API Key</label>
+            <div className="relative mt-1">
+              <input
+                type={showKey ? 'text' : 'password'}
+                value={apiKey}
+                onChange={(e) => { setApiKey(e.target.value); setSaved(false); setTestStatus('idle') }}
+                placeholder="sk-xxxxxxxxxxxxxxxxxxxx"
+                className="w-full px-3 py-2 bg-gray-900/80 border border-gray-700 rounded-lg text-sm font-mono text-gray-200 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 pr-10"
+              />
+              <button
+                onClick={() => setShowKey(!showKey)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-500 hover:text-gray-300"
+              >
+                {showKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+          </div>
+
+          <div className="mb-2">
+            <label className="text-xs font-mono text-gray-400">模型</label>
+            <select
+              value={model}
+              onChange={(e) => { setModel(e.target.value); setSaved(false) }}
+              className="w-full mt-1 px-3 py-2 bg-gray-900/80 border border-gray-700 rounded-lg text-sm font-mono text-gray-200 focus:outline-none focus:border-green-500"
+            >
+              <option value="moonshot-v1-8k">moonshot-v1-8k（8K上下文）</option>
+              <option value="moonshot-v1-32k">moonshot-v1-32k（32K上下文）</option>
+              <option value="moonshot-v1-128k">moonshot-v1-128k（128K上下文）</option>
+            </select>
+          </div>
+
+          <div className="mb-2">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-mono text-gray-400">Temperature</label>
+              <span className="text-xs font-mono text-green-400">{temperature}</span>
+            </div>
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.1"
+              value={temperature}
+              onChange={(e) => { setTemperature(parseFloat(e.target.value)); setSaved(false) }}
+              className="w-full h-2 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-green-500 mt-1"
+            />
+          </div>
+
+          <div className="mb-3">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-mono text-gray-400">Max Tokens</label>
+              <span className="text-xs font-mono text-green-400">{maxTokens}</span>
+            </div>
+            <input
+              type="range"
+              min="500"
+              max="8000"
+              step="500"
+              value={maxTokens}
+              onChange={(e) => { setMaxTokens(parseInt(e.target.value)); setSaved(false) }}
+              className="w-full h-2 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-green-500 mt-1"
+            />
+          </div>
+
+          <div className="flex gap-2">
+            <button
+              onClick={handleSave}
+              className="flex-1 px-3 py-2 bg-green-600 hover:bg-green-500 text-white text-xs font-mono rounded-lg transition-colors flex items-center justify-center gap-1.5"
+            >
+              <Key className="w-3.5 h-3.5" />
+              保存配置
+            </button>
+            <button
+              onClick={handleTest}
+              disabled={testing}
+              className="flex-1 px-3 py-2 bg-blue-600 hover:bg-blue-500 disabled:bg-gray-700 text-white text-xs font-mono rounded-lg transition-colors flex items-center justify-center gap-1.5"
+            >
+              {testing ? '测试中...' : (
+                <>
+                  <Zap className="w-3.5 h-3.5" />
+                  测试连接
+                </>
+              )}
+            </button>
+            <button
+              onClick={handleClear}
+              className="px-3 py-2 bg-red-900/50 hover:bg-red-800/50 text-red-300 text-xs font-mono rounded-lg transition-colors"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          {testStatus === 'success' && (
+            <div className="mt-2 px-3 py-2 bg-green-900/30 border border-green-700/50 rounded-lg flex items-center gap-2">
+              <Check className="w-4 h-4 text-green-400 flex-shrink-0" />
+              <span className="text-xs font-mono text-green-300">API连接成功！</span>
+            </div>
+          )}
+          {testStatus === 'fail' && (
+            <div className="mt-2 px-3 py-2 bg-red-900/30 border border-red-700/50 rounded-lg flex items-center gap-2">
+              <X className="w-4 h-4 text-red-400 flex-shrink-0" />
+              <span className="text-xs font-mono text-red-300">API连接失败，请检查Key是否正确</span>
+            </div>
+          )}
+          {saved && testStatus === 'idle' && (
+            <p className="mt-2 text-[10px] font-mono text-gray-500 text-center">
+              配置已保存在本地浏览器中
+            </p>
+          )}
+        </div>
+      </div>
+    </SettingSection>
+  )
+}
+
 function DataSettings() {
   const [showConfirm, setShowConfirm] = useState(false)
 
@@ -419,6 +674,8 @@ export default function Settings() {
           <ThemeSettings />
           <AppearanceSettings />
           <AgentSettings />
+          <LearningSettings />
+          <LLMSettings />
           <DataSettings />
 
           <div className="pt-4 pb-2 text-center">

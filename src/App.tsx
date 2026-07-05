@@ -1,18 +1,18 @@
 import { useState } from 'react'
 import { HashRouter as Router, Routes, Route, NavLink, useLocation } from 'react-router-dom'
-import { MessageSquare, Users, BookOpen, Rocket, Settings as SettingsIcon } from 'lucide-react'
+import { MessageSquare, Users, BookOpen, ListTodo, Settings as SettingsIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import MatrixBackground from '@/components/MatrixBackground'
 import Dashboard from '@/pages/Dashboard'
 import Knowledge from '@/pages/Knowledge'
-import Deploy from '@/pages/Deploy'
+import Tasks from '@/pages/Tasks'
 import Settings from '@/pages/Settings'
 
 const navItems = [
   { path: '/', label: '首页', icon: MessageSquare, color: 'text-green-400', glow: 'rgba(34, 197, 94, 0.5)' },
   { path: '/team', label: '团队', icon: Users, color: 'text-blue-400', glow: 'rgba(59, 130, 246, 0.5)' },
   { path: '/knowledge', label: '知识', icon: BookOpen, color: 'text-purple-400', glow: 'rgba(168, 85, 247, 0.5)' },
-  { path: '/deploy', label: '部署', icon: Rocket, color: 'text-orange-400', glow: 'rgba(251, 146, 60, 0.5)' },
+  { path: '/tasks', label: '任务', icon: ListTodo, color: 'text-orange-400', glow: 'rgba(251, 146, 60, 0.5)' },
   { path: '/settings', label: '我的', icon: SettingsIcon, color: 'text-yellow-400', glow: 'rgba(250, 204, 21, 0.5)' },
 ]
 
@@ -70,7 +70,7 @@ function AppLayout() {
           <Route path="/" element={<Dashboard />} />
           <Route path="/team" element={<TeamPage />} />
           <Route path="/knowledge" element={<Knowledge />} />
-          <Route path="/deploy" element={<Deploy />} />
+          <Route path="/tasks" element={<Tasks />} />
           <Route path="/settings" element={<Settings />} />
         </Routes>
       </main>

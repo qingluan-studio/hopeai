@@ -17,6 +17,7 @@ export interface Agent {
   progress: number
   currentTask: string
   lastActive: number
+  department?: string
 }
 
 export interface KnowledgeEntry {

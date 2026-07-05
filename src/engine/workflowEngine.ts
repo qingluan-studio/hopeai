@@ -10,8 +10,25 @@ import {
   bugDetectorTemplate,
   extenderTemplate,
   packagerTemplate,
-  deployerTemplate
+  deployerTemplate,
+  knowledgeManagerTemplate
 } from './agentTemplates';
+import { callKimi } from '@/services/llmService';
+
+function isLLMEnabled(): boolean {
+  try {
+    return localStorage.getItem('hopeai-use-llm') === 'true'
+  } catch {
+    return false
+  }
+}
+
+function buildContext(prevOutputs: string[], maxChars: number = 3000): string {
+  if (prevOutputs.length === 0) return ''
+  const all = prevOutputs.join('\n\n---\n\n')
+  if (all.length <= maxChars) return all
+  return all.slice(0, maxChars) + '\n...（内容已截断）'
+}
 
 export type WorkflowPhase = 
   | 'analysis' 
@@ -20,7 +37,8 @@ export type WorkflowPhase =
   | 'review' 
   | 'extension' 
   | 'packaging' 
-  | 'deployment';
+  | 'deployment'
+  | 'knowledge';
 
 export interface PhaseConfig {
   id: WorkflowPhase;
@@ -135,6 +153,15 @@ const defaultPhases: PhaseConfig[] = [
     agents: [deployerTemplate],
     minDuration: 1500,
     maxDuration: 3000
+  },
+  {
+    id: 'knowledge',
+    name: '知识沉淀',
+    description: '总结经验，存入知识库',
+    icon: '📚',
+    agents: [knowledgeManagerTemplate],
+    minDuration: 1000,
+    maxDuration: 2000
   }
 ];
 
@@ -220,6 +247,13 @@ export class WorkflowEngine {
         });
 
         if (phase.agents.length > 0) {
+          const prevOutputs: string[] = [];
+          for (let p = 0; p < i; p++) {
+            if (this.results[p]?.outputs) {
+              prevOutputs.push(...this.results[p].outputs);
+            }
+          }
+
           for (const agent of phase.agents) {
             if (this.abortController.signal.aborted) break;
 
@@ -235,11 +269,27 @@ export class WorkflowEngine {
 
             const agentDelay = (phase.minDuration + Math.random() * (phase.maxDuration - phase.minDuration)) / phase.agents.length;
             const adjustedDelay = agentDelay / (this.options.speedFactor || 1);
-            await delay(adjustedDelay);
 
-            const content = await agent.generateResponse(command);
+            let content: string;
+            const useLLM = isLLMEnabled();
+
+            if (useLLM) {
+              try {
+                const context = buildContext(prevOutputs);
+                content = await callKimi(agent.id, command, context);
+                await delay(Math.min(adjustedDelay, 800));
+              } catch (err) {
+                const fallbackContent = await agent.generateResponse(command);
+                const errMsg = err instanceof Error ? err.message : '未知错误';
+                content = `⚠️ AI模型调用失败，使用本地模板生成\n\n原因：${errMsg}\n\n---\n\n${fallbackContent}`;
+              }
+            } else {
+              await delay(adjustedDelay);
+              content = await agent.generateResponse(command);
+            }
             
             phaseResult.outputs.push(content);
+            prevOutputs.push(content);
 
             this.reportProgress({
               phase: phase.id,
