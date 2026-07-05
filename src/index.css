@@ -1,0 +1,200 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  html,
+  body {
+    height: 100%;
+    width: 100%;
+  }
+
+  body {
+    font-family: "JetBrains Mono", "Fira Code", monospace;
+    background-color: #0a0a0f;
+    color: #e0e0e0;
+    line-height: 1.6;
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background-image:
+      linear-gradient(rgba(26, 26, 46, 0.3) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(26, 26, 46, 0.3) 1px, transparent 1px);
+    background-size: 20px 20px;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #0f0f1a;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #00ff88;
+    border-radius: 3px;
+    box-shadow: 0 0 10px #00ff88;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #00d4ff;
+    box-shadow: 0 0 15px #00d4ff;
+  }
+
+  ::selection {
+    background: #00ff88;
+    color: #0a0a0f;
+    text-shadow: 0 0 10px #00ff88;
+  }
+
+  ::-moz-selection {
+    background: #00ff88;
+    color: #0a0a0f;
+    text-shadow: 0 0 10px #00ff88;
+  }
+}
+
+@layer components {
+  .scanline-bg {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .scanline-bg::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(
+      transparent 50%,
+      rgba(0, 255, 136, 0.02) 50%
+    );
+    background-size: 100% 4px;
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  .scanline-bg::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 100px;
+    background: linear-gradient(
+      to bottom,
+      transparent,
+      rgba(0, 255, 136, 0.1),
+      transparent
+    );
+    animation: scanline 6s linear infinite;
+    pointer-events: none;
+    z-index: 11;
+  }
+
+  .terminal-cursor {
+    display: inline-block;
+    width: 10px;
+    height: 1.2em;
+    background-color: #00ff88;
+    margin-left: 2px;
+    animation: blink 1s step-end infinite;
+    box-shadow: 0 0 10px #00ff88;
+    vertical-align: text-bottom;
+  }
+
+  .neon-text-green {
+    color: #00ff88;
+    text-shadow: 0 0 5px #00ff88, 0 0 10px #00ff88, 0 0 20px #00ff88;
+  }
+
+  .neon-text-blue {
+    color: #00d4ff;
+    text-shadow: 0 0 5px #00d4ff, 0 0 10px #00d4ff, 0 0 20px #00d4ff;
+  }
+
+  .neon-text-red {
+    color: #ff3366;
+    text-shadow: 0 0 5px #ff3366, 0 0 10px #ff3366, 0 0 20px #ff3366;
+  }
+
+  .neon-text-yellow {
+    color: #ffaa00;
+    text-shadow: 0 0 5px #ffaa00, 0 0 10px #ffaa00, 0 0 20px #ffaa00;
+  }
+
+  .neon-text-purple {
+    color: #aa00ff;
+    text-shadow: 0 0 5px #aa00ff, 0 0 10px #aa00ff, 0 0 20px #aa00ff;
+  }
+
+  .terminal-input {
+    background-color: #0f0f1a;
+    border: 1px solid #1a1a2e;
+    color: #e0e0e0;
+    padding: 0.5rem 1rem;
+    font-family: "JetBrains Mono", "Fira Code", monospace;
+    outline: none;
+    transition: all 0.3s ease;
+  }
+
+  .terminal-input:focus {
+    border-color: #00ff88;
+    box-shadow: 0 0 10px rgba(0, 255, 136, 0.3), inset 0 0 10px rgba(0, 255, 136, 0.1);
+  }
+
+  .terminal-input::placeholder {
+    color: #555566;
+  }
+
+  .code-block {
+    background-color: #0f0f1a;
+    border: 1px solid #1a1a2e;
+    border-radius: 4px;
+    padding: 1rem;
+    font-family: "JetBrains Mono", "Fira Code", monospace;
+    font-size: 0.875rem;
+    line-height: 1.6;
+    overflow-x: auto;
+    position: relative;
+  }
+
+  .code-block::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, #00ff88, #00d4ff, #aa00ff);
+  }
+}
+
+@layer utilities {
+  .text-shadow-glow-green {
+    text-shadow: 0 0 5px #00ff88, 0 0 10px #00ff88;
+  }
+
+  .text-shadow-glow-blue {
+    text-shadow: 0 0 5px #00d4ff, 0 0 10px #00d4ff;
+  }
+
+  .box-shadow-glow-green {
+    box-shadow: 0 0 10px rgba(0, 255, 136, 0.5), 0 0 20px rgba(0, 255, 136, 0.3);
+  }
+
+  .box-shadow-glow-blue {
+    box-shadow: 0 0 10px rgba(0, 212, 255, 0.5), 0 0 20px rgba(0, 212, 255, 0.3);
+  }
+}
