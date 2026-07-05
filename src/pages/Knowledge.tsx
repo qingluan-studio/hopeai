@@ -9,16 +9,24 @@ import {
   X,
   FileText,
   Filter,
-  ArrowLeft
+  ArrowLeft,
+  Download,
+  Loader2,
+  CheckCircle,
+  Github,
+  Code2,
+  User
 } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { cn } from '@/lib/utils'
 import { useKnowledgeStore } from '@/store/useKnowledgeStore'
+import { fetchOpenSourceKnowledge, fetchCodeSnippets, fetchMyProjects } from '@/services/knowledgeFetcher'
 import type { KnowledgeEntry } from '@/types'
 
 const categories = [
   { id: 'all', name: '全部' },
+  { id: '项目规划', name: '规划' },
   { id: '前端开发', name: '前端' },
   { id: '后端开发', name: '后端' },
   { id: '编程语言', name: '语言' },
@@ -245,10 +253,13 @@ function DetailView({
 }
 
 export default function Knowledge() {
-  const { entries, searchQuery, setSearch, selectEntry, selectedEntry } = useKnowledgeStore()
+  const { entries, searchQuery, setSearch, selectEntry, selectedEntry, addEntry } = useKnowledgeStore()
   const [activeCategory, setActiveCategory] = useState('all')
   const [activeTag, setActiveTag] = useState<string | null>(null)
   const [showFilters, setShowFilters] = useState(false)
+  const [importing, setImporting] = useState(false)
+  const [importProgress, setImportProgress] = useState({ current: 0, total: 0, name: '' })
+  const [importResult, setImportResult] = useState<string | null>(null)
 
   const allTags = useMemo(() => {
     const tags = new Set<string>()
@@ -281,6 +292,80 @@ export default function Knowledge() {
   }, [entries, activeCategory, activeTag, searchQuery])
 
   const selectedEntryData = entries.find(e => e.id === selectedEntry) || null
+
+  // 自动导入开源知识
+  const handleImportFromGitHub = async () => {
+    setImporting(true)
+    setImportResult(null)
+    try {
+      const newEntries = await fetchOpenSourceKnowledge(
+        (current, total, name) => setImportProgress({ current, total, name }),
+        8
+      )
+      let added = 0
+      for (const entry of newEntries) {
+        // 避免重复
+        if (!entries.some(e => e.id === entry.id)) {
+          addEntry(entry)
+          added++
+        }
+      }
+      setImportResult(`✅ 成功导入 ${added} 条开源知识`)
+    } catch (err) {
+      setImportResult(`❌ 导入失败: ${err instanceof Error ? err.message : '未知错误'}`)
+    } finally {
+      setImporting(false)
+      setImportProgress({ current: 0, total: 0, name: '' })
+      setTimeout(() => setImportResult(null), 5000)
+    }
+  }
+
+  // 导入代码片段
+  const handleImportCode = async () => {
+    setImporting(true)
+    setImportResult(null)
+    try {
+      const newEntries = await fetchCodeSnippets(
+        'python',
+        (current, total) => setImportProgress({ current, total, name: '代码片段' })
+      )
+      let added = 0
+      for (const entry of newEntries) {
+        addEntry(entry)
+        added++
+      }
+      setImportResult(`✅ 成功导入 ${added} 条代码片段`)
+    } catch (err) {
+      setImportResult(`❌ 导入失败: ${err instanceof Error ? err.message : '未知错误'}`)
+    } finally {
+      setImporting(false)
+      setImportProgress({ current: 0, total: 0, name: '' })
+      setTimeout(() => setImportResult(null), 5000)
+    }
+  }
+
+  // 导入董事长自有项目
+  const handleImportMyProjects = async () => {
+    setImporting(true)
+    setImportResult(null)
+    try {
+      const newEntries = await fetchMyProjects(
+        (current, total, name) => setImportProgress({ current, total, name })
+      )
+      let added = 0
+      for (const entry of newEntries) {
+        addEntry(entry)
+        added++
+      }
+      setImportResult(`✅ 成功导入 ${added} 个董事长项目`)
+    } catch (err) {
+      setImportResult(`❌ 导入失败: ${err instanceof Error ? err.message : '未知错误'}`)
+    } finally {
+      setImporting(false)
+      setImportProgress({ current: 0, total: 0, name: '' })
+      setTimeout(() => setImportResult(null), 5000)
+    }
+  }
 
   return (
     <div className="h-full flex flex-col">
@@ -325,6 +410,94 @@ export default function Knowledge() {
               <Filter className="w-4 h-4" />
             </button>
           </div>
+
+          {/* 自动导入按钮 */}
+          <div className="grid grid-cols-3 gap-1.5 mt-2">
+            <button
+              onClick={handleImportFromGitHub}
+              disabled={importing}
+              className={cn(
+                'flex items-center justify-center gap-1 py-1.5 rounded-lg border text-[10px] font-mono transition-all',
+                importing
+                  ? 'bg-gray-800 border-gray-700 text-gray-500'
+                  : 'bg-green-900/20 border-green-700/40 text-green-400 hover:bg-green-900/40 active:scale-95'
+              )}
+            >
+              {importing ? (
+                <Loader2 className="w-3 h-3 animate-spin" />
+              ) : (
+                <Github className="w-3 h-3" />
+              )}
+              开源知识
+            </button>
+            <button
+              onClick={handleImportCode}
+              disabled={importing}
+              className={cn(
+                'flex items-center justify-center gap-1 py-1.5 rounded-lg border text-[10px] font-mono transition-all',
+                importing
+                  ? 'bg-gray-800 border-gray-700 text-gray-500'
+                  : 'bg-blue-900/20 border-blue-700/40 text-blue-400 hover:bg-blue-900/40 active:scale-95'
+              )}
+            >
+              {importing ? (
+                <Loader2 className="w-3 h-3 animate-spin" />
+              ) : (
+                <Code2 className="w-3 h-3" />
+              )}
+              代码片段
+            </button>
+            <button
+              onClick={handleImportMyProjects}
+              disabled={importing}
+              className={cn(
+                'flex items-center justify-center gap-1 py-1.5 rounded-lg border text-[10px] font-mono transition-all',
+                importing
+                  ? 'bg-gray-800 border-gray-700 text-gray-500'
+                  : 'bg-purple-900/20 border-purple-700/40 text-purple-400 hover:bg-purple-900/40 active:scale-95'
+              )}
+            >
+              {importing ? (
+                <Loader2 className="w-3 h-3 animate-spin" />
+              ) : (
+                <User className="w-3 h-3" />
+              )}
+              我的项目
+            </button>
+          </div>
+
+          {/* 导入进度 */}
+          {importing && importProgress.total > 0 && (
+            <div className="mt-2 p-2 rounded-lg bg-gray-900/80 border border-green-800/30">
+              <div className="flex items-center justify-between text-[10px] font-mono text-gray-400 mb-1">
+                <span className="truncate flex-1">{importProgress.name}</span>
+                <span className="ml-2">{importProgress.current}/{importProgress.total}</span>
+              </div>
+              <div className="h-1 bg-gray-800 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-green-500 to-cyan-500 transition-all duration-300"
+                  style={{ width: `${(importProgress.current / importProgress.total) * 100}%` }}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* 导入结果 */}
+          {importResult && (
+            <div className={cn(
+              'mt-2 p-2 rounded-lg text-[11px] font-mono flex items-center gap-1.5',
+              importResult.startsWith('✅')
+                ? 'bg-green-900/20 border border-green-700/40 text-green-400'
+                : 'bg-red-900/20 border border-red-700/40 text-red-400'
+            )}>
+              {importResult.startsWith('✅') ? (
+                <CheckCircle className="w-3.5 h-3.5 flex-shrink-0" />
+              ) : (
+                <X className="w-3.5 h-3.5 flex-shrink-0" />
+              )}
+              <span className="truncate">{importResult}</span>
+            </div>
+          )}
 
           {showFilters && (
             <div className="mt-3 space-y-3 animate-in slide-in-from-top-2">
