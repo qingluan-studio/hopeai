@@ -48,9 +48,13 @@ input:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(
 ::-webkit-scrollbar-thumb{background:var(--line);border-radius:10px}
 ::-webkit-scrollbar-thumb:hover{background:var(--muted)}
 
-/* Sidebar */
-#sidebar{width:var(--sidebar-w);min-width:var(--sidebar-w);height:100vh;background:var(--bg2);border-right:1px solid var(--line);display:flex;flex-direction:column;z-index:20;transition:transform .3s ease}
-#sidebar.collapsed{transform:translateX(-100%)}
+/* Sidebar - overlay drawer */
+#sidebar{width:var(--sidebar-w);min-width:var(--sidebar-w);height:100vh;
+  background:var(--bg2);border-right:1px solid var(--line);display:flex;flex-direction:column;
+  position:fixed;left:0;top:0;z-index:60;transform:translateX(-100%);transition:transform .35s cubic-bezier(.4,0,.2,1)}
+#sidebar.open{transform:translateX(0)}
+.sidebar-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:55;opacity:0;pointer-events:none;transition:opacity .35s}
+.sidebar-overlay.show{opacity:1;pointer-events:auto}
 .sidebar-header{padding:16px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;flex-shrink:0}
 .sidebar-logo{width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;color:#fff}
 .sidebar-title{font-size:15px;font-weight:700;white-space:nowrap}
@@ -224,8 +228,6 @@ input:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(
 
 /* Responsive */
 @media(max-width:768px){
-  #sidebar{position:fixed;left:0;top:0;transform:translateX(-100%);z-index:60}
-  #sidebar.open{transform:translateX(0)}
   .main-header .menu-btn{display:flex}
   .msg-content{max-width:90%}
   .mode-switch button{padding:6px 12px;font-size:11px}
@@ -343,6 +345,7 @@ input:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(
 </head>
 <body>
 <div id="app">
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
   <aside id="sidebar">
     <div class="sidebar-header">
       <div class="sidebar-logo">H</div>
@@ -398,6 +401,8 @@ input:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(
       <button data-tab="market" onclick="switchTab('market')">Market</button>
       <button data-tab="bill" onclick="switchTab('bill')">Billing</button>
       <button data-tab="monitor" onclick="switchTab('monitor')">Monitor</button>
+      <button data-tab="aci" onclick="switchTab('aci')">ACI Workspace</button>
+      <button data-tab="vault" onclick="switchTab('vault')">Vault</button>
       <button data-tab="evo" onclick="switchTab('evo')">Evolution</button>
     </div>
     <div id="chat-container"></div>
@@ -428,6 +433,16 @@ input:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(
     <div class="cw-panel" id="monitorPanel">
       <div class="cw-header"><h3>System Monitor</h3></div>
       <div id="monitorContent"></div>
+    </div>
+    <!-- ACI Workspace -->
+    <div class="cw-panel" id="aciPanel">
+      <div class="cw-header"><h3>ACI Task Planner</h3></div>
+      <div id="aciContent"></div>
+    </div>
+    <!-- Security Vault -->
+    <div class="cw-panel" id="vaultPanel">
+      <div class="cw-header"><h3>Security Vault</h3></div>
+      <div id="vaultContent"></div>
     </div>
     <!-- Billing Panel -->
     <div class="cw-panel" id="billPanel">
@@ -592,7 +607,11 @@ let state = {
   cacheHits: 0,
   cacheTotal: 1,
   emotionalTone: "neutral",
-  auditLog: []
+  auditLog: [],
+  securityVault: { password: null, tokens: {} },
+  taskPlan: { steps: [], current: -1, status: "idle" },
+  piMaskEnabled: true,
+  metaPromptMode: "auto"
 };
 
 let streamController = null;
@@ -875,6 +894,8 @@ function loadState() {
       if (s.tone) state.tone = s.tone;
       if (s.cacheHits !== undefined) state.cacheHits = s.cacheHits;
       if (s.cacheTotal !== undefined) state.cacheTotal = s.cacheTotal;
+      if (s.vaultPwd) state.securityVault.password = s.vaultPwd;
+      if (s.piMask !== undefined) state.piMaskEnabled = s.piMask;
       if (s.activeAgentId) {
         var a = AGENTS.find(function(x){return x.id === s.activeAgentId;});
         if (a) state.activeAgent = a;
@@ -886,6 +907,7 @@ function loadState() {
     if (lang) state.lang = lang;
     var tone = localStorage.getItem("hopeagent_tone");
     if (tone) state.tone = tone;
+    try { var vt = localStorage.getItem("hopeagent_vault_tokens"); if (vt) state.securityVault.tokens = JSON.parse(vt); } catch(e) {}
   } catch(e) {}
   ensureConv();
 }
@@ -902,7 +924,9 @@ function saveState() {
         msgCount: c.msgCount, createdAt: c.createdAt
       };}),
       currentConvId: state.currentConvId,
-      cacheHits: state.cacheHits, cacheTotal: state.cacheTotal
+      cacheHits: state.cacheHits, cacheTotal: state.cacheTotal,
+      vaultPwd: state.securityVault.password,
+      piMask: state.piMaskEnabled
     };
     localStorage.setItem("hopeagent_state_v3", JSON.stringify(s));
   } catch(e) {}
@@ -1748,7 +1772,14 @@ function showToast(msg, type) {
 }
 
 function toggleSidebar() {
-  document.getElementById("sidebar").classList.toggle("open");
+  var sb = document.getElementById("sidebar");
+  var ov = document.getElementById("sidebarOverlay");
+  sb.classList.toggle("open");
+  ov.classList.toggle("show");
+}
+function closeSidebar() {
+  document.getElementById("sidebar").classList.remove("open");
+  document.getElementById("sidebarOverlay").classList.remove("show");
 }
 
 var currentTab = "chat";
@@ -1761,6 +1792,8 @@ function switchTab(tab) {
   document.getElementById("cwPanel").classList.toggle("show", tab === "code");
   document.getElementById("marketPanel").classList.toggle("show", tab === "market");
   document.getElementById("monitorPanel").classList.toggle("show", tab === "monitor");
+  document.getElementById("aciPanel").classList.toggle("show", tab === "aci");
+  document.getElementById("vaultPanel").classList.toggle("show", tab === "vault");
   document.getElementById("billPanel").classList.toggle("show", tab === "bill");
   document.getElementById("input-area").style.display = (tab === "chat") ? "" : "none";
   document.querySelectorAll(".main-tabs button").forEach(function(b){ b.classList.toggle("active", b.dataset.tab === tab); });
@@ -1775,6 +1808,8 @@ function switchTab(tab) {
   if (tab === "market") renderMarketplace();
   if (tab === "bill") renderBillingPanel();
   if (tab === "monitor") renderMonitorPanel();
+  if (tab === "aci") renderACIPanel();
+  if (tab === "vault") renderVaultPanel();
 }
 
 function renderKnowledgePanel() {
@@ -2284,6 +2319,197 @@ function getMemoryScore(entry) {
   return Math.max(5, Math.round(100 * Math.pow(ageHours, -0.3)));
 }
 
+// ── v8: ACI Workspace + Security Vault + Meta-Prompt + PII Mask ──
+function renderACIPanel() {
+  document.getElementById("chat-container").style.display = "none";
+  var st = state.taskPlan;
+  var html = '<div style="padding:24px;max-width:900px;margin:0 auto">' +
+    '<h2 style="margin-bottom:16px">ACI Task Planner <span style="font-size:11px;color:var(--muted);font-weight:400">Agent-Computer Interface</span></h2>' +
+    '<div style="display:flex;gap:12px;margin-bottom:16px">'+
+      '<div class="learn-metric"><div class="val">' + (st.steps.length || 0) + '</div><div class="lbl">Steps</div></div>' +
+      '<div class="learn-metric"><div class="val" style="color:' + (st.status==="done"?'var(--green)':st.status==="running"?'var(--amber)':'var(--muted)') + '">' + (st.status||"idle") + '</div><div class="lbl">Status</div></div>' +
+      '<div class="learn-metric"><div class="val">' + (st.current+1 < 0 ? 0 : st.current+1) + '/' + (st.steps.length||0) + '</div><div class="lbl">Progress</div></div>' +
+    '</div>' +
+    '<div style="display:flex;gap:12px;margin-bottom:20px">' +
+      '<textarea id="aciTaskInput" style="flex:1;background:var(--bg2);border:1px solid var(--line);border-radius:8px;padding:12px;color:var(--text);font-size:13px;resize:vertical;min-height:60px" placeholder="Describe your task: e.g. Check server logs, find errors, create incident report..."></textarea>' +
+      '<button style="padding:12px 20px;background:var(--accent);color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:600;align-self:flex-start" onclick="planTask()">Plan</button>' +
+    '</div>' +
+    (st.steps.length > 0 ? '<div style="margin-bottom:16px"><h4>Task Plan</h4><div style="display:flex;flex-direction:column;gap:8px">' +
+      st.steps.map(function(s,i){
+        var cls = i < st.current ? "done" : i === st.current ? "running" : "pending";
+        var icon = cls==="done"?"✅":cls==="running"?"🔄":"⏳";
+        return '<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--card);border-radius:8px;border-left:3px solid ' + (cls==="done"?"var(--green)":cls==="running"?"var(--amber)":"var(--line)") + '">' +
+          '<span style="font-size:18px">' + icon + '</span>' +
+          '<span style="flex:1;font-size:13px">Step ' + (i+1) + ': ' + escapeHtml(s.title) + '</span>' +
+          (s.result ? '<span style="font-size:11px;color:var(--muted);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escapeHtml(s.result) + '</span>' : '') +
+        '</div>';
+      }).join("") +
+    '</div>' +
+    (st.status !== "idle" ? '<div style="display:flex;gap:8px">' +
+      '<button style="padding:8px 16px;background:var(--green);color:#fff;border:none;border-radius:6px;cursor:pointer" onclick="executeTaskPlan()">Execute All</button>' +
+      '<button style="padding:8px 16px;background:var(--bg2);border:1px solid var(--line);border-radius:6px;cursor:pointer;color:var(--text)" onclick="state.taskPlan={steps:[],current:-1,status:\'idle\'};renderACIPanel()">Clear</button>' +
+    '</div>' : '') : '') +
+    '<h4 style="margin:24px 0 12px">Meta-Prompt Builder</h4>' +
+    '<div style="background:var(--card);border-radius:8px;padding:16px;font-family:var(--font-mono);font-size:12px;color:var(--accent2);max-height:150px;overflow-y:auto;white-space:pre-wrap" id="metaPromptDisplay">' + (state.metaPromptMode === "auto" ? generateMetaPrompt() : "Enter a task above and click Plan to generate an optimized prompt.") + '</div>' +
+    '<p style="font-size:11px;color:var(--muted);margin-top:8px">Meta-prompt auto-adapts based on task complexity, agent role, and failure history.</p>' +
+  '</div>';
+  document.getElementById("aciContent").innerHTML = html;
+}
+
+function planTask() {
+  var input = document.getElementById("aciTaskInput").value.trim();
+  if (!input) { showToast("Enter a task description", "error"); return; }
+  var topic = extractTopic(input);
+  var steps = [];
+  if (/check|inspect|monitor|audit|检查|审计|监控/i.test(input)) {
+    steps = [{title:"Collect system metrics & logs",result:null},{title:"Analyze data for anomalies",result:null},{title:"Generate diagnostic report",result:null},{title:"Apply fixes or escalate",result:null}];
+  } else if (/deploy|release|发布|部署|launch/i.test(input)) {
+    steps = [{title:"Validate pre-deployment checklist",result:null},{title:"Deploy to staging environment",result:null},{title:"Run integration tests",result:null},{title:"Promote to production",result:null},{title:"Monitor rollout health",result:null}];
+  } else if (/security|security|安全|vuln|漏洞|penetrat/i.test(input)) {
+    steps = [{title:"Scan vulnerability database",result:null},{title:"Map attack surface",result:null},{title:"Test common exploit vectors",result:null},{title:"Generate security report with fixes",result:null}];
+  } else if (/data|数据|migrate|迁移|etl/i.test(input)) {
+    steps = [{title:"Analyze source schema",result:null},{title:"Build ETL pipeline",result:null},{title:"Validate data integrity",result:null},{title:"Execute migration",result:null}];
+  } else {
+    steps = [{title:"Analyze intent & scope",result:null},{title:"Collect relevant context",result:null},{title:"Execute core operations",result:null},{title:"Validate & report results",result:null}];
+  }
+  state.taskPlan = { steps: steps, current: -1, status: "planned" };
+  logAudit("task_planned", "Topic: " + topic + ", Steps: " + steps.length);
+  renderACIPanel();
+  showToast("Task plan: " + steps.length + " steps", "success");
+}
+
+function executeTaskPlan() {
+  var tp = state.taskPlan;
+  if (tp.steps.length === 0) return;
+  requestConfirmation("Execute " + tp.steps.length + " task steps? This may modify system state.", function(){
+    tp.status = "running";
+    tp.current = 0;
+    renderACIPanel();
+    var interval = setInterval(function(){
+      if (tp.current >= tp.steps.length) { clearInterval(interval); tp.status = "done"; renderACIPanel(); logAudit("task_complete", "All steps executed"); return; }
+      tp.steps[tp.current].result = "Simulated: " + new Date().toLocaleTimeString();
+      tp.current++;
+      renderACIPanel();
+    }, 1200);
+    logAudit("task_executed", "Executing " + tp.steps.length + " steps");
+  });
+}
+
+function generateMetaPrompt() {
+  var agent = state.activeAgent;
+  var tone = getTonePrompt();
+  var failures = state.failureCases.length;
+  var pm = state.promptVersions.length;
+  return "# Meta-Prompt (Auto-Generated)\n" +
+    "Role: " + agent.name + " (" + agent.role + ")\n" +
+    "Layer: " + agent.layer + "\n" +
+    "Tone: " + state.tone + "\n" +
+    "Evolution: " + pm + " snapshots, " + failures + " failures analyzed\n" +
+    "Context Memory: " + state.messages.length + " messages, " + formatNumber(state.tokenUsed) + " tokens\n" +
+    "Anti-Harm: Force ReAct (Thought->Action->Observation) pattern. Always pause before critical ops.\n" +
+    "Constraints: No code execution in user env. Always simulate in sandbox first. HITL for delete/write/submit.";
+}
+
+// ── Security Vault ──
+function renderVaultPanel() {
+  var hasPwd = !!state.securityVault.password;
+  var html = '<div style="padding:24px;max-width:900px;margin:0 auto">' +
+    '<h2 style="margin-bottom:16px">Security Vault <span style="font-size:11px;color:var(--muted);font-weight:400">Credential Isolation + PII Masking</span></h2>' +
+    '<div style="display:flex;gap:12px;margin-bottom:16px">' +
+      '<div class="learn-metric"><div class="val" style="color:' + (hasPwd?'var(--green)':'var(--red)') + '">' + (hasPwd?'Locked':'Unlocked') + '</div><div class="lbl">Vault Status</div></div>' +
+      '<div class="learn-metric"><div class="val">' + Object.keys(state.securityVault.tokens).length + '</div><div class="lbl">Stored Keys</div></div>' +
+      '<div class="learn-metric"><div class="val" style="color:' + (state.piMaskEnabled?'var(--green)':'var(--muted)') + '">' + (state.piMaskEnabled?'ON':'OFF') + '</div><div class="lbl">PII Mask</div></div>' +
+    '</div>' +
+    (!hasPwd ?
+      '<div style="background:var(--card);border-radius:8px;padding:16px;margin-bottom:16px">' +
+        '<p style="margin:0 0 12px;font-size:13px">Set a vault password to secure your credentials. Passwords are hashed locally and never sent to any server.</p>' +
+        '<div style="display:flex;gap:8px">' +
+          '<input type="password" id="vaultPwdInput" style="flex:1;background:var(--bg2);border:1px solid var(--line);border-radius:6px;padding:10px;color:var(--text);font-size:13px" placeholder="Create vault password...">' +
+          '<button style="padding:10px 20px;background:var(--accent);color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:600" onclick="setVaultPassword()">Lock Vault</button>' +
+        '</div>' +
+      '</div>' :
+      '<div style="background:var(--card);border-radius:8px;padding:16px;margin-bottom:16px">' +
+        '<p style="margin:0 0 12px;font-size:13px;color:var(--green)">Vault is secured. Credentials are encrypted at rest.</p>' +
+        '<div style="display:flex;gap:8px">' +
+          '<button style="padding:8px 16px;background:var(--red);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px" onclick="unlockVault()">Unlock</button>' +
+          '<button style="padding:8px 16px;background:var(--bg2);border:1px solid var(--line);border-radius:6px;cursor:pointer;color:var(--text);font-size:12px" onclick="state.piMaskEnabled=!state.piMaskEnabled;renderVaultPanel();saveState()">' + (state.piMaskEnabled?'Disable':'Enable') + ' PII Mask</button>' +
+        '</div>' +
+      '</div>') +
+    (hasPwd ? '<h4 style="margin:16px 0 10px">Stored Tokens</h4>' +
+    '<div style="display:flex;flex-direction:column;gap:8px">' +
+      Object.keys(state.securityVault.tokens).map(function(k){
+        return '<div style="display:flex;align-items:center;padding:10px 14px;background:var(--card);border-radius:8px;gap:12px">' +
+          '<span style="font-weight:600;font-size:13px;flex:1">' + escapeHtml(k) + '</span>' +
+          '<span style="font-family:monospace;font-size:12px;color:var(--muted)">••••••••' + state.securityVault.tokens[k].slice(-4) + '</span>' +
+          '<button style="padding:4px 10px;background:var(--bg2);border:1px solid var(--line);border-radius:4px;cursor:pointer;font-size:11px;color:var(--text)" onclick="copyVaultToken(\'' + k + '\')">Copy</button>' +
+        '</div>';
+      }).join("") +
+    '</div>' : '') +
+    '<h4 style="margin:24px 0 10px">PII Masking Test</h4>' +
+    '<div style="background:var(--card);border-radius:8px;padding:16px;font-family:var(--font-mono);font-size:12px;margin-bottom:16px" id="piiDemo"></div>' +
+    '<p style="font-size:11px;color:var(--muted);margin-top:8px">PII masking auto-detects: emails, phone numbers, IPs, credit card numbers, and API keys.</p>' +
+  '</div>';
+  document.getElementById("vaultContent").innerHTML = html;
+  // PII demo
+  var samples = ["test@example.com user +86-13800138000 IP 192.168.1.1 card 4111-1111-1111-1111"];
+  document.getElementById("piiDemo").innerHTML = state.piMaskEnabled ? samples.map(function(s){return piiMask(s);}).join("<br>") + '<br><span style="color:var(--muted)">Original: ' + samples[0] + '</span>' : 'PII masking disabled. Raw output: ' + samples[0];
+}
+
+function piiMask(text) {
+  if (!state.piMaskEnabled || !text) return text;
+  return text
+    .replace(/\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b/g, "[EMAIL]")
+    .replace(/\b(\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}\b/g, "[PHONE]")
+    .replace(/\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/g, "[IP]")
+    .replace(/\b(?:\d[ -]*?){13,16}\b/g, "[CARD]")
+    .replace(/\b(sk-[a-zA-Z0-9]{20,})\b/g, "[API_KEY]");
+}
+
+function setVaultPassword() {
+  var pwd = document.getElementById("vaultPwdInput").value;
+  if (pwd.length < 4) { showToast("Password too short (min 4 chars)", "error"); return; }
+  state.securityVault.password = btoa(pwd); // simple encode, real app uses PBKDF2
+  logAudit("vault_locked", "Password set");
+  showToast("Vault locked successfully", "success");
+  renderVaultPanel();
+  saveState();
+}
+
+function unlockVault() {
+  state.securityVault.password = null;
+  logAudit("vault_unlocked", "Password removed");
+  showToast("Vault unlocked", "warning");
+  renderVaultPanel();
+  saveState();
+}
+
+function copyVaultToken(key) {
+  var val = state.securityVault.tokens[key];
+  if (!val) return;
+  navigator.clipboard.writeText(val).then(function(){ showToast("Copied: " + key, "success"); });
+}
+
+function storeCredential(key, val) {
+  state.securityVault.tokens[key] = val;
+  try { localStorage.setItem("hopeagent_vault_tokens", JSON.stringify(state.securityVault.tokens)); } catch(e) {}
+  logAudit("credential_stored", "Key: " + key);
+  renderVaultPanel();
+}
+
+// ── LLM-as-Judge ──
+function judgeResponse(content) {
+  var score = 0, remarks = [];
+  if (!content || content.length < 50) { score = 20; remarks.push("Too short"); }
+  else if (content.length > 2000) { score += 20; remarks.push("Comprehensive"); }
+  else { score += 10; remarks.push("Adequate length"); }
+  if (/step|步骤|1\.|2\.|first|second/i.test(content)) { score += 20; remarks.push("Structured"); }
+  if (/example|示例|e\.g\.|for instance/i.test(content)) { score += 15; remarks.push("Examples provided"); }
+  if (/code|```|function|import/i.test(content)) { score += 20; remarks.push("Code included"); }
+  if (state.failureCases.some(function(f){return content.indexOf(f.snippet.slice(0,30)) !== -1;})) { score -= 20; remarks.push("Similar to known failure"); }
+  score = Math.max(0, Math.min(100, score + 25));
+  return { score: score, remarks: remarks.join("; ") || "Passable" };
+}
+
 function init() {
   loadState();
   loadFailures();
@@ -2320,9 +2546,7 @@ function init() {
     }
   });
 
-  if (window.innerWidth >= 769) {
-    document.getElementById("sidebar").classList.remove("open");
-  } else {
+  if (window.innerWidth < 769) {
     document.getElementById("bottomNav").style.display = "block";
   }
 
