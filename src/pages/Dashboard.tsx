@@ -10,6 +10,7 @@ import { toolEngine, type ToolDefinition } from '@/tools/toolEngine'
 import { templateStore, type Template } from '@/engine/templateStore'
 import { embeddingService } from '@/services/embeddingService'
 import { defaultKnowledgeEngine } from '@/engine/knowledgeEngine'
+import { AgentConsoleView } from '@/components/AgentConsole'
 
 const roleConfig: Record<string, { name: string; color: string; bg: string; border: string; icon: any }> = {
   user: { name: '董事长', color: 'text-yellow-400', bg: 'bg-yellow-900/30', border: 'border-yellow-700/50', icon: Crown },
@@ -610,7 +611,7 @@ function ChatView() {
   const { addEntry } = useKnowledgeStore()
   const [input, setInput] = useState('')
   const [phase, setPhase] = useState<string>('idle')
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'chat'>('dashboard')
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'chat' | 'console'>('dashboard')
   const scrollRef = useRef<HTMLDivElement>(null)
   const workflowEngineRef = useRef<WorkflowEngine | null>(null)
   const processedAgentsRef = useRef<Set<string>>(new Set())
@@ -839,12 +840,25 @@ ${allOutputs.slice(0, 2000)}
           >
             下达指令
           </button>
+          <button
+            onClick={() => setActiveTab('console')}
+            className={cn(
+              'flex-1 py-1.5 rounded-lg text-[11px] font-mono transition-all',
+              activeTab === 'console'
+                ? 'bg-purple-900/40 text-purple-400 border border-purple-800/50'
+                : 'text-gray-500 hover:text-gray-300'
+            )}
+          >
+            Agent 控制台
+          </button>
         </div>
       </div>
 
       {/* 内容区 */}
       {activeTab === 'dashboard' ? (
         <DashboardMiniView onStartChat={() => setActiveTab('chat')} />
+      ) : activeTab === 'console' ? (
+        <AgentConsoleView />
       ) : (
         <>
           {/* 消息列表 */}
