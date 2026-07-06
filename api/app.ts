@@ -15,6 +15,7 @@ import authRoutes from './routes/auth.js'
 import agentRoutes from './routes/agent.js'
 import knowledgeRoutes from './routes/knowledge.js'
 import deployRoutes from './routes/deploy.js'
+import chatRoutes from './routes/chat.js'
 
 // for esm mode
 const __filename = fileURLToPath(import.meta.url)
@@ -36,6 +37,7 @@ app.use('/api/auth', authRoutes)
 app.use('/api/agent', agentRoutes)
 app.use('/api/knowledge', knowledgeRoutes)
 app.use('/api/deploy', deployRoutes)
+app.use('/api/chat', chatRoutes)
 
 /**
  * health

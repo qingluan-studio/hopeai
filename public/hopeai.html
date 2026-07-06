@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>希望AI - 智能对话助手</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      min-height: 100vh;
+      color: #fff;
+    }
+    
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    header {
+      text-align: center;
+      padding: 20px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    
+    header h1 {
+      font-size: 2em;
+      color: #4ecca3;
+      letter-spacing: 2px;
+    }
+    
+    header p {
+      color: rgba(255,255,255,0.6);
+      margin-top: 8px;
+      font-size: 14px;
+    }
+    
+    .chat-area {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    
+    .message {
+      max-width: 80%;
+      padding: 12px 16px;
+      border-radius: 16px;
+      animation: fadeIn 0.3s ease;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .message.user {
+      background: linear-gradient(135deg, #4ecca3, #45b7aa);
+      align-self: flex-end;
+      color: #fff;
+    }
+    
+    .message.ai {
+      background: rgba(255,255,255,0.1);
+      align-self: flex-start;
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+    
+    .message.ai .rag-ref {
+      background: rgba(78, 204, 163, 0.2);
+      border: 1px solid rgba(78, 204, 163, 0.3);
+      padding: 10px;
+      margin-top: 10px;
+      border-radius: 8px;
+      font-size: 12px;
+      color: rgba(255,255,255,0.8);
+    }
+    
+    .input-area {
+      padding: 20px;
+      border-top: 1px solid rgba(255,255,255,0.1);
+    }
+    
+    .input-wrapper {
+      display: flex;
+      gap: 12px;
+      background: rgba(255,255,255,0.05);
+      padding: 12px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    
+    .input-wrapper input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: #fff;
+      font-size: 16px;
+      outline: none;
+    }
+    
+    .input-wrapper input::placeholder {
+      color: rgba(255,255,255,0.4);
+    }
+    
+    .input-wrapper button {
+      background: linear-gradient(135deg, #4ecca3, #45b7aa);
+      border: none;
+      color: #fff;
+      padding: 12px 24px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .input-wrapper button:hover {
+      transform: scale(1.05);
+      box-shadow: 0 4px 20px rgba(78, 204, 163, 0.3);
+    }
+    
+    .input-wrapper button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    .loading {
+      display: flex;
+      gap: 4px;
+      padding: 12px 16px;
+    }
+    
+    .loading span {
+      width: 8px;
+      height: 8px;
+      background: #4ecca3;
+      border-radius: 50%;
+      animation: bounce 1s infinite;
+    }
+    
+    .loading span:nth-child(2) { animation-delay: 0.2s; }
+    .loading span:nth-child(3) { animation-delay: 0.4s; }
+    
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+    
+    .stats {
+      text-align: center;
+      padding: 10px;
+      color: rgba(255,255,255,0.4);
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🤖 希望AI</h1>
+      <p>智能对话助手 · 知识库增强 · Kimi API驱动</p>
+    </header>
+    
+    <div class="chat-area" id="chatArea">
+      <div class="message ai">
+        你好！我是希望AI，一个智能对话助手。我可以帮你解答技术问题、写代码、分析需求等。有什么想问的吗？
+      </div>
+    </div>
+    
+    <div class="stats" id="stats">
+      知识库: 0 条 | RAG检索: 未启用
+    </div>
+    
+    <div class="input-area">
+      <div class="input-wrapper">
+        <input type="text" id="input" placeholder="输入你的问题..." autocomplete="off">
+        <button id="sendBtn" onclick="sendMessage()">发送</button>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    const chatArea = document.getElementById('chatArea');
+    const input = document.getElementById('input');
+    const sendBtn = document.getElementById('sendBtn');
+    const stats = document.getElementById('stats');
+    
+    let messages = [
+      { role: 'assistant', content: '你好！我是希望AI，一个智能对话助手。我可以帮你解答技术问题、写代码、分析需求等。有什么想问的吗？' }
+    ];
+    
+    // 加载知识库统计
+    async function loadStats() {
+      try {
+        const res = await fetch('/api/chat/knowledge/stats');
+        const data = await res.json();
+        if (data.success) {
+          stats.textContent = `知识库: ${data.data.total} 条 | 分类: ${data.data.categories} 个 | RAG检索: 已启用`;
+        }
+      } catch (e) {
+        stats.textContent = '知识库: 0 条 | RAG检索: 未启用';
+      }
+    }
+    
+    loadStats();
+    
+    function addMessage(content, isUser, ragUsed = false) {
+      const div = document.createElement('div');
+      div.className = `message ${isUser ? 'user' : 'ai'}`;
+      
+      if (!isUser && ragUsed) {
+        // 显示是否使用了RAG
+        const ragParts = content.split('\n\n📚 知识库参考');
+        div.innerHTML = ragParts[0];
+        if (ragParts.length > 1) {
+          const ragDiv = document.createElement('div');
+          ragDiv.className = 'rag-ref';
+          ragDiv.innerHTML = '📚 <strong>知识库参考</strong><br>' + ragParts[1].replace('(RAG检索):', '');
+          div.appendChild(ragDiv);
+        }
+      } else {
+        div.textContent = content;
+      }
+      
+      chatArea.appendChild(div);
+      chatArea.scrollTop = chatArea.scrollHeight;
+    }
+    
+    function addLoading() {
+      const div = document.createElement('div');
+      div.className = 'message ai loading';
+      div.id = 'loadingMsg';
+      div.innerHTML = '<span></span><span></span><span></span>';
+      chatArea.appendChild(div);
+      chatArea.scrollTop = chatArea.scrollHeight;
+    }
+    
+    function removeLoading() {
+      const loading = document.getElementById('loadingMsg');
+      if (loading) loading.remove();
+    }
+    
+    async function sendMessage() {
+      const text = input.value.trim();
+      if (!text) return;
+      
+      // 显示用户消息
+      addMessage(text, true);
+      input.value = '';
+      sendBtn.disabled = true;
+      
+      // 添加loading
+      addLoading();
+      
+      // 添加到消息历史
+      messages.push({ role: 'user', content: text });
+      
+      try {
+        const res = await fetch('/api/chat/hopeai', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ messages })
+        });
+        
+        const data = await res.json();
+        
+        removeLoading();
+        
+        if (data.success && data.data.choices) {
+          const aiContent = data.data.choices[0].message.content;
+          addMessage(aiContent, false, data.ragUsed);
+          messages.push({ role: 'assistant', content: aiContent });
+        } else {
+          addMessage('抱歉，出现了错误：' + (data.error || '未知错误'), false);
+        }
+      } catch (e) {
+        removeLoading();
+        addMessage('网络错误，请稍后重试', false);
+      }
+      
+      sendBtn.disabled = false;
+      input.focus();
+    }
+    
+    // 回车发送
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') sendMessage();
+    });
+  </script>
+</body>
+</html>
