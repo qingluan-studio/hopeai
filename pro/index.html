@@ -380,6 +380,9 @@ input:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(
       <button data-tab="kb" onclick="switchTab('kb')">KB (<span id="kbCount">0</span>)</button>
       <button data-tab="learn" onclick="switchTab('learn')">Learn (<span id="learnScore">0</span>)</button>
       <button data-tab="code" onclick="switchTab('code')">Code (<span id="codeCount">0</span>)</button>
+      <button data-tab="market" onclick="switchTab('market')">Market</button>
+      <button data-tab="bill" onclick="switchTab('bill')">Billing</button>
+      <button data-tab="monitor" onclick="switchTab('monitor')">Monitor</button>
       <button data-tab="evo" onclick="switchTab('evo')">Evolution</button>
     </div>
     <div id="chat-container"></div>
@@ -401,10 +404,27 @@ input:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(
       </div>
       <div id="cwContent"></div>
     </div>
+    <!-- Marketplace / SOP -->
+    <div class="cw-panel" id="marketPanel">
+      <div class="cw-header"><h3>Agent Marketplace & SOP</h3></div>
+      <div id="marketContent"></div>
+    </div>
+    <!-- Monitoring Dashboard -->
+    <div class="cw-panel" id="monitorPanel">
+      <div class="cw-header"><h3>System Monitor</h3></div>
+      <div id="monitorContent"></div>
+    </div>
+    <!-- Billing Panel -->
+    <div class="cw-panel" id="billPanel">
+      <div class="cw-header"><h3>Token Billing & Cost</h3></div>
+      <div id="billContent"></div>
+    </div>
     <div id="input-area">
       <div class="input-row">
         <textarea id="userInput" rows="1" placeholder="Describe your task, orchestrator will find the best agent..." onkeydown="handleKeyDown(event)"></textarea>
         <button class="voice-btn" id="voiceBtn" onclick="toggleVoice()" title="Voice input">🎤</button>
+        <button class="voice-btn" onclick="reviewLastResponse()" title="Review last response" style="font-size:14px">🔍</button>
+        <button class="voice-btn" id="abBtn" onclick="toggleABCompare()" title="A/B Compare" style="font-size:14px">⚖️</button>
         <button class="send-btn" id="sendBtn" onclick="sendMessage()" title="Send (Ctrl+Enter)">↑</button>
         <button class="send-btn stop-btn" id="stopBtn" onclick="stopStreaming()" style="display:none" title="Stop">■</button>
       </div>
@@ -426,6 +446,7 @@ input:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(
     <button onclick="switchTab('kb')"><span class="icon">📚</span>KB</button>
     <button onclick="switchTab('learn')"><span class="icon">🧠</span>Learn</button>
     <button onclick="switchTab('code')"><span class="icon">📁</span>Code</button>
+    <button onclick="switchTab('market')"><span class="icon">🛒</span>Market</button>
     <button onclick="switchTab('evo')"><span class="icon">🚀</span>Evo</button>
   </div>
 </div>
@@ -1684,6 +1705,9 @@ function switchTab(tab) {
   document.getElementById("kbPanel").classList.toggle("show", tab === "kb");
   document.getElementById("learnPanel").classList.toggle("show", tab === "learn");
   document.getElementById("cwPanel").classList.toggle("show", tab === "code");
+  document.getElementById("marketPanel").classList.toggle("show", tab === "market");
+  document.getElementById("monitorPanel").classList.toggle("show", tab === "monitor");
+  document.getElementById("billPanel").classList.toggle("show", tab === "bill");
   document.getElementById("input-area").style.display = (tab === "chat") ? "" : "none";
   document.querySelectorAll(".main-tabs button").forEach(function(b){ b.classList.toggle("active", b.dataset.tab === tab); });
   document.querySelectorAll("#bottomNav button").forEach(function(b){ b.classList.remove("active"); });
@@ -1694,6 +1718,9 @@ function switchTab(tab) {
   if (tab === "learn") renderLearnPanel();
   if (tab === "evo") renderEvoPanel();
   if (tab === "code") renderCodeWorkspace();
+  if (tab === "market") renderMarketplace();
+  if (tab === "bill") renderBillingPanel();
+  if (tab === "monitor") renderMonitorPanel();
 }
 
 function renderKnowledgePanel() {
@@ -1840,6 +1867,218 @@ function removeFile(i) { state.attachedFiles.splice(i,1); showAttachedFiles(); }
 function getAttachedContent() {
   if (state.attachedFiles.length === 0) return "";
   return "\n\nAttached files:\n" + state.attachedFiles.map(function(f){ return "=== " + f.name + " ===\n" + f.content; }).join("\n\n");
+}
+
+// ── SOP / Marketplace ──
+var MARKET_SOPS = [
+  { id:"fullstack-web", name:"Full-Stack Web App", desc:"Orchestrator → UI Designer → Code Artisan → Test Engineer → DevOps Deployer", steps:["Intent analysis & requirement clarification","UI/UX design proposal","Full-stack code generation with tests","Security audit & performance optimization","CI/CD deployment pipeline setup"], emoji:"🌐", price:5000, tags:["web","fullstack","deploy"] },
+  { id:"api-migration", name:"API Migration Project", desc:"API Architect → Backend Engineer → Test Engineer → Tech Writer", steps:["Existing API audit & gap analysis","Database schema migration planning","New API implementation with backward compat","Automated regression test suite","OpenAPI documentation generation"], emoji:"🔌", price:3800, tags:["api","migration","backend"] },
+  { id:"security-audit-pack", name:"Security Audit Suite", desc:"Security Auditor → Vulnerability Scanner → Compliance Officer → Audit Trail", steps:["Dependency vulnerability scan (SCA)","SAST static code analysis","Penetration test plan execution","Compliance report (GDPR/SOC2)","Remediation tracking & verification"], emoji:"🔐", price:6000, tags:["security","audit","compliance"] },
+  { id:"data-pipeline", name:"Data Pipeline Builder", desc:"Lakehouse Architect → ETL Engineer → Data Quality Monitor → Dataviz Designer", steps:["Data source inventory & schema design","ETL pipeline implementation","Data quality rules & monitoring","Dashboard & visualization","Scheduled pipeline with alerting"], emoji:"🗄️", price:4500, tags:["data","etl","pipeline"] },
+  { id:"mobile-app-pack", name:"Mobile App Launch", desc:"Mobile Architect → Frontend Designer → Backend Engineer → Test Engineer", steps:["Mobile UX wireframe & prototype","Cross-platform frontend (React Native/Flutter)","Backend API for mobile","Device testing matrix execution","App store submission prep"], emoji:"📱", price:5500, tags:["mobile","app","cross-platform"] },
+  { id:"rag-setup", name:"RAG Knowledge Engine", desc:"RAG Specialist → VectorDB Operator → Embedding Tuner → Full-text Engineer", steps:["Knowledge source analysis & chunking strategy","Vector DB setup & index optimization","Embedding model selection & fine-tuning","Hybrid search (vector+BM25) pipeline","Reranking & evaluation benchmark"], emoji:"🔎", price:4200, tags:["rag","vector","search"] },
+  { id:"devops-greenfield", name:"DevOps Greenfield Setup", desc:"DevOps Deployer → Cloud Native Architect → Harness Engineer → CI Guardian", steps:["Infrastructure-as-Code (Terraform/Pulumi)","Container orchestration (K8s/Nomad)","CI/CD pipeline with quality gates","Observability stack (logs/metrics/traces)","Disaster recovery & runbook"], emoji:"🚀", price:7000, tags:["devops","infra","cloud"] }
+];
+
+function renderMarketplace() {
+  document.getElementById("marketContent").innerHTML = '<h4 style="margin-bottom:12px">Pre-built SOP Skill Packs</h4><p style="color:var(--muted);margin-bottom:16px;font-size:13px">One-click deploy complete agent workflows. Each pack orchestrates 3-5 specialized agents in a proven sequence.</p>' +
+    '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px">' +
+    MARKET_SOPS.map(function(sop){
+      return '<div class="evo-direction" style="cursor:pointer" onclick="deploySOP(\'' + sop.id + '\')">' +
+        '<h4>' + sop.emoji + ' ' + sop.name + '</h4>' +
+        '<p style="font-size:12px;color:var(--muted);margin:4px 0">' + sop.desc + '</p>' +
+        '<div style="font-size:11px;color:var(--green);margin-top:6px">Steps: ' + sop.steps.map(function(s,i){return (i+1)+'. '+s;}).join(' → ') + '</div>' +
+        '<div style="display:flex;align-items:center;gap:10px;margin-top:10px">' +
+          '<span style="font-size:16px;font-weight:700;color:var(--accent2)">' + formatNumber(sop.price) + ' tokens</span>' +
+          '<span style="font-size:11px;color:var(--muted)">est.</span>' +
+          sop.tags.map(function(t){return '<span style="font-size:10px;background:rgba(124,92,255,.1);padding:2px 8px;border-radius:8px">'+t+'</span>';}).join("") +
+        '</div>' +
+      '</div>';
+    }).join("") + '</div>';
+}
+
+function deploySOP(id) {
+  var sop = MARKET_SOPS.find(function(s){return s.id===id;});
+  if (!sop) return;
+  requestConfirmation("Deploy SOP \"" + sop.name + "\"?\nThis will trigger a " + sop.steps.length + "-step agent workflow.\nEstimated cost: " + formatNumber(sop.price) + " tokens.", function(){
+    var msg = "Execute SOP: " + sop.name + "\nAgent chain: " + sop.desc + "\nSteps:\n" + sop.steps.map(function(s,i){return (i+1)+". "+s;}).join("\n") + "\n\nStart from step 1.";
+    document.getElementById("userInput").value = msg;
+    switchTab("chat");
+    sendMessage();
+    showToast("SOP deployed: " + sop.name, "success");
+  });
+}
+
+// ── Review / Reflection ──
+function reviewLastResponse() {
+  var agentMsgs = state.messages.filter(function(m){return m.type==="agent" && m.id && !m.rating;});
+  if (agentMsgs.length===0) { showToast("No response to review", "error"); return; }
+  var last = agentMsgs[agentMsgs.length-1];
+  var reviewMsg = "Self-review your previous response critically. Identify: 1) Any factual errors 2) Missing important details 3) Could be more concise 4) Clarity improvements. Then provide an improved version.";
+  state.messages.push({ type: "user", content: reviewMsg });
+  state.thinking = true;
+  document.getElementById("sendBtn").style.display = "none";
+  document.getElementById("stopBtn").style.display = "";
+  renderMessages();
+  fullSave();
+  doInternalStream(reviewMsg);
+}
+
+async function doInternalStream(text) {
+  var model = state.mode === "deep" ? state.deepModel : state.model;
+  var sysPrompt = "You are " + state.activeAgent.name + " on HopeAgent Pro. Self-critique the previous response honestly and provide an improved version. Be specific about what was wrong and how you fixed it.";
+  try {
+    var messages = [{ role: "system", content: sysPrompt }, { role: "user", content: text }];
+    streamController = new AbortController();
+    var resp = await fetch(state.apiBase + "/chat/completions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + state.apiKey },
+      body: JSON.stringify({ model: model, messages: messages, temperature: 0.3, max_tokens: 2048, stream: true }),
+      signal: streamController.signal
+    });
+    if (!resp.ok) { var err = await resp.text(); throw new Error("API Error: " + err); }
+    var msgId = "rev_" + Date.now();
+    state.messages.push({ type: "agent", id: msgId, content: "", streaming: true });
+    renderMessages();
+    var reader = resp.body.getReader(), decoder = new TextDecoder(), buffer = "", content = "", totalTokens = 0;
+    while (true) {
+      var r = await reader.read();
+      if (r.done) break;
+      buffer += decoder.decode(r.value, { stream: true });
+      var lines = buffer.split("\n");
+      buffer = lines.pop();
+      for (var i = 0; i < lines.length; i++) {
+        var line = lines[i].trim();
+        if (!line || !line.startsWith("data: ")) continue;
+        var d = line.slice(6);
+        if (d === "[DONE]") continue;
+        try {
+          var j = JSON.parse(d);
+          var delta = j.choices?.[0]?.delta?.content;
+          if (delta) {
+            content += delta; totalTokens++;
+            var el = document.getElementById(msgId);
+            if (el) { el.innerHTML = formatContent(content) + '<span style="opacity:0">|</span>'; el.classList.add("streaming-cursor"); }
+            document.getElementById("chat-container").scrollTop = document.getElementById("chat-container").scrollHeight;
+          }
+        } catch(e) {}
+      }
+    }
+    var m = state.messages.find(function(mm){return mm.id===msgId;});
+    if (m) { m.content = content; m.streaming = false; }
+    if (totalTokens > 0) { state.tokenUsed += totalTokens; updateTokenDisplay(); }
+  } catch(e) {
+    if (e.name !== "AbortError") state.messages.push({ type: "agent", content: "Review error: " + e.message });
+  }
+  streamController = null;
+  state.thinking = false;
+  document.getElementById("sendBtn").style.display = "";
+  document.getElementById("stopBtn").style.display = "";
+  updateConvTitle();
+  renderMessages();
+  renderConvList();
+  fullSave();
+}
+
+// ── A/B Compare ──
+var abCompareMode = false;
+function toggleABCompare() {
+  abCompareMode = !abCompareMode;
+  showToast(abCompareMode ? "A/B mode ON: select another agent before sending" : "A/B mode OFF", "success");
+}
+
+// ── Human-in-the-loop ──
+function requestConfirmation(msg, callback) {
+  var modalBody = document.getElementById("modalBody");
+  modalBody.innerHTML = '<div style="text-align:center;padding:20px">' +
+    '<div style="font-size:48px;margin-bottom:12px">⚠️</div>' +
+    '<p style="margin-bottom:16px"><strong>Human-in-the-loop Confirmation</strong></p>' +
+    '<p style="color:var(--muted);margin-bottom:8px">' + escapeHtml(msg) + '</p>' +
+    '<p style="font-size:12px;color:var(--amber);margin-bottom:16px">This is a simulated confirmation. Click Approve to continue.</p>' +
+    '<button class="btn-primary" onclick="event.stopPropagation();document.getElementById(\'modalOverlay\').style.display=\'none\';if(window._hitlCallback)window._hitlCallback();showToast(\'Approved\',\'success\')" style="margin-bottom:8px">Approve</button>' +
+    '<button class="btn-danger" onclick="event.stopPropagation();closeModal();showToast(\'Cancelled\',\'error\')">Reject</button>' +
+  '</div>';
+  document.getElementById("modalTitle").textContent = "HITL Confirmation";
+  document.getElementById("modalOverlay").style.display = "flex";
+  window._hitlCallback = callback;
+}
+
+// ── Token Billing Simulator ──
+var BILLING_RATES = { "gpt-3.5-turbo":{in:0.5,out:1.5}, "gpt-4o-mini":{in:0.15,out:0.6}, "gpt-4o":{in:5,out:15}, "deepseek-chat":{in:0.14,out:0.28}, "claude-3-5-sonnet":{in:3,out:15}, "qwen-turbo":{in:0.3,out:0.6} };
+
+function renderBillingPanel() {
+  var model = state.mode==="deep" ? state.deepModel : state.model;
+  var rate = BILLING_RATES[model] || {in:1,out:3};
+  var estIn = state.tokenUsed * 0.6;
+  var estOut = state.tokenUsed * 0.4;
+  var costIn = (estIn/1000) * rate.in;
+  var costOut = (estOut/1000) * rate.out;
+  var totalCost = costIn + costOut;
+  var html = '<div class="learn-metrics" style="margin-bottom:16px">' +
+    '<div class="learn-metric"><div class="val">' + formatNumber(state.tokenUsed) + '</div><div class="lbl">Total Tokens</div></div>' +
+    '<div class="learn-metric"><div class="val">$' + totalCost.toFixed(4) + '</div><div class="lbl">Est. Cost (USD)</div></div>' +
+    '<div class="learn-metric"><div class="val">' + (state.tokenLimit ? (state.tokenUsed/state.tokenLimit*100).toFixed(1)+'%' : '∞') + '</div><div class="lbl">Quota Used</div></div>' +
+    '<div class="learn-metric"><div class="val">' + model + '</div><div class="lbl">Current Model</div></div>' +
+  '</div>' +
+  '<h4 style="margin-bottom:10px">Rate Card ($/1M tokens)</h4>' +
+  '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px">';
+  for (var m in BILLING_RATES) {
+    var r = BILLING_RATES[m];
+    var active = m===model;
+    html += '<div class="kb-entry" style="' + (active?'border-color:var(--accent);background:var(--bg2)':'') + '">' +
+      '<strong style="font-size:13px">' + m + (active?' <span style="color:var(--green);font-size:10px">(active)</span>':'') + '</strong>' +
+      '<div style="font-size:11px;color:var(--muted);margin-top:4px">Input: $' + r.in.toFixed(2) + ' | Output: $' + r.out.toFixed(2) + '</div>' +
+      '<div style="font-size:10px;color:var(--accent2);margin-top:2px">~$' + ((r.in+r.out)/2).toFixed(2) + '/M avg</div>' +
+    '</div>';
+  }
+  html += '</div>' +
+    '<p style="color:var(--muted);font-size:11px;margin-top:12px">Billing simulation. Actual costs depend on provider. HopeAgent Pro is free — you only pay your own API key usage.</p>';
+  document.getElementById("billContent").innerHTML = html;
+}
+
+// ── System Monitoring Dashboard ──
+function renderMonitorPanel() {
+  var agentsOnline = 74;
+  if (typeof SelfLearning !== "undefined") {
+    var s = SelfLearning.getStats();
+    var healthScore = Math.min(99, 70 + (s.helpfulRate||0) * 0.3);
+  } else { var healthScore = 88; }
+  var latencies = [42,38,55,31,67,44,29,52];
+  var avgLatency = Math.round(latencies.reduce(function(a,b){return a+b;},0)/latencies.length);
+  document.getElementById("monitorContent").innerHTML =
+    '<div class="learn-metrics" style="margin-bottom:16px">' +
+      '<div class="learn-metric"><div class="val" style="color:' + (healthScore>80?'var(--green)':healthScore>50?'var(--amber)':'var(--red)') + '">' + healthScore + '%</div><div class="lbl">System Health</div></div>' +
+      '<div class="learn-metric"><div class="val">' + agentsOnline + '/75</div><div class="lbl">Agents Online</div></div>' +
+      '<div class="learn-metric"><div class="val">' + avgLatency + 'ms</div><div class="lbl">Avg Latency</div></div>' +
+      '<div class="learn-metric"><div class="val">' + formatNumber(state.tokenUsed) + '</div><div class="lbl">Tokens Used</div></div>' +
+      '<div class="learn-metric"><div class="val">99.9%</div><div class="lbl">Uptime (sim)</div></div>' +
+      '<div class="learn-metric"><div class="val">4/4</div><div class="lbl">Layers Active</div></div>' +
+    '</div>' +
+    '<h4 style="margin-bottom:10px">Agent Layer Status</h4>' +
+    '<div style="display:flex;flex-direction:column;gap:8px">' +
+      ['L1','L2','L3','L4'].map(function(l){
+        var layerAgents = AGENTS.filter(function(a){return a.layer===l;}).length;
+        var online = layerAgents - Math.floor(Math.random()*2);
+        var pct = Math.round(online/layerAgents*100);
+        return '<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--card);border-radius:8px">' +
+          '<span style="font-weight:700;width:30px">' + L[l].emoji + '</span>' +
+          '<span style="flex:1;font-size:13px">' + L[l].name + '</span>' +
+          '<span style="font-size:11px;color:var(--muted);width:50px">' + online + '/' + layerAgents + '</span>' +
+          '<div style="width:80px;height:6px;background:var(--bg2);border-radius:3px;overflow:hidden">' +
+            '<div style="width:' + pct + '%;height:100%;background:' + (pct>90?'var(--green)':pct>70?'var(--amber)':'var(--red)') + ';border-radius:3px"></div>' +
+          '</div>' +
+          '<span style="font-size:11px;width:36px;text-align:right;color:' + (pct>90?'var(--green)':'var(--amber)') + '">' + pct + '%</span>' +
+        '</div>';
+      }).join("") +
+    '</div>' +
+    '<h4 style="margin:16px 0 10px">Service Mesh Latency (ms)</h4>' +
+    '<div style="display:flex;align-items:flex-end;gap:8px;height:80px;padding:8px 0">' +
+      latencies.map(function(v,i){
+        return '<div style="flex:1;background:linear-gradient(to top,' + (v>50?'var(--amber)':'var(--accent)') + ',var(--accent2));border-radius:4px 4px 0 0;height:' + v + '%;position:relative" title="' + v + 'ms">' +
+          '<span style="position:absolute;bottom:-18px;left:50%;transform:translateX(-50%);font-size:9px;color:var(--muted)">' + v + '</span></div>';
+      }).join("") +
+    '</div>' +
+    '<p style="color:var(--muted);font-size:11px;margin-top:20px">Monitoring dashboard simulation. Real deployment would use OpenTelemetry + Grafana.</p>';
 }
 
 function init() {
