@@ -9,6 +9,7 @@ export interface KnowledgePoint {
   updatedAt: string;
   importance: number;
   references: string[];
+  embedding?: number[];
 }
 
 export interface ExtractionResult {
@@ -313,6 +314,114 @@ export class KnowledgeEngine {
 
   search(query: string, options: SearchOptions = {}): SearchResult[] {
     return searchKnowledge(query, this.getAllKnowledge(), options);
+  }
+
+  async vectorSearch(
+    query: string,
+    options: SearchOptions & { useFallback?: boolean } = {}
+  ): Promise<SearchResult[]> {
+    const { useFallback = true, limit = 10, minScore = 0.3, categories, tags } = options;
+
+    let filtered = this.getAllKnowledge();
+    
+    if (categories && categories.length > 0) {
+      filtered = filtered.filter(p => categories.includes(p.category));
+    }
+    
+    if (tags && tags.length > 0) {
+      filtered = filtered.filter(p => p.tags.some(t => tags.includes(t)));
+    }
+
+    try {
+      const { embeddingService } = await import('@/services/embeddingService');
+      
+      const queryEmbedding = await embeddingService.embed(query);
+
+      const needEmbedding = filtered.filter(p => !p.embedding);
+      if (needEmbedding.length > 0) {
+        const texts = needEmbedding.map(p => `${p.title}\n${p.content.slice(0, 1000)}`);
+        const embeddings = await embeddingService.embedBatch(texts);
+        
+        needEmbedding.forEach((point, idx) => {
+          point.embedding = embeddings[idx];
+          this.knowledgeBase.set(point.id, point);
+        });
+      }
+
+      const results: SearchResult[] = filtered
+        .filter(p => p.embedding)
+        .map(point => {
+          const score = embeddingService.cosineSimilarity(queryEmbedding, point.embedding!);
+          const boostedScore = score + (point.importance * 0.02);
+          return {
+            point,
+            score: Math.min(boostedScore, 1),
+            matchedTerms: []
+          };
+        })
+        .filter(r => r.score >= minScore)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, limit);
+
+      return results;
+    } catch (e) {
+      if (useFallback) {
+        console.warn('向量搜索失败，回退到关键词搜索:', e);
+        return this.search(query, options);
+      }
+      throw e;
+    }
+  }
+
+  async buildAllEmbeddings(
+    onProgress?: (current: number, total: number) => void
+  ): Promise<{ success: number; failed: number }> {
+    const all = this.getAllKnowledge();
+    const needEmbedding = all.filter(p => !p.embedding);
+    const total = needEmbedding.length;
+    
+    if (total === 0) return { success: 0, failed: 0 };
+
+    try {
+      const { embeddingService } = await import('@/services/embeddingService');
+      let success = 0;
+      let failed = 0;
+      
+      const batchSize = 10;
+      for (let i = 0; i < needEmbedding.length; i += batchSize) {
+        const batch = needEmbedding.slice(i, i + batchSize);
+        const texts = batch.map(p => `${p.title}\n${p.content.slice(0, 1000)}`);
+        
+        try {
+          const embeddings = await embeddingService.embedBatch(texts);
+          batch.forEach((point, idx) => {
+            point.embedding = embeddings[idx];
+            this.knowledgeBase.set(point.id, point);
+            success++;
+          });
+        } catch {
+          failed += batch.length;
+        }
+        
+        onProgress?.(Math.min(i + batchSize, total), total);
+      }
+      
+      return { success, failed };
+    } catch (e) {
+      console.error('构建向量索引失败:', e);
+      throw e;
+    }
+  }
+
+  getEmbeddingStats() {
+    const all = this.getAllKnowledge();
+    const withEmbedding = all.filter(p => p.embedding).length;
+    return {
+      total: all.length,
+      withEmbedding,
+      withoutEmbedding: all.length - withEmbedding,
+      progress: all.length > 0 ? withEmbedding / all.length : 0
+    };
   }
 
   extractAndStore(text: string, source = 'conversation'): ExtractionResult {

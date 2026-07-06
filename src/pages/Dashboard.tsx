@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { Send, Crown, Search, Code2, Shield, Rocket, Package, Sparkles, ChevronLeft, MoreVertical, Users, Zap, Cpu, Palette, ClipboardList, FlaskConical, FileText, Users2, Landmark, Megaphone, Headphones, ShieldAlert, Scale, Settings2, Bot, Lightbulb, BookOpen, Wrench, FileCode, Calculator, FileJson, FileSearch, FileEdit, FolderOpen, Braces, Hash } from 'lucide-react'
+import { Send, Crown, Search, Code2, Shield, Rocket, Package, Sparkles, ChevronLeft, MoreVertical, Users, Zap, Cpu, Palette, ClipboardList, FlaskConical, FileText, Users2, Landmark, Megaphone, Headphones, ShieldAlert, Scale, Settings2, Bot, Lightbulb, BookOpen, Wrench, FileCode, Calculator, FileJson, FileSearch, FileEdit, FolderOpen, Braces, Hash, Database, Loader2, Check, Key, Globe } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useChatStore } from '@/store/useChatStore'
 import { useAgentStore } from '@/store/useAgentStore'
@@ -8,6 +8,8 @@ import { useThemeStore } from '@/store/useThemeStore'
 import { WorkflowEngine, type WorkflowProgress } from '@/engine/workflowEngine'
 import { toolEngine, type ToolDefinition } from '@/tools/toolEngine'
 import { templateStore, type Template } from '@/engine/templateStore'
+import { embeddingService } from '@/services/embeddingService'
+import { defaultKnowledgeEngine } from '@/engine/knowledgeEngine'
 
 const roleConfig: Record<string, { name: string; color: string; bg: string; border: string; icon: any }> = {
   user: { name: '董事长', color: 'text-yellow-400', bg: 'bg-yellow-900/30', border: 'border-yellow-700/50', icon: Crown },
@@ -420,6 +422,9 @@ function DashboardView() {
             ))}
           </div>
         </div>
+
+        {/* 向量检索配置 */}
+        <VectorSearchPanel />
 
         {/* 快捷操作 */}
         <div>
@@ -912,6 +917,195 @@ ${allOutputs.slice(0, 2000)}
       </div>
         </>
       )}
+    </div>
+  )
+}
+
+function VectorSearchPanel() {
+  const [config, setConfig] = React.useState(() => embeddingService.getConfig())
+  const [apiKey, setApiKey] = React.useState(config.apiKey || '')
+  const [apiBase, setApiBase] = React.useState(config.apiBase || '')
+  const [model, setModel] = React.useState(config.model || '')
+  const [testing, setTesting] = React.useState(false)
+  const [testResult, setTestResult] = useState<'success' | 'error' | null>(null)
+  const [building, setBuilding] = useState(false)
+  const [buildProgress, setBuildProgress] = useState({ current: 0, total: 0 })
+  const [showAdvanced, setShowAdvanced] = useState(false)
+
+  const handleSave = () => {
+    embeddingService.saveConfig({
+      provider: 'api',
+      apiKey,
+      apiBase,
+      model,
+    })
+    setConfig(embeddingService.getConfig())
+    setTestResult(null)
+  }
+
+  const handleTest = async () => {
+    setTesting(true)
+    setTestResult(null)
+    try {
+      await embeddingService.embed('测试向量检索')
+      setTestResult('success')
+    } catch {
+      setTestResult('error')
+    } finally {
+      setTesting(false)
+    }
+  }
+
+  const handleBuildIndex = async () => {
+    setBuilding(true)
+    setBuildProgress({ current: 0, total: 0 })
+    try {
+      await defaultKnowledgeEngine.buildAllEmbeddings(
+        (current, total) => setBuildProgress({ current, total })
+      )
+    } finally {
+      setBuilding(false)
+    }
+  }
+
+  const embeddingStats = defaultKnowledgeEngine.getEmbeddingStats()
+  const isConfigured = !!config.apiKey
+
+  return (
+    <div>
+      <div className="text-[11px] font-mono text-gray-400 px-1 mb-2 flex items-center gap-2">
+        <Database className="w-3 h-3" />
+        向量检索配置
+        <span className={cn(
+          'text-[9px] px-1.5 py-0.5 rounded ml-auto',
+          isConfigured 
+            ? 'bg-green-900/40 text-green-400 border border-green-800/40' 
+            : 'bg-yellow-900/40 text-yellow-400 border border-yellow-800/40'
+        )}>
+          {isConfigured ? '已配置' : '未配置'}
+        </span>
+      </div>
+      
+      <div className="p-3 rounded-xl bg-gray-900/50 border border-gray-800 space-y-3">
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <Key className="w-3.5 h-3.5 text-gray-500" />
+            <span className="text-[10px] text-gray-400">API Key</span>
+          </div>
+          <input
+            type="password"
+            value={apiKey}
+            onChange={(e) => setApiKey(e.target.value)}
+            onBlur={handleSave}
+            placeholder="sk-... 或 moonshot api key"
+            className="w-full px-2.5 py-2 text-[11px] font-mono bg-gray-950/80 border border-gray-700/50 rounded-lg text-gray-300 placeholder:text-gray-600 focus:outline-none focus:border-cyan-600/50 focus:ring-1 focus:ring-cyan-600/30"
+          />
+        </div>
+
+        {showAdvanced && (
+          <>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Globe className="w-3.5 h-3.5 text-gray-500" />
+                <span className="text-[10px] text-gray-400">API 地址</span>
+              </div>
+              <input
+                type="text"
+                value={apiBase}
+                onChange={(e) => setApiBase(e.target.value)}
+                onBlur={handleSave}
+                placeholder="https://api.moonshot.cn/v1"
+                className="w-full px-2.5 py-2 text-[11px] font-mono bg-gray-950/80 border border-gray-700/50 rounded-lg text-gray-300 placeholder:text-gray-600 focus:outline-none focus:border-cyan-600/50 focus:ring-1 focus:ring-cyan-600/30"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Cpu className="w-3.5 h-3.5 text-gray-500" />
+                <span className="text-[10px] text-gray-400">模型名称</span>
+              </div>
+              <input
+                type="text"
+                value={model}
+                onChange={(e) => setModel(e.target.value)}
+                onBlur={handleSave}
+                placeholder="embedding-v1"
+                className="w-full px-2.5 py-2 text-[11px] font-mono bg-gray-950/80 border border-gray-700/50 rounded-lg text-gray-300 placeholder:text-gray-600 focus:outline-none focus:border-cyan-600/50 focus:ring-1 focus:ring-cyan-600/30"
+              />
+            </div>
+          </>
+        )}
+
+        <div className="flex gap-2">
+          <button
+            onClick={handleTest}
+            disabled={!apiKey || testing}
+            className={cn(
+              'flex-1 px-3 py-2 text-[10px] font-mono rounded-lg border transition-all',
+              apiKey && !testing
+                ? 'text-cyan-400 border-cyan-700/40 bg-cyan-900/20 hover:bg-cyan-900/30 active:scale-95'
+                : 'text-gray-600 border-gray-800 bg-gray-900/30 cursor-not-allowed'
+            )}
+          >
+            {testing ? (
+              <span className="flex items-center justify-center gap-1.5">
+                <Loader2 className="w-3 h-3 animate-spin" />
+                测试中
+              </span>
+            ) : testResult === 'success' ? (
+              <span className="flex items-center justify-center gap-1.5">
+                <Check className="w-3 h-3" />
+                连接正常
+              </span>
+            ) : testResult === 'error' ? (
+              '连接失败'
+            ) : (
+              '测试连接'
+            )}
+          </button>
+          
+          <button
+            onClick={() => setShowAdvanced(!showAdvanced)}
+            className="px-3 py-2 text-[10px] font-mono text-gray-400 border border-gray-700/40 rounded-lg hover:bg-gray-800/50 transition-all active:scale-95"
+          >
+            {showAdvanced ? '收起' : '高级'}
+          </button>
+        </div>
+
+        <div className="pt-2 border-t border-gray-800/50">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[10px] text-gray-400">向量索引</span>
+            <span className="text-[10px] text-gray-500 font-mono">
+              {embeddingStats.withEmbedding}/{embeddingStats.total}
+            </span>
+          </div>
+          <div className="h-1.5 bg-gray-800 rounded-full overflow-hidden mb-2">
+            <div
+              className="h-full bg-gradient-to-r from-purple-600 to-cyan-500 transition-all duration-500"
+              style={{ width: `${embeddingStats.progress * 100}%` }}
+            />
+          </div>
+          <button
+            onClick={handleBuildIndex}
+            disabled={!isConfigured || building}
+            className={cn(
+              'w-full px-3 py-2 text-[10px] font-mono rounded-lg border transition-all',
+              isConfigured && !building
+                ? 'text-purple-400 border-purple-700/40 bg-purple-900/20 hover:bg-purple-900/30 active:scale-95'
+                : 'text-gray-600 border-gray-800 bg-gray-900/30 cursor-not-allowed'
+            )}
+          >
+            {building ? (
+              <span className="flex items-center justify-center gap-1.5">
+                <Loader2 className="w-3 h-3 animate-spin" />
+                构建中 {buildProgress.current}/{buildProgress.total}
+              </span>
+            ) : (
+              '构建全部向量索引'
+            )}
+          </button>
+        </div>
+      </div>
     </div>
   )
 }
