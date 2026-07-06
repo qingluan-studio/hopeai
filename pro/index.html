@@ -542,12 +542,276 @@ let state = {
   thinking: false,
   conversations: [],
   currentConvId: null,
-  codeFiles: []
+  codeFiles: [],
+  lang: "zh",
+  userProfile: { totalMsgs: 0, totalTokens: 0, favAgents: {}, favTopics: {}, sessionsStarted: 0, lastLogin: null, badges: [] },
+  currentStep: { step: "idle", substeps: [], timings: {} },
+  attachedFiles: []
 };
 
 let streamController = null;
 let voiceRecognition = null;
 let voiceActive = false;
+
+// ── i18n System ──
+const I18N = {
+  zh: {
+    sidebarTitle: "HopeAgent Pro",
+    searchPlaceholder: "搜索 75+ AI 角色... (Ctrl+K)",
+    apiConfig: "API 配置",
+    settingsHelp: "设置与帮助",
+    conversations: "对话列表",
+    newConv: "新对话",
+    dailyMode: "日常",
+    deepMode: "深度思考",
+    chatTab: "对话",
+    kbTab: "知识库",
+    learnTab: "自学习",
+    codeTab: "代码",
+    evoTab: "进化方向",
+    inputPlaceholder: "描述你的需求，调度官将匹配最佳角色...",
+    sendBtn: "发送",
+    voiceBtn: "语音",
+    stopBtn: "停止",
+    shortcuts: "快捷键",
+    configureAPI: "配置 API",
+    welcomeTitle: "欢迎使用 HopeAgent Pro",
+    welcomeDesc: "75+ AI 角色已就绪，覆盖编排、交付、底座、治理四层架构。描述需求，调度官自动匹配最佳角色。",
+    aiAgents: "AI 角色",
+    knowledge: "知识条目",
+    sessions: "学习会话",
+    layers: "架构层次",
+    quickActions: "快捷操作",
+    landingPage: "建网站首页",
+    productCopy: "产品文案",
+    performance: "性能优化",
+    dbSchema: "数据库设计",
+    securityAudit: "安全审计",
+    apiDesign: "API 设计",
+    codeWorkspace: "代码工作区",
+    downloadAll: "打包下载",
+    clearAll: "清空全部",
+    noCodeYet: "暂无代码文件",
+    codeHint: "Agent 回复中的代码块会自动收集到这里，按语言分类管理。",
+    copy: "复制",
+    download: "下载",
+    copied: "已复制",
+    loading_: "加载中...",
+    thinking_: "思考中...",
+    stepsPanel: "执行步骤",
+    stepIdle: "等待任务",
+    stepIntent: "意图分析",
+    stepMatch: "角色匹配",
+    stepKnowledge: "知识检索",
+    stepGenerate: "生成回复",
+    stepDone: "完成",
+    userProfile: "用户画像",
+    level: "等级",
+    messages_: "消息",
+    tokens_: "Token",
+    badges_: "徽章",
+    favAgent: "常用角色",
+    sessions_: "会话",
+    fileUpload: "拖拽文件到此处或点击上传",
+    fileAttached: "已附加文件",
+    fileRemove: "移除",
+    settingsTitle: "设置",
+    save: "保存",
+    saved: "已保存",
+    apiKey: "API 密钥",
+    apiBase: "API 基础地址",
+    dailyModel: "日常模式模型",
+    deepModel_: "深度思考模型",
+    tokenLimit_: "每月 Token 限制",
+    resetToken: "重置 Token 用量",
+    cleared: "已清除",
+    error_: "错误",
+    language: "界面语言",
+    langZH: "中文",
+    langEN: "English",
+    settingsInfo: "v5 — 75+ AI 角色协作平台",
+    featuresList: "功能：多语言、用户画像、执行步骤、文件上传、代码工作区、流式响应、语音输入",
+    clearData: "清除所有本地数据",
+    evolutionDirections: "进化方向",
+    evoScale: "规模扩展",
+    evoIntelligence: "智能进化",
+    evoArch: "架构演进",
+    evoEconomy: "经济系统",
+    evoInteraction: "交互升级",
+    evoLife: "数字生命体",
+    newConversation: "新对话已创建",
+    apiError: "AI 服务错误",
+    checkAPI: "请检查 API 配置",
+    voiceListening: "正在聆听...",
+    voiceError: "语音识别失败",
+    voiceUnsupported: "您的浏览器不支持语音输入",
+    badgeBeginner: "新手探索者",
+    badgeCoder: "代码工匠",
+    badgeScholar: "知识学者",
+    badgeVeteran: "资深用户",
+    badgePolyglot: "多语言大师",
+    badgeNightOwl: "夜猫子",
+    badgeEarlyBird: "早起鸟"
+  },
+  en: {
+    sidebarTitle: "HopeAgent Pro",
+    searchPlaceholder: "Search 75+ AI agents... (Ctrl+K)",
+    apiConfig: "API Config",
+    settingsHelp: "Settings & Help",
+    conversations: "Conversations",
+    newConv: "New Chat",
+    dailyMode: "Daily",
+    deepMode: "Deep Think",
+    chatTab: "Chat",
+    kbTab: "KB",
+    learnTab: "Learn",
+    codeTab: "Code",
+    evoTab: "Evolution",
+    inputPlaceholder: "Describe your task, orchestrator will find the best agent...",
+    sendBtn: "Send",
+    voiceBtn: "Voice",
+    stopBtn: "Stop",
+    shortcuts: "Shortcuts",
+    configureAPI: "Configure API",
+    welcomeTitle: "Welcome to HopeAgent Pro",
+    welcomeDesc: "75+ AI agents ready across orchestration, delivery, foundation and governance layers. Describe your task.",
+    aiAgents: "AI Agents",
+    knowledge: "Knowledge",
+    sessions: "Sessions",
+    layers: "Layers",
+    quickActions: "Quick Actions",
+    landingPage: "Landing Page",
+    productCopy: "Product Copy",
+    performance: "Performance",
+    dbSchema: "DB Schema",
+    securityAudit: "Security Audit",
+    apiDesign: "API Design",
+    codeWorkspace: "Code Workspace",
+    downloadAll: "Download All",
+    clearAll: "Clear All",
+    noCodeYet: "No code files yet",
+    codeHint: "Code blocks from agent responses auto-collect here, organized by language.",
+    copy: "Copy",
+    download: "Download",
+    copied: "Copied",
+    loading_: "Loading...",
+    thinking_: "Thinking...",
+    stepsPanel: "Execution Steps",
+    stepIdle: "Awaiting task",
+    stepIntent: "Intent Analysis",
+    stepMatch: "Agent Matching",
+    stepKnowledge: "Knowledge Retrieval",
+    stepGenerate: "Response Generation",
+    stepDone: "Done",
+    userProfile: "User Profile",
+    level: "Level",
+    messages_: "Messages",
+    tokens_: "Tokens",
+    badges_: "Badges",
+    favAgent: "Favorite Agent",
+    sessions_: "Sessions",
+    fileUpload: "Drop files here or click to upload",
+    fileAttached: "File attached",
+    fileRemove: "Remove",
+    settingsTitle: "Settings",
+    save: "Save",
+    saved: "Saved",
+    apiKey: "API Key",
+    apiBase: "API Base URL",
+    dailyModel: "Daily Model",
+    deepModel_: "Deep Think Model",
+    tokenLimit_: "Monthly Token Limit",
+    resetToken: "Reset Token Usage",
+    cleared: "Cleared",
+    error_: "Error",
+    language: "Interface Language",
+    langZH: "中文",
+    langEN: "English",
+    settingsInfo: "v5 — 75+ AI Agent Collaboration Platform",
+    featuresList: "Features: Multi-lang, User Profile, Execution Steps, File Upload, Code Workspace, Streaming, Voice",
+    clearData: "Clear All Local Data",
+    evolutionDirections: "Evolution Directions",
+    evoScale: "Scale",
+    evoIntelligence: "Intelligence",
+    evoArch: "Architecture",
+    evoEconomy: "Economy",
+    evoInteraction: "Interaction",
+    evoLife: "Life",
+    newConversation: "New conversation created",
+    apiError: "AI Service Error",
+    checkAPI: "Check API settings",
+    voiceListening: "Listening...",
+    voiceError: "Voice recognition failed",
+    voiceUnsupported: "Your browser does not support voice input",
+    badgeBeginner: "Beginner Explorer",
+    badgeCoder: "Code Artisan",
+    badgeScholar: "Knowledge Scholar",
+    badgeVeteran: "Veteran User",
+    badgePolyglot: "Polyglot",
+    badgeNightOwl: "Night Owl",
+    badgeEarlyBird: "Early Bird"
+  }
+};
+
+function t(key) { return (I18N[state.lang] || I18N.en)[key] || key; }
+
+function setLang(lang) {
+  state.lang = lang;
+  localStorage.setItem("hopeagent_lang", lang);
+  updateAllUI();
+}
+
+function updateAllUI() {
+  var L = t;
+  document.title = "HopeAgent Pro . 75+ AI Agent Collaboration Platform";
+  document.getElementById("agentSearch").placeholder = L("searchPlaceholder");
+  document.getElementById("btnTokenConfig").textContent = L("apiConfig");
+  document.getElementById("btnSettings").textContent = L("settingsHelp");
+  document.getElementById("userInput").placeholder = L("inputPlaceholder");
+  updateHeader();
+  renderMessages();
+  renderConvList();
+  renderSidebar();
+  updateBottomNav();
+}
+
+function updateBottomNav() {
+  var btns = document.querySelectorAll("#bottomNav button");
+  var labels = ["chatTab","kbTab","learnTab","codeTab","evoTab"];
+  btns.forEach(function(b,i){ if(i<5) b.childNodes[1] && (b.childNodes[1].textContent = t(labels[i])); });
+}
+
+function loadProfile() {
+  try {
+    var p = localStorage.getItem("hopeagent_profile");
+    if (p) state.userProfile = JSON.parse(p);
+  } catch(e) {}
+  state.userProfile.lastLogin = Date.now();
+}
+
+function saveProfile() {
+  try { localStorage.setItem("hopeagent_profile", JSON.stringify(state.userProfile)); } catch(e) {}
+}
+
+function updateProfile(msgCount, tokens, agentId, topic) {
+  var p = state.userProfile;
+  p.totalMsgs = (p.totalMsgs||0) + (msgCount||0);
+  p.totalTokens = (p.totalTokens||0) + (tokens||0);
+  p.sessionsStarted = (p.sessionsStarted||0);
+  if (agentId) { p.favAgents[agentId] = (p.favAgents[agentId]||0) + 1; }
+  if (topic) { p.favTopics[topic] = (p.favTopics[topic]||0) + 1; }
+  var badgeL = state.lang === "zh";
+  if (p.totalMsgs >= 100 && p.badges.indexOf("veteran") === -1) p.badges.push("veteran");
+  if (p.totalMsgs >= 10 && p.badges.indexOf("beginner") === -1) p.badges.push("beginner");
+  var codeCount = state.codeFiles.length;
+  var totalSnippets = 0; state.codeFiles.forEach(function(f){ totalSnippets += f.snippets; });
+  if (totalSnippets >= 20 && p.badges.indexOf("coder") === -1) p.badges.push("coder");
+  if (p.totalMsgs >= 50 && p.badges.indexOf("scholar") === -1) p.badges.push("scholar");
+  saveProfile();
+}
+
+function getUserLevel() { var m = state.userProfile.totalMsgs||0; if (m>=500) return 5; if (m>=200) return 4; if (m>=80) return 3; if (m>=20) return 2; if (m>=5) return 1; return 0; }
+function getLevelName(lv) { var names = state.lang==="zh" ? ["新手","入门","进阶","专家","大师","传奇"] : ["Newbie","Beginner","Advanced","Expert","Master","Legend"]; return names[lv]||names[0]; }
 
 function loadState() {
   try {
@@ -569,6 +833,8 @@ function loadState() {
       if (s.conversations) state.conversations = s.conversations;
       if (s.currentConvId != null) state.currentConvId = s.currentConvId;
     }
+    var lang = localStorage.getItem("hopeagent_lang");
+    if (lang) state.lang = lang;
   } catch(e) {}
   ensureConv();
 }
@@ -963,10 +1229,13 @@ async function sendMessage() {
     renderSidebar();
   }
 
-  state.messages.push({ type: "user", content: text });
+  var fileContent = getAttachedContent();
+  state.messages.push({ type: "user", content: text + fileContent });
   state.thinking = true;
   document.getElementById("sendBtn").style.display = "none";
   document.getElementById("stopBtn").style.display = "";
+  state.attachedFiles = [];
+  showAttachedFiles();
   renderMessages();
   fullSave();
 
@@ -980,12 +1249,24 @@ async function sendMessage() {
 
   var model = state.mode === "deep" ? state.deepModel : state.model;
   var timeSeed = Date.now() % 10000;
-  var sysPrompt = "You are \"" + state.activeAgent.name + "\" (" + state.activeAgent.role + ") on HopeAgent Pro." +
-    (state.mode === "deep" ? " Deep thinking mode: show reasoning, then final answer." : " Be concise and efficient.") +
-    "\nLayer: " + L[state.activeAgent.layer].name + "\nTools: " + state.activeAgent.tools +
-    "\nIMPORTANT: Never use template/boilerplate introductions. Respond directly to the user's specific request without generic greetings like 'Hello' or 'I am...'." +
-    "\nVary response structure based on context. If asked same question twice, respond differently each time." +
-    "\nUse ```lang\\ncode\\n``` for code blocks. Reply in user's language. Seed:" + timeSeed + kbContext;
+
+  // Build memory context from past conversations
+  var memContext = "";
+  var profile = state.userProfile;
+  if (profile.totalMsgs > 0) {
+    var topAgents = Object.entries(profile.favAgents||{}).sort(function(a,b){return b[1]-a[1];}).slice(0,2);
+    var topTopics = Object.entries(profile.favTopics||{}).sort(function(a,b){return b[1]-a[1];}).slice(0,2);
+    memContext = "\nUser profile: Lv." + getUserLevel() + " " + getLevelName(getUserLevel()) + ", " + (profile.totalMsgs||0) + " messages exchanged. ";
+    if (topAgents.length) memContext += "Favored agents: " + topAgents.map(function(a){return a[0];}).join(", ") + ". ";
+    if (topTopics.length) memContext += "Common topics: " + topTopics.map(function(a){return a[0];}).join(", ") + ".";
+  }
+
+  var sysPrompt = "You are \"" + state.activeAgent.name + "\" (" + state.activeAgent.role + ") on HopeAgent Pro. You are a warm, empathetic, and highly skilled AI assistant. Speak naturally, like a knowledgeable colleague — not a robot reciting facts." +
+    (state.mode === "deep" ? " Deep thinking mode: explore thoroughly, show your reasoning process, then deliver a well-structured answer." : " Be clear and helpful, matching the user's energy level.") +
+    "\nYour tone: Professional yet approachable. Use warmth where appropriate, be concise when needed. Never use rigid templates or repetitive introductions." +
+    "\nLayer: " + L[state.activeAgent.layer].name + "\nTools: " + state.activeAgent.tools + memContext +
+    "\nWhen asked the same question repeatedly, rephrase your answer differently each time. Avoid saying 'Certainly!' or 'Of course!' as openers." +
+    "\nUse ```lang\\ncode\\n``` for code. Reply in the user's language. Seed:" + timeSeed + kbContext;
 
   try {
     var messages = [
@@ -1058,6 +1339,8 @@ async function sendMessage() {
       SelfLearning.track(state.activeAgent.id, text, content, true);
       document.getElementById("learnScore").textContent = SelfLearning.getStats().totalInteractions;
     }
+
+    updateProfile(1, totalTokens || 0, state.activeAgent.id, extractTopic(text));
   } catch(e) {
     if (e.name !== "AbortError") {
       var msgId = "msg_" + Date.now();
@@ -1215,15 +1498,35 @@ function resetTokenUsage() {
 
 function openSettings() {
   var modalBody = document.getElementById("modalBody");
+  var lv = getUserLevel();
+  var profile = state.userProfile;
+  var badgeNames = state.lang === "zh"
+    ? {beginner:"新手探索者",coder:"代码工匠",scholar:"知识学者",veteran:"资深用户"}
+    : {beginner:"Beginner Explorer",coder:"Code Artisan",scholar:"Knowledge Scholar",veteran:"Veteran User"};
+  var badgeHtml = profile.badges.map(function(b){ return '<span style="display:inline-block;background:rgba(124,92,255,.15);color:#c4b5fd;padding:2px 10px;border-radius:10px;font-size:11px;margin:2px">' + (badgeNames[b]||b) + '</span>'; }).join("") || '<span style="color:var(--muted);font-size:11px">' + t("noCodeYet") + '</span>';
   modalBody.innerHTML =
-    '<p style="margin-bottom:16px"><strong>HopeAgent Pro v3</strong> — ' + TOTAL_AGENTS + '+ AI Agent Collaboration Platform</p>' +
-    '<p style="color:var(--muted);margin-bottom:8px">Agents: <strong>' + TOTAL_AGENTS + '</strong> in 4 layers</p>' +
-    '<p style="color:var(--muted);margin-bottom:8px">Features: Streaming SSE, Conversations, Voice Input, Ratings</p>' +
-    '<p style="color:var(--muted);margin-bottom:8px">Storage: localStorage (conversations + settings)</p>' +
-    '<p style="color:var(--muted);margin-bottom:8px">Deployment: GitHub Pages (free)</p>' +
-    '<p style="color:var(--muted);margin-bottom:16px">Zero cost. All features run on free-tier quotas.</p>' +
-    '<button class="btn-danger" onclick="clearAllData()">Clear All Local Data</button>';
-  document.getElementById("modalTitle").textContent = "Settings & Help";
+    '<div style="margin-bottom:16px;background:var(--bg2);border-radius:var(--r-sm);padding:14px">' +
+      '<div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">' +
+        '<div style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:22px;color:#fff">' + (profile.totalMsgs>0?'★':'?') + '</div>' +
+        '<div><strong style="font-size:15px">' + t("userProfile") + '</strong><div style="font-size:11px;color:var(--accent2)">Lv.' + lv + ' ' + getLevelName(lv) + '</div></div>' +
+      '</div>' +
+      '<div style="display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:var(--muted)">' +
+        '<span>' + t("messages_") + ': <strong style="color:var(--text)">' + (profile.totalMsgs||0) + '</strong></span>' +
+        '<span>' + t("tokens_") + ': <strong style="color:var(--text)">' + formatNumber(profile.totalTokens||0) + '</strong></span>' +
+        '<span>' + t("badges_") + ': ' + badgeHtml + '</span>' +
+      '</div>' +
+    '</div>' +
+    '<div class="field"><label>' + t("language") + '</label>' +
+      '<select id="cfgLang" onchange="setLang(this.value)">' +
+        '<option value="zh"' + (state.lang==="zh"?" selected":"") + '>' + t("langZH") + '</option>' +
+        '<option value="en"' + (state.lang==="en"?" selected":"") + '>' + t("langEN") + '</option>' +
+      '</select>' +
+    '</div>' +
+    '<p style="color:var(--muted);margin-bottom:8px;font-size:12px">' + t("settingsInfo") + '</p>' +
+    '<p style="color:var(--muted);margin-bottom:8px;font-size:12px">' + t("featuresList") + '</p>' +
+    '<p style="color:var(--muted);margin-bottom:16px;font-size:12px">Zero cost. GitHub Pages + localStorage.</p>' +
+    '<button class="btn-danger" onclick="clearAllData()">' + t("clearData") + '</button>';
+  document.getElementById("modalTitle").textContent = t("settingsHelp");
   document.getElementById("modalOverlay").style.display = "flex";
 }
 
@@ -1484,6 +1787,61 @@ function autoMatchAgent(query) {
   return (bestAgent && bestScore >= 2 && bestAgent.id !== state.activeAgent.id) ? bestAgent : null;
 }
 
+function extractTopic(text) {
+  var topics = { code:["code","function","class","api","bug","algorithm"], design:["design","ui","css","layout"], data:["database","sql","analytics","csv","data"], security:["security","vuln","encrypt","auth"], content:["copy","write","blog","article"] };
+  text = text.toLowerCase();
+  for (var t in topics) { if (topics[t].some(function(w){return text.indexOf(w)!==-1;})) return t; }
+  return null;
+}
+
+// ── File Upload ──
+function setupFileUpload() {
+  var ia = document.getElementById("input-area");
+  ia.addEventListener("dragover", function(e){ e.preventDefault(); });
+  ia.addEventListener("drop", function(e){ e.preventDefault(); handleFiles(e.dataTransfer.files); });
+  document.addEventListener("paste", function(e){
+    if (document.activeElement !== document.getElementById("userInput")) return;
+    var items = e.clipboardData && e.clipboardData.items;
+    if (!items) return;
+    for (var i = 0; i < items.length; i++) if (items[i].kind === "file") { e.preventDefault(); handleFiles([items[i].getAsFile()]); return; }
+  });
+}
+
+function handleFiles(files) {
+  for (var i = 0; i < files.length; i++) {
+    var f = files[i];
+    if (f.size > 1024*1024) { showToast("File too large: " + f.name, "error"); continue; }
+    var reader = new FileReader();
+    reader.onload = (function(file){ return function(e){
+      state.attachedFiles.push({ name: file.name, content: e.target.result.slice(0,8000), size: file.size });
+      showAttachedFiles();
+      showToast(t("fileAttached") + ": " + file.name, "success");
+    };})(f);
+    reader.readAsText(f);
+  }
+}
+
+function showAttachedFiles() {
+  var el = document.getElementById("attachedFiles");
+  if (el) el.remove();
+  if (state.attachedFiles.length === 0) return;
+  var div = document.createElement("div");
+  div.id = "attachedFiles";
+  div.style.cssText = "display:flex;flex-wrap:wrap;gap:6px;padding:8px 0";
+  div.innerHTML = state.attachedFiles.map(function(f,i){
+    return '<span style="background:var(--bg2);border:1px solid var(--line);border-radius:6px;padding:4px 10px;font-size:12px;display:flex;align-items:center;gap:6px">📎 ' + escapeHtml(f.name) + ' <button onclick="removeFile(' + i + ')" style="color:var(--red);font-size:14px;padding:0 4px">✕</button></span>';
+  }).join("");
+  var inputRow = document.querySelector(".input-row");
+  if (inputRow) inputRow.parentNode.insertBefore(div, inputRow);
+}
+
+function removeFile(i) { state.attachedFiles.splice(i,1); showAttachedFiles(); }
+
+function getAttachedContent() {
+  if (state.attachedFiles.length === 0) return "";
+  return "\n\nAttached files:\n" + state.attachedFiles.map(function(f){ return "=== " + f.name + " ===\n" + f.content; }).join("\n\n");
+}
+
 function init() {
   loadState();
   renderSidebar();
@@ -1491,6 +1849,7 @@ function init() {
   updateHeader();
   updateTokenDisplay();
   renderMessages();
+  setupFileUpload();
 
   document.getElementById("btnMenu").addEventListener("click", toggleSidebar);
   document.getElementById("btnNewChat").addEventListener("click", function(){
@@ -1530,6 +1889,9 @@ function init() {
   if (typeof HOPEAI_KB !== "undefined") {
     document.getElementById("kbCount").textContent = HOPEAI_KB.total;
   }
+
+  loadProfile();
+  if (state.lang) updateAllUI();
 }
 
 init();
