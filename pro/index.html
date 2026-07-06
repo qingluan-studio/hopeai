@@ -341,10 +341,40 @@ input:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(
 .cw-empty{text-align:center;padding:40px;color:var(--muted)}
 .cw-empty .big-icon{font-size:48px;margin-bottom:12px}
 @media(max-width:768px){.cw-header{flex-direction:column;align-items:flex-start}.cw-actions{margin-left:0}}
+/* ── APP Polish ── */
+@keyframes msgIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.message{animation:msgIn .3s ease-out}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.learn-metric{animation:fadeUp .4s ease-out}
+@keyframes ripple{to{transform:scale(4);opacity:0}}
+.ripple-effect{position:absolute;border-radius:50%;background:rgba(255,255,255,.3);transform:scale(0);animation:ripple .6s ease-out;pointer-events:none}
+@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+.skeleton{background:linear-gradient(90deg,var(--bg2) 25%,var(--card) 50%,var(--bg2) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:8px}
+@keyframes pulse-dot{0%,80%,100%{transform:scale(.6);opacity:.4}40%{transform:scale(1);opacity:1}}
+#network-status{position:fixed;top:0;left:0;right:0;height:3px;z-index:99;background:var(--green);transition:all .5s;opacity:0}
+#network-status.offline{background:var(--red);opacity:1;height:4px}
+.time-group{text-align:center;margin:20px 0 12px;font-size:11px;color:var(--muted);font-weight:600}
+.time-group span{background:var(--bg2);padding:4px 12px;border-radius:10px}
+.quick-chips{display:flex;gap:6px;flex-wrap:wrap;padding:8px 0;transition:all .3s}
+.quick-chip{padding:6px 14px;background:var(--bg2);border:1px solid var(--line);border-radius:18px;font-size:12px;cursor:pointer;color:var(--text);transition:all .2s;white-space:nowrap}
+.quick-chip:hover{background:var(--accent);color:#fff;border-color:var(--accent);transform:translateY(-1px)}
+.scroll-bottom-btn{position:fixed;bottom:120px;right:20px;width:36px;height:36px;border-radius:50%;background:var(--accent);color:#fff;border:none;display:none;align-items:center;justify-content:center;cursor:pointer;z-index:40;box-shadow:0 4px 12px rgba(0,0,0,.3);font-size:16px;transition:all .2s}
+.scroll-bottom-btn:hover{transform:scale(1.1)}
+.scroll-bottom-btn.visible{display:flex}
+.conv-swipe{position:relative;overflow:hidden}
+.conv-swipe-actions{position:absolute;right:0;top:0;bottom:0;display:flex;align-items:stretch;transform:translateX(100%);transition:transform .2s}
+.conv-swipe-actions.show{transform:translateX(0)}
+.conv-swipe-action{padding:0 16px;display:flex;align-items:center;color:#fff;font-size:12px;font-weight:600;cursor:pointer;border:none}
+.conv-swipe-action.danger{background:var(--red)}
+.msg-status{font-size:10px;color:var(--muted);margin-top:4px;display:flex;align-items:center;gap:4px}
+.msg-status.sent{color:var(--green)}
+.msg-status.error{color:var(--red)}
 </style>
 </head>
 <body>
 <div id="app">
+  <div id="network-status"></div>
+  <button id="scrollBottomBtn" class="scroll-bottom-btn" onclick="scrollToBottom()" title="Scroll to bottom">↓</button>
   <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
   <aside id="sidebar">
     <div class="sidebar-header">
@@ -476,6 +506,7 @@ input:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(
       </div>
     </div>
     <div id="input-area">
+      <div class="quick-chips" id="quickChips"></div>
       <div class="input-row">
         <textarea id="userInput" rows="1" placeholder="Describe your task, orchestrator will find the best agent..." onkeydown="handleKeyDown(event)"></textarea>
         <button class="voice-btn" onclick="toggleDebateCourt()" title="Debate Court" style="font-size:14px" id="debateBtn">🏛️</button>
@@ -1166,7 +1197,7 @@ function updateHeader() {
 }
 
 function updateTokenDisplay() {
-  document.getElementById("tokenUsed").textContent = formatNumber(state.tokenUsed);
+  animateTokenCount(state.tokenUsed);
   document.getElementById("tokenLimit").textContent = state.tokenLimit === 0 ? "∞" : formatNumber(state.tokenLimit);
   var ring = document.getElementById("tokenRing");
   var circumference = 75.4;
@@ -1245,7 +1276,8 @@ function renderMessages() {
     }
     container.innerHTML = html;
   }
-  container.scrollTop = container.scrollHeight;
+  if (!appState.scrollLocked) container.scrollTop = container.scrollHeight;
+  renderQuickChips();
 }
 
 function formatContent(text) {
@@ -1342,7 +1374,7 @@ async function sendMessage() {
   }
 
   var fileContent = getAttachedContent();
-  state.messages.push({ type: "user", content: text + fileContent });
+  state.messages.push({ type: "user", content: text + fileContent, time: Date.now() });
   state.thinking = true;
   document.getElementById("sendBtn").style.display = "none";
   document.getElementById("stopBtn").style.display = "";
@@ -1416,7 +1448,7 @@ async function sendMessage() {
     }
 
     var msgId = "msg_" + Date.now();
-    state.messages.push({ type: "agent", id: msgId, content: "", streaming: true });
+    state.messages.push({ type: "agent", id: msgId, content: "", streaming: true, time: Date.now() });
     renderMessages();
 
     var reader = resp.body.getReader();
@@ -1474,7 +1506,7 @@ async function sendMessage() {
     if (e.name !== "AbortError") {
       var msgId = "msg_" + Date.now();
       var errMsg = "AI service error: " + e.message;
-      state.messages.push({ type: "agent", id: msgId, content: errMsg + "\n\nCheck API settings.", rated: null });
+      state.messages.push({ type: "agent", id: msgId, content: errMsg + "\n\nCheck API settings.", rated: null, time: Date.now() });
       trackFailure(errMsg);
       logAudit("error", e.message);
     } else {
@@ -2049,7 +2081,7 @@ function reviewLastResponse() {
   if (agentMsgs.length===0) { showToast("No response to review", "error"); return; }
   var last = agentMsgs[agentMsgs.length-1];
   var reviewMsg = "Self-review your previous response critically. Identify: 1) Any factual errors 2) Missing important details 3) Could be more concise 4) Clarity improvements. Then provide an improved version.";
-  state.messages.push({ type: "user", content: reviewMsg });
+  state.messages.push({ type: "user", content: reviewMsg, time: Date.now() });
   state.thinking = true;
   document.getElementById("sendBtn").style.display = "none";
   document.getElementById("stopBtn").style.display = "";
@@ -2072,9 +2104,10 @@ async function doInternalStream(text) {
     });
     if (!resp.ok) { var err = await resp.text(); throw new Error("API Error: " + err); }
     var msgId = "rev_" + Date.now();
-    state.messages.push({ type: "agent", id: msgId, content: "", streaming: true });
+    state.messages.push({ type: "agent", id: msgId, content: "", streaming: true, time: Date.now() });
     renderMessages();
     var reader = resp.body.getReader(), decoder = new TextDecoder(), buffer = "", content = "", totalTokens = 0;
+    streamController = new AbortController();
     while (true) {
       var r = await reader.read();
       if (r.done) break;
@@ -2943,6 +2976,126 @@ function branchConversation() {
   showToast("Branch created. Continue exploring alternate paths.", "success");
 }
 
+// ── v11: APP Polish ──
+var appState = { scrollLocked: false, online: true, lastScrollTop: 0, touchStartX: 0, touchStartY: 0 };
+
+function scrollToBottom() {
+  var c = document.getElementById("chat-container");
+  c.scrollTo({ top: c.scrollHeight, behavior: "smooth" });
+  appState.scrollLocked = false;
+}
+
+function handleChatScroll() {
+  var c = document.getElementById("chat-container");
+  var distFromBottom = c.scrollHeight - c.scrollTop - c.clientHeight;
+  appState.scrollLocked = distFromBottom > 100;
+  var btn = document.getElementById("scrollBottomBtn");
+  if (appState.scrollLocked) btn.classList.add("visible");
+  else btn.classList.remove("visible");
+}
+
+// Touch gesture: swipe to close sidebar
+function initTouchGestures() {
+  document.addEventListener("touchstart", function(e){
+    appState.touchStartX = e.touches[0].clientX;
+    appState.touchStartY = e.touches[0].clientY;
+  }, { passive: true });
+  document.addEventListener("touchend", function(e){
+    var dx = e.changedTouches[0].clientX - appState.touchStartX;
+    var dy = Math.abs(e.changedTouches[0].clientY - appState.touchStartY);
+    if (dx < -60 && Math.abs(dx) > dy && document.getElementById("sidebar").classList.contains("open")) closeSidebar();
+  }, { passive: true });
+}
+
+// Quick reply suggestions
+function suggestQuickReplies() {
+  var lastMsg = state.messages.filter(function(m){return m.type==="agent"}).pop();
+  if (!lastMsg || !lastMsg.content) return [];
+  var content = lastMsg.content.toLowerCase();
+  var suggestions = [];
+  if (/error|错误|fail|失败|bug/i.test(content)) suggestions.push("Fix this error", "Show debug steps", "Explain the root cause");
+  else if (/code|function|class|import/i.test(content)) suggestions.push("Refactor this", "Add tests", "Optimize performance");
+  else if (/deploy|deploy|deployment/i.test(content)) suggestions.push("Rollback plan", "Monitor health", "Check logs");
+  else if (/security|安全|vuln/i.test(content)) suggestions.push("Audit checklist", "Patch priority", "Compliance check");
+  else suggestions.push("Tell me more", "Show examples", "Summarize");
+  return suggestions.slice(0, 5);
+}
+
+function renderQuickChips() {
+  var chips = suggestQuickReplies();
+  if (chips.length === 0) return;
+  var html = chips.map(function(c){return '<span class="quick-chip" onclick="sendChip(\'' + c + '\')">' + c + '</span>';}).join("");
+  var el = document.getElementById("quickChips");
+  if (el) el.innerHTML = html;
+}
+
+function sendChip(text) {
+  document.getElementById("userInput").value = text;
+  sendMessage();
+}
+
+// Ripple click effect
+function addRipple(e) {
+  var el = e.currentTarget;
+  var ripple = document.createElement("span");
+  ripple.className = "ripple-effect";
+  var rect = el.getBoundingClientRect();
+  var size = Math.max(rect.width, rect.height);
+  ripple.style.width = ripple.style.height = size + "px";
+  ripple.style.left = (e.clientX - rect.left - size/2) + "px";
+  ripple.style.top = (e.clientY - rect.top - size/2) + "px";
+  el.style.position = el.style.position || "relative";
+  el.style.overflow = "hidden";
+  el.appendChild(ripple);
+  setTimeout(function(){ ripple.remove(); }, 600);
+}
+
+// Network status
+function updateNetworkStatus() {
+  var bar = document.getElementById("network-status");
+  if (navigator.onLine) { bar.classList.remove("offline"); appState.online = true; }
+  else { bar.classList.add("offline"); appState.online = false; addNotification("Offline", "Network connection lost. Using cached data.", "warning"); }
+}
+
+// Smooth token counter
+var tokenAnimFrame;
+function animateTokenCount(target) {
+  var el = document.getElementById("tokenUsed");
+  var current = parseInt((el.textContent || "0").replace(/,/g,"")) || 0;
+  if (current >= target) { el.textContent = formatNumber(target); return; }
+  var step = Math.max(1, Math.ceil((target - current) / 20));
+  function tick() {
+    current += step;
+    if (current >= target) { el.textContent = formatNumber(target); return; }
+    el.textContent = formatNumber(current);
+    tokenAnimFrame = requestAnimationFrame(tick);
+  }
+  tick();
+}
+
+// Time grouping for messages
+function getTimeGroupLabel(msg, prevMsg) {
+  if (!prevMsg) return new Date(msg.time || Date.now()).toLocaleString();
+  var diff = (prevMsg.time || Date.now()) - (msg.time || Date.now());
+  if (Math.abs(diff) > 300000) return new Date(msg.time || Date.now()).toLocaleTimeString();
+  return null;
+}
+
+// Init APP polish
+function initAppPolish() {
+  initTouchGestures();
+  updateNetworkStatus();
+  window.addEventListener("online", function(){ updateNetworkStatus(); addNotification("Back Online", "Network connection restored.", "success"); });
+  window.addEventListener("offline", function(){ updateNetworkStatus(); });
+  var chatContainer = document.getElementById("chat-container");
+  if (chatContainer) chatContainer.addEventListener("scroll", handleChatScroll, { passive: true });
+  // Add ripple to buttons
+  document.querySelectorAll("button:not(.ripple-effect)").forEach(function(btn){
+    btn.addEventListener("click", addRipple);
+  });
+  renderQuickChips();
+}
+
 function init() {
   loadState();
   loadFailures();
@@ -3007,6 +3160,7 @@ function init() {
     if (toneSel) toneSel.value = state.tone;
   }
   if (state.lang) updateAllUI();
+  initAppPolish();
 }
 
 init();
