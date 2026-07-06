@@ -22,7 +22,9 @@ import remarkGfm from 'remark-gfm'
 import { cn } from '@/lib/utils'
 import { useKnowledgeStore } from '@/store/useKnowledgeStore'
 import { fetchOpenSourceKnowledge, fetchCodeSnippets, fetchMyProjects } from '@/services/knowledgeFetcher'
+import { syncToHopeAI, getSyncConfig } from '@/services/hopeaiSyncService'
 import type { KnowledgeEntry } from '@/types'
+import { RefreshCw } from 'lucide-react'
 
 const categories = [
   { id: 'all', name: '全部' },
@@ -260,6 +262,9 @@ export default function Knowledge() {
   const [importing, setImporting] = useState(false)
   const [importProgress, setImportProgress] = useState({ current: 0, total: 0, name: '' })
   const [importResult, setImportResult] = useState<string | null>(null)
+  const [syncConfig, setSyncConfig] = useState(() => getSyncConfig())
+  const [syncing, setSyncing] = useState(false)
+  const [syncResult, setSyncResult] = useState<string | null>(null)
 
   const allTags = useMemo(() => {
     const tags = new Set<string>()
@@ -367,6 +372,26 @@ export default function Knowledge() {
     }
   }
 
+  // 同步到希望AI
+  const handleSyncToHopeAI = async () => {
+    setSyncing(true)
+    setSyncResult(null)
+    try {
+      const result = await syncToHopeAI(entries)
+      if (result.success) {
+        setSyncResult(`✅ 同步成功！新增 ${result.created} 条，更新 ${result.updated} 条，跳过 ${result.skipped} 条`)
+        setSyncConfig(getSyncConfig())
+      } else {
+        setSyncResult(`❌ 同步失败：${result.error}`)
+      }
+    } catch (err) {
+      setSyncResult(`❌ 同步失败：${err instanceof Error ? err.message : '未知错误'}`)
+    } finally {
+      setSyncing(false)
+      setTimeout(() => setSyncResult(null), 5000)
+    }
+  }
+
   return (
     <div className="h-full flex flex-col">
       <div className="flex-shrink-0 bg-gray-950/90 backdrop-blur-md border-b border-green-900/30 px-4 py-3">
@@ -412,7 +437,7 @@ export default function Knowledge() {
           </div>
 
           {/* 自动导入按钮 */}
-          <div className="grid grid-cols-3 gap-1.5 mt-2">
+          <div className="grid grid-cols-4 gap-1.5 mt-2">
             <button
               onClick={handleImportFromGitHub}
               disabled={importing}
@@ -464,6 +489,23 @@ export default function Knowledge() {
               )}
               我的项目
             </button>
+            <button
+              onClick={handleSyncToHopeAI}
+              disabled={syncing || !syncConfig.enabled}
+              className={cn(
+                'flex items-center justify-center gap-1 py-1.5 rounded-lg border text-[10px] font-mono transition-all',
+                syncing || !syncConfig.enabled
+                  ? 'bg-gray-800 border-gray-700 text-gray-500'
+                  : 'bg-yellow-900/20 border-yellow-700/40 text-yellow-400 hover:bg-yellow-900/40 active:scale-95'
+              )}
+            >
+              {syncing ? (
+                <Loader2 className="w-3 h-3 animate-spin" />
+              ) : (
+                <RefreshCw className="w-3 h-3" />
+              )}
+              同步
+            </button>
           </div>
 
           {/* 导入进度 */}
@@ -496,6 +538,23 @@ export default function Knowledge() {
                 <X className="w-3.5 h-3.5 flex-shrink-0" />
               )}
               <span className="truncate">{importResult}</span>
+            </div>
+          )}
+
+          {/* 同步结果 */}
+          {syncResult && (
+            <div className={cn(
+              'mt-2 p-2 rounded-lg text-[11px] font-mono flex items-center gap-1.5',
+              syncResult.startsWith('✅')
+                ? 'bg-yellow-900/20 border border-yellow-700/40 text-yellow-400'
+                : 'bg-red-900/20 border border-red-700/40 text-red-400'
+            )}>
+              {syncResult.startsWith('✅') ? (
+                <CheckCircle className="w-3.5 h-3.5 flex-shrink-0" />
+              ) : (
+                <X className="w-3.5 h-3.5 flex-shrink-0" />
+              )}
+              <span className="truncate">{syncResult}</span>
             </div>
           )}
 

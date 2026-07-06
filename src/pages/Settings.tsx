@@ -27,6 +27,8 @@ import { cn } from '@/lib/utils'
 import { useThemeStore } from '@/store/useThemeStore'
 import type { Theme } from '@/types'
 import { callKimi, saveLLMConfig, clearLLMConfig } from '@/services/llmService'
+import { getSyncConfig, saveSyncConfig, clearSyncConfig, testConnection, syncToHopeAI } from '@/services/hopeaiSyncService'
+import { RefreshCw, Link, Unlink } from 'lucide-react'
 
 const themeConfigs: { id: Theme; name: string; icon: typeof Moon; color: string; glow: string }[] = [
   { 
@@ -553,6 +555,232 @@ function LLMSettings() {
   )
 }
 
+function HopeAISyncSettings() {
+  const [config, setConfig] = useState(() => getSyncConfig())
+  const [testing, setTesting] = useState(false)
+  const [testStatus, setTestStatus] = useState<'idle' | 'success' | 'fail'>('idle')
+  const [testMsg, setTestMsg] = useState('')
+  const [syncing, setSyncing] = useState(false)
+  const [syncResult, setSyncResult] = useState<string | null>(null)
+
+  const handleToggle = (enabled: boolean) => {
+    saveSyncConfig({ enabled })
+    setConfig(prev => ({ ...prev, enabled }))
+  }
+
+  const handleToggleAutoSync = (autoSync: boolean) => {
+    saveSyncConfig({ autoSync })
+    setConfig(prev => ({ ...prev, autoSync }))
+  }
+
+  const handleSave = () => {
+    saveSyncConfig({
+      apiUrl: config.apiUrl,
+      apiKey: config.apiKey,
+    })
+    setTestStatus('idle')
+    setSyncResult(null)
+  }
+
+  const handleTest = async () => {
+    setTesting(true)
+    setTestStatus('idle')
+    setTestMsg('')
+    try {
+      const result = await testConnection()
+      if (result.success) {
+        setTestStatus('success')
+        setTestMsg(`连接成功！远端知识库共 ${result.totalKnowledge} 条`)
+      } else {
+        setTestStatus('fail')
+        setTestMsg(result.error || '连接失败')
+      }
+    } catch (e) {
+      setTestStatus('fail')
+      setTestMsg(e instanceof Error ? e.message : '未知错误')
+    } finally {
+      setTesting(false)
+    }
+  }
+
+  const handleSyncNow = async () => {
+    setSyncing(true)
+    setSyncResult(null)
+    try {
+      const { useKnowledgeStore } = await import('@/store/useKnowledgeStore')
+      const store = useKnowledgeStore.getState()
+      const result = await syncToHopeAI(store.entries)
+
+      if (result.success) {
+        setSyncResult(`✅ 同步成功！新增 ${result.created} 条，更新 ${result.updated} 条，跳过 ${result.skipped} 条`)
+        setConfig(prev => ({ ...prev, lastSyncTime: Date.now() }))
+      } else {
+        setSyncResult(`❌ 同步失败：${result.error}`)
+      }
+    } catch (e) {
+      setSyncResult(`❌ 同步失败：${e instanceof Error ? e.message : '未知错误'}`)
+    } finally {
+      setSyncing(false)
+    }
+  }
+
+  const handleClear = () => {
+    if (confirm('确定要清除希望AI同步配置吗？')) {
+      clearSyncConfig()
+      setConfig(getSyncConfig())
+      setTestStatus('idle')
+      setSyncResult(null)
+    }
+  }
+
+  const formatDate = (ts: number) => {
+    if (!ts) return '从未同步'
+    return new Date(ts).toLocaleString('zh-CN', {
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    })
+  }
+
+  return (
+    <SettingSection icon={Link} title="希望AI 同步" description="将知识库同步到希望AI 平台">
+      <div className="space-y-3">
+        <ToggleSwitch
+          enabled={config.enabled}
+          onChange={handleToggle}
+          label="启用同步"
+          description="将Agent产出的知识同步到希望AI知识库"
+        />
+
+        {config.enabled && (
+          <>
+            <div className="h-px bg-gray-800/50" />
+
+            <div>
+              <label className="text-xs font-mono text-gray-400">API 地址</label>
+              <input
+                type="text"
+                value={config.apiUrl}
+                onChange={(e) => { setConfig(prev => ({ ...prev, apiUrl: e.target.value })); setTestStatus('idle') }}
+                placeholder="https://hopeai-v20.pages.dev/api"
+                className="w-full mt-1 px-3 py-2 bg-gray-900/80 border border-gray-700 rounded-lg text-sm font-mono text-gray-200 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500"
+              />
+              <p className="text-[10px] font-mono text-gray-600 mt-1">希望AI 平台的 API 根路径</p>
+            </div>
+
+            <div>
+              <label className="text-xs font-mono text-gray-400">API Key（可选）</label>
+              <input
+                type="password"
+                value={config.apiKey}
+                onChange={(e) => { setConfig(prev => ({ ...prev, apiKey: e.target.value })); setTestStatus('idle') }}
+                placeholder="如果配置了访问密钥"
+                className="w-full mt-1 px-3 py-2 bg-gray-900/80 border border-gray-700 rounded-lg text-sm font-mono text-gray-200 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500"
+              />
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                onClick={handleSave}
+                className="flex-1 px-3 py-2 bg-green-600 hover:bg-green-500 text-white text-xs font-mono rounded-lg transition-colors flex items-center justify-center gap-1.5"
+              >
+                保存配置
+              </button>
+              <button
+                onClick={handleTest}
+                disabled={testing}
+                className="flex-1 px-3 py-2 bg-blue-600 hover:bg-blue-500 disabled:bg-gray-700 text-white text-xs font-mono rounded-lg transition-colors flex items-center justify-center gap-1.5"
+              >
+                {testing ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    测试中
+                  </>
+                ) : (
+                  <>
+                    <Link className="w-3.5 h-3.5" />
+                    测试连接
+                  </>
+                )}
+              </button>
+              <button
+                onClick={handleClear}
+                className="px-3 py-2 bg-red-900/50 hover:bg-red-800/50 text-red-300 text-xs font-mono rounded-lg transition-colors"
+              >
+                <Unlink className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            {testStatus === 'success' && (
+              <div className="px-3 py-2 bg-green-900/30 border border-green-700/50 rounded-lg flex items-center gap-2">
+                <Check className="w-4 h-4 text-green-400 flex-shrink-0" />
+                <span className="text-xs font-mono text-green-300">{testMsg}</span>
+              </div>
+            )}
+            {testStatus === 'fail' && (
+              <div className="px-3 py-2 bg-red-900/30 border border-red-700/50 rounded-lg flex items-center gap-2">
+                <X className="w-4 h-4 text-red-400 flex-shrink-0" />
+                <span className="text-xs font-mono text-red-300">{testMsg}</span>
+              </div>
+            )}
+
+            <div className="h-px bg-gray-800/50" />
+
+            <ToggleSwitch
+              enabled={config.autoSync}
+              onChange={handleToggleAutoSync}
+              label="自动同步"
+              description="新知识产生后自动同步到希望AI"
+            />
+
+            <button
+              onClick={handleSyncNow}
+              disabled={syncing}
+              className="w-full py-2.5 rounded-lg border border-purple-700/50 bg-purple-900/20 text-purple-400 hover:bg-purple-900/30 transition-all flex items-center justify-center gap-2 text-xs font-mono disabled:opacity-50"
+            >
+              {syncing ? (
+                <>
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  同步中...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="w-4 h-4" />
+                  立即同步全部知识
+                </>
+              )}
+            </button>
+
+            {syncResult && (
+              <div className={cn(
+                'px-3 py-2 rounded-lg text-xs font-mono flex items-center gap-1.5',
+                syncResult.startsWith('✅')
+                  ? 'bg-green-900/20 border border-green-700/40 text-green-400'
+                  : 'bg-red-900/20 border border-red-700/40 text-red-400'
+              )}>
+                {syncResult.startsWith('✅') ? <Check className="w-3.5 h-3.5" /> : <X className="w-3.5 h-3.5" />}
+                <span className="truncate">{syncResult}</span>
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-2 pt-1">
+              <div className="bg-gray-900/60 rounded-lg p-2 border border-gray-800">
+                <p className="text-[10px] font-mono text-gray-500">上次同步</p>
+                <p className="text-xs font-mono text-gray-300 mt-0.5">{formatDate(config.lastSyncTime)}</p>
+              </div>
+              <div className="bg-gray-900/60 rounded-lg p-2 border border-gray-800">
+                <p className="text-[10px] font-mono text-gray-500">累计同步</p>
+                <p className="text-xs font-mono text-green-400 mt-0.5">{config.syncStats.totalSynced} 条</p>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+    </SettingSection>
+  )
+}
+
 function DataSettings() {
   const [showConfirm, setShowConfirm] = useState(false)
 
@@ -675,6 +903,7 @@ export default function Settings() {
           <AppearanceSettings />
           <AgentSettings />
           <LearningSettings />
+          <HopeAISyncSettings />
           <LLMSettings />
           <DataSettings />
 
