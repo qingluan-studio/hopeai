@@ -414,6 +414,7 @@ input:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(
 .thinking-outline ul{margin:0;padding-left:18px;font-size:12px;color:var(--muted)}
 .thinking-outline li{margin-bottom:4px}
 @media(max-width:768px){#artifactsPanel{width:100vw;min-width:unset;max-width:unset}}
+</style>
 </head>
 <body>
 <div id="app">
@@ -902,7 +903,6 @@ const I18N = {
     toneConcise: "极简",
     toneCreative: "创意",
     // extras
-    saved: "已保存",
     tokenReset: "Token 已重置",
     cwCleared: "代码工作区已清空",
     allCleared: "所有本地数据已清空",
@@ -3083,8 +3083,8 @@ function filterCommandPalette() {
     var found = 0;
     for (var i = 0; i < Math.min(20, HOPEAI_KB.entries.length); i++) {
       var e = HOPEAI_KB.entries[i];
-      if (e.title.toLowerCase().indexOf(q) !== -1 || e.desc.toLowerCase().indexOf(q) !== -1) {
-        results.push({ type: "kb", id: "kb_" + i, name: e.title, emoji: "📚", desc: e.desc.slice(0,80), layer: e.layer });
+      if (e.t.toLowerCase().indexOf(q) !== -1 || e.c.toLowerCase().indexOf(q) !== -1) {
+        results.push({ type: "kb", id: "kb_" + i, name: e.t, emoji: "📚", desc: e.c.slice(0,80), layer: e.l });
         found++;
         if (found >= 5) break;
       }
