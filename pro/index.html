@@ -433,7 +433,7 @@ input:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(
     </div>
     <nav class="sidebar-nav" id="sidebarNav"></nav>
     <div class="conv-section" id="convSection">
-      <div class="conv-section-header">Conversations</div>
+      <div class="conv-section-header" id="convSectionHeader">Conversations</div>
       <ul class="conv-list" id="convList"></ul>
     </div>
     <div class="sidebar-footer">
@@ -495,8 +495,8 @@ input:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(
       <div class="cw-header">
         <h3>Code Workspace</h3>
         <div class="cw-actions">
-          <button class="cw-download-all" onclick="downloadAllCode()">Download All (.zip)</button>
-          <button class="cw-clear" onclick="clearCodeWorkspace()">Clear All</button>
+          <button class="cw-download-all" onclick="downloadAllCode()"><span id="cwDownloadAllLabel">Download All (.zip)</span></button>
+          <button class="cw-clear" onclick="clearCodeWorkspace()"><span id="cwClearAllLabel">Clear All</span></button>
         </div>
       </div>
       <div id="cwContent"></div>
@@ -534,7 +534,7 @@ input:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(
     <!-- Notification Panel -->
     <div id="notifyPanel" style="display:none;position:fixed;right:16px;top:60px;width:340px;max-height:80vh;background:var(--bg2);border:1px solid var(--line);border-radius:12px;z-index:70;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,.5)">
       <div style="padding:12px 16px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center">
-        <h4 style="margin:0;font-size:14px">Notifications</h4>
+        <h4 style="margin:0;font-size:14px" id="notifyHeader">Notifications</h4>
         <button style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px" onclick="closeNotifications()">&times;</button>
       </div>
       <div id="notifyContent" style="max-height:60vh;overflow-y:auto"></div>
@@ -625,10 +625,10 @@ input:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(
 <script src="/hopeai/pro/js/self-learning.js"></script>
 <script>
 const L = {
-  L1: { name:"Orchestration", dot:"#a78bfa", emoji:"🎯" },
-  L2: { name:"Delivery", dot:"#67e8f9", emoji:"⚡" },
-  L3: { name:"Foundation", dot:"#86efac", emoji:"🗄️" },
-  L4: { name:"Governance", dot:"#fcd34d", emoji:"🛡️" }
+  L1: { name:"Orchestration", nameZh:"编排", dot:"#a78bfa", emoji:"🎯" },
+  L2: { name:"Delivery", nameZh:"交付", dot:"#67e8f9", emoji:"⚡" },
+  L3: { name:"Foundation", nameZh:"底座", dot:"#86efac", emoji:"🗄️" },
+  L4: { name:"Governance", nameZh:"治理", dot:"#fcd34d", emoji:"🛡️" }
 };
 
 const AGENTS = [
@@ -853,7 +853,67 @@ const I18N = {
     badgeVeteran: "资深用户",
     badgePolyglot: "多语言大师",
     badgeNightOwl: "夜猫子",
-    badgeEarlyBird: "早起鸟"
+    badgeEarlyBird: "早起鸟",
+    // v8+ added keys
+    marketTab: "技能市场",
+    billTab: "计费",
+    monitorTab: "监控",
+    aciTab: "ACI工作区",
+    vaultTab: "保险库",
+    dashboardTab: "仪表盘",
+    cancel: "取消",
+    confirm: "确认",
+    deploy: "部署",
+    execute: "执行",
+    plan: "规划",
+    clear: "清空",
+    preview: "预览",
+    review: "审查",
+    export_: "导出",
+    branch: "分支",
+    systemMonitor: "系统监控",
+    tokenBilling: "Token 计费",
+    aciWorkspace: "ACI 工作区",
+    securityVault: "安全保险箱",
+    systemDashboard: "系统仪表盘",
+    skillFactory: "技能工厂",
+    parallelAgents: "并行调度",
+    selfAttrib: "自我归因",
+    sandboxIso: "沙盒隔离",
+    notification: "通知",
+    searchCmd: "搜索角色/对话/知识...",
+    noNotifications: "暂无通知",
+    online: "在线",
+    offline: "离线",
+    backOnline: "已恢复在线",
+    networkLost: "网络连接已断开",
+    exported: "已导出",
+    branchCreated: "分支已创建",
+    agentMatched: "角色已匹配",
+    askAnything: "输入你的需求...",
+    deploySOP: "部署 SOP",
+    confirmDeploy: "确认部署",
+    reviewHelp: "AI 正在审查回复质量...",
+    abCompare: "A/B 对比模式",
+    debateCourt: "辩论法庭",
+    tonePro: "专业",
+    toneWarm: "温暖共情",
+    toneHumor: "幽默",
+    toneConcise: "极简",
+    toneCreative: "创意",
+    // extras
+    saved: "已保存",
+    tokenReset: "Token 已重置",
+    cwCleared: "代码工作区已清空",
+    allCleared: "所有本地数据已清空",
+    listening: "正在聆听...",
+    vaultLocked: "保险库已锁定",
+    vaultUnlocked: "保险库已解锁",
+    deployed: "已部署",
+    branchCreatedToast: "分支已创建。继续探索其他路径。",
+    exportedMD: "已导出为 Markdown",
+    appliedSkill: "已应用技能",
+    zeroCost: "零成本。GitHub Pages + localStorage。",
   },
   en: {
     sidebarTitle: "HopeAgent Pro",
@@ -951,7 +1011,67 @@ const I18N = {
     badgeVeteran: "Veteran User",
     badgePolyglot: "Polyglot",
     badgeNightOwl: "Night Owl",
-    badgeEarlyBird: "Early Bird"
+    badgeEarlyBird: "Early Bird",
+    // v8+ added keys
+    marketTab: "Market",
+    billTab: "Billing",
+    monitorTab: "Monitor",
+    aciTab: "ACI Workspace",
+    vaultTab: "Vault",
+    dashboardTab: "Dashboard",
+    cancel: "Cancel",
+    confirm: "Confirm",
+    deploy: "Deploy",
+    execute: "Execute",
+    plan: "Plan",
+    clear: "Clear",
+    preview: "Preview",
+    review: "Review",
+    export_: "Export",
+    branch: "Branch",
+    systemMonitor: "System Monitor",
+    tokenBilling: "Token Billing",
+    aciWorkspace: "ACI Workspace",
+    securityVault: "Security Vault",
+    systemDashboard: "System Dashboard",
+    skillFactory: "Skill Factory",
+    parallelAgents: "Parallel Agents",
+    selfAttrib: "Self-Attribution",
+    sandboxIso: "Sandbox Isolation",
+    notification: "Notification",
+    searchCmd: "Search agents, knowledge, conversations...",
+    noNotifications: "No notifications yet",
+    online: "Online",
+    offline: "Offline",
+    backOnline: "Back Online",
+    networkLost: "Network connection lost",
+    exported: "Exported",
+    branchCreated: "Branch created",
+    agentMatched: "Agent matched",
+    askAnything: "Describe your task...",
+    deploySOP: "Deploy SOP",
+    confirmDeploy: "Confirm Deploy",
+    reviewHelp: "AI is reviewing response quality...",
+    abCompare: "A/B Compare",
+    debateCourt: "Debate Court",
+    tonePro: "Professional",
+    toneWarm: "Warm & Empathetic",
+    toneHumor: "Humorous",
+    toneConcise: "Ultra Concise",
+    toneCreative: "Creative",
+    // extras
+    saved: "Saved",
+    tokenReset: "Token usage reset",
+    cwCleared: "Code workspace cleared",
+    allCleared: "All local data cleared",
+    listening: "Listening...",
+    vaultLocked: "Vault locked",
+    vaultUnlocked: "Vault unlocked",
+    deployed: "Deployed",
+    branchCreatedToast: "Branch created. Continue exploring alternate paths.",
+    exportedMD: "Exported as Markdown",
+    appliedSkill: "Applied skill",
+    zeroCost: "Zero cost. GitHub Pages + localStorage.",
   }
 };
 
@@ -966,15 +1086,61 @@ function setLang(lang) {
 function updateAllUI() {
   var L = t;
   document.title = "HopeAgent Pro . 75+ AI Agent Collaboration Platform";
-  document.getElementById("agentSearch").placeholder = L("searchPlaceholder");
-  document.getElementById("btnTokenConfig").textContent = L("apiConfig");
-  document.getElementById("btnSettings").textContent = L("settingsHelp");
-  document.getElementById("userInput").placeholder = L("inputPlaceholder");
+  var el = function(id){return document.getElementById(id);};
+  if (el("agentSearch")) el("agentSearch").placeholder = L("searchPlaceholder");
+  if (el("btnTokenConfig")) el("btnTokenConfig").textContent = L("apiConfig");
+  if (el("btnSettings")) el("btnSettings").textContent = L("settingsHelp");
+  if (el("userInput")) el("userInput").placeholder = L("inputPlaceholder");
+  // Main tabs
+  var tabs = document.querySelectorAll(".main-tabs button");
+  var tabKeys = ["chatTab","dashboardTab","kbTab","learnTab","codeTab","marketTab","billTab","monitorTab","aciTab","vaultTab","evoTab"];
+  tabs.forEach(function(b,i){ if (i < tabKeys.length && tabKeys[i]) b.textContent = L(tabKeys[i]); });
+  // Panel headers
+  var headers = document.querySelectorAll(".cw-header h3");
+  var headerKeys = [ "codeWorkspace", "marketTab", "systemMonitor", "systemDashboard", "aciWorkspace", "securityVault", "tokenBilling" ];
+  headers.forEach(function(h,i){ if (headerKeys[i]) h.textContent = L(headerKeys[i]); });
+  // Quick actions
+  var actions = document.querySelectorAll(".quick-action");
+  var actionKeys = ["landingPage","productCopy","performance","dbSchema","securityAudit","apiDesign"];
+  actions.forEach(function(a,i){ if (actionKeys[i]) a.textContent = L(actionKeys[i]); });
+  // Mode buttons
+  if (el("btnDaily")) el("btnDaily").textContent = L("dailyMode");
+  if (el("btnDeep")) el("btnDeep").textContent = L("deepMode");
+  // Tone select
+  var toneSel = el("toneSelect");
+  if (toneSel) {
+    toneSel.options[0].text = L("tonePro");
+    toneSel.options[1].text = L("toneWarm");
+    toneSel.options[2].text = L("toneHumor");
+    toneSel.options[3].text = L("toneConcise");
+    toneSel.options[4].text = L("toneCreative");
+  }
+  // Command palette placeholder
+  if (el("cmdInput")) el("cmdInput").placeholder = L("searchCmd");
+  // ACI task input if visible
+  var aciInput = el("aciTaskInput");
+  if (aciInput) aciInput.placeholder = L("askAnything");
+  // Artifacts panel
+  if (el("artifactsTitle")) el("artifactsTitle").textContent = "📄 " + L("preview");
+  if (el("convSectionHeader")) el("convSectionHeader").textContent = L("conversations");
+  if (el("noConvHint")) el("noConvHint").textContent = L("newConv");
+  if (el("cwDownloadAllLabel")) el("cwDownloadAllLabel").textContent = L("downloadAll");
+  if (el("cwClearAllLabel")) el("cwClearAllLabel").textContent = L("clearAll");
+  if (el("notifyHeader")) el("notifyHeader").textContent = L("notification");
+  if (el("artTabPreview")) el("artTabPreview").textContent = L("preview");
+  if (el("artTabCode")) el("artTabCode").textContent = L("codeTab");
+  if (el("btnDaily")) el("btnDaily").textContent = L("dailyMode");
+  if (el("btnDeep")) el("btnDeep").textContent = L("deepMode");
   updateHeader();
   renderMessages();
   renderConvList();
   renderSidebar();
   updateBottomNav();
+  // Re-render visible panels
+  if (currentTab === "monitor") renderMonitorPanel();
+  if (currentTab === "aci") renderACIPanel();
+  if (currentTab === "vault") renderVaultPanel();
+  if (currentTab === "dashboard") renderDashboard();
 }
 
 function updateBottomNav() {
@@ -1088,7 +1254,7 @@ function generateId() { return Date.now().toString(36) + Math.random().toString(
 function ensureConv() {
   if (state.conversations.length === 0) {
     var id = generateId();
-    state.conversations.push({ id: id, title: "New Conversation", agentId: "orchestrator", msgCount: 0, createdAt: Date.now() });
+    state.conversations.push({ id: id, title: (state.lang==="zh"?"新对话":"New Conversation"), agentId: "orchestrator", msgCount: 0, createdAt: Date.now() });
     state.currentConvId = id;
     state.messages = [];
     state.tokenUsed = 0;
@@ -1118,7 +1284,7 @@ function ensureConv() {
 function newConversation() {
   fullSave();
   var id = generateId();
-  state.conversations.unshift({ id: id, title: "New Conversation", agentId: state.activeAgent.id, msgCount: 0, createdAt: Date.now() });
+  state.conversations.unshift({ id: id, title: (state.lang==="zh"?"新对话":"New Conversation"), agentId: state.activeAgent.id, msgCount: 0, createdAt: Date.now() });
   state.currentConvId = id;
   state.messages = [];
   state.tokenUsed = 0;
@@ -1176,7 +1342,7 @@ function switchConversation(convId) {
 function deleteConversation(convId, e) {
   e.stopPropagation();
   if (state.conversations.length <= 1) {
-    showToast("Cannot delete the last conversation", "error");
+    showToast(state.lang==="zh" ? "不能删除最后一个对话" : "Cannot delete the last conversation", "error");
     return;
   }
   state.conversations = state.conversations.filter(function(c){return c.id !== convId;});
@@ -1212,7 +1378,7 @@ function renderConvList() {
   list.innerHTML = state.conversations.map(function(c){
     var active = c.id === state.currentConvId ? " active" : "";
     return '<li class="conv-item' + active + '" onclick="switchConversation(\'' + c.id + '\')">' +
-      '<span class="conv-title">' + escapeHtml(c.title || "New Conversation") + '</span>' +
+      '<span class="conv-title">' + escapeHtml(c.title || (state.lang==="zh" ? "新对话" : "New Conversation")) + '</span>' +
       '<span class="conv-delete" onclick="deleteConversation(\'' + c.id + '\',event)">✕</span>' +
     '</li>';
   }).join("");
@@ -1229,6 +1395,7 @@ function renderSidebar() {
     if (!byLayer[a.layer]) byLayer[a.layer] = [];
     byLayer[a.layer].push(a);
   });
+  var isZh = state.lang === "zh";
   var html = "";
   for (var key in L) {
     var info = L[key];
@@ -1236,14 +1403,14 @@ function renderSidebar() {
     if (!agents || agents.length === 0) continue;
     html += '<div class="nav-section">';
     html += '<div class="nav-section-header" onclick="this.parentElement.classList.toggle(\'collapsed\')">' +
-      '<span class="dot" style="background:' + info.dot + '"></span>' + info.name + ' (' + agents.length + ')' +
+      '<span class="dot" style="background:' + info.dot + '"></span>' + (isZh ? info.nameZh : info.name) + ' (' + agents.length + ')' +
       '<span class="arrow">▼</span></div>';
     html += '<ul class="agent-list">';
     agents.forEach(function(a){
       var active = state.activeAgent.id === a.id ? " active" : "";
       html += '<li class="agent-item' + active + '" onclick="selectAgent(\'' + a.id + '\')">' +
         '<span class="emoji">' + a.emoji + '</span><span class="name">' + a.name + '</span>' +
-        (a.layer === "L1" ? '<span class="badge">Core</span>' : "") + '</li>';
+        (a.layer === "L1" ? '<span class="badge">' + (isZh ? '核心' : 'Core') + '</span>' : "") + '</li>';
     });
     html += '</ul></div>';
   }
@@ -1296,41 +1463,42 @@ function renderMessages() {
     try { if (typeof HOPEAI_KB !== "undefined") kbCount = "" + HOPEAI_KB.total; } catch(e) {}
     var sessionsCount = "0";
     try { if (typeof SelfLearning !== "undefined") sessionsCount = "" + SelfLearning.getStats().totalSessions; } catch(e) {}
+    var isZh = state.lang === "zh";
     container.innerHTML = '<div class="chat-welcome">' +
-      '<div class="logo-lg">H</div><h2>Welcome to HopeAgent Pro</h2>' +
-      '<p>' + TOTAL_AGENTS + ' AI agents ready across orchestration, delivery, foundation and governance layers. Describe your task and the orchestrator will auto-match the best agent.</p>' +
+      '<div class="logo-lg">H</div><h2>' + t("welcomeTitle") + '</h2>' +
+      '<p>' + (isZh ? ('共 ' + TOTAL_AGENTS + ' 个 AI 角色覆盖编排、交付、底座、治理四层架构。描述您的需求，调度官自动匹配最佳角色。') : (TOTAL_AGENTS + ' AI agents ready across orchestration, delivery, foundation and governance layers. Describe your task.')) + '</p>' +
       '<div class="splash-stats">' +
-        '<div class="splash-stat"><div class="num">' + TOTAL_AGENTS + '</div><div class="lbl">AI Agents</div></div>' +
-        '<div class="splash-stat"><div class="num">' + kbCount + '</div><div class="lbl">Knowledge</div></div>' +
-        '<div class="splash-stat"><div class="num">' + sessionsCount + '</div><div class="lbl">Sessions</div></div>' +
-        '<div class="splash-stat"><div class="num">4 Layers</div><div class="lbl">Architecture</div></div>' +
+        '<div class="splash-stat"><div class="num">' + TOTAL_AGENTS + '</div><div class="lbl">' + t("aiAgents") + '</div></div>' +
+        '<div class="splash-stat"><div class="num">' + kbCount + '</div><div class="lbl">' + t("knowledge") + '</div></div>' +
+        '<div class="splash-stat"><div class="num">' + sessionsCount + '</div><div class="lbl">' + t("sessions") + '</div></div>' +
+        '<div class="splash-stat"><div class="num">' + (isZh ? '4 层' : '4 Layers') + '</div><div class="lbl">' + t("layers") + '</div></div>' +
       '</div>' +
       '<div class="agent-grid">' +
         AGENTS.filter(function(a){return a.layer === "L1";}).map(function(a){
           return '<div class="agent-chip" onclick="selectAgent(\'' + a.id + '\')"><span class="emoji">' + a.emoji + '</span>' + a.name + '</div>';
         }).join("") +
       '</div>' +
-      '<p style="margin-top:20px;color:var(--muted);font-size:12px">Quick Actions:</p>' +
+      '<p style="margin-top:20px;color:var(--muted);font-size:12px">' + t("quickActions") + ':</p>' +
       '<div class="quick-actions">' +
-        '<button class="quick-action" onclick="quickAction(\'Write HTML code for a landing page\')">Landing Page</button>' +
-        '<button class="quick-action" onclick="quickAction(\'Write a product introduction copy\')">Product Copy</button>' +
-        '<button class="quick-action" onclick="quickAction(\'Optimize my code performance\')">Performance</button>' +
-        '<button class="quick-action" onclick="quickAction(\'Design a database schema\')">DB Schema</button>' +
-        '<button class="quick-action" onclick="quickAction(\'Audit code for security vulnerabilities\')">Security Audit</button>' +
-        '<button class="quick-action" onclick="quickAction(\'Design a REST API\')">API Design</button>' +
+        '<button class="quick-action" onclick="quickAction(\'Write HTML code for a landing page\')">' + t("landingPage") + '</button>' +
+        '<button class="quick-action" onclick="quickAction(\'Write a product introduction copy\')">' + t("productCopy") + '</button>' +
+        '<button class="quick-action" onclick="quickAction(\'Optimize my code performance\')">' + t("performance") + '</button>' +
+        '<button class="quick-action" onclick="quickAction(\'Design a database schema\')">' + t("dbSchema") + '</button>' +
+        '<button class="quick-action" onclick="quickAction(\'Audit code for security vulnerabilities\')">' + t("securityAudit") + '</button>' +
+        '<button class="quick-action" onclick="quickAction(\'Design a REST API\')">' + t("apiDesign") + '</button>' +
       '</div></div>';
   } else {
     var html = "";
     state.messages.forEach(function(msg, i){
       if (msg.type === "thinking" && msg.content) {
         html += '<div class="thinking-stream">' +
-          '<div class="thinking-header" onclick="toggleThinking(this)">🧠 Thinking...<span class="toggle">▼</span></div>' +
+          '<div class="thinking-header" onclick="toggleThinking(this)">🧠 ' + t("thinking_") + '<span class="toggle">▼</span></div>' +
           '<div class="thinking-content">' + escapeHtml(msg.content) + '</div></div>';
       } else if (msg.type === "agent" || msg.type === "user") {
         html += '<div class="message ' + msg.type + '">' +
           '<div class="msg-avatar">' + (msg.type === "user" ? "👤" : state.activeAgent.emoji) + '</div>' +
           '<div class="msg-content">' +
-            '<div class="msg-header">' + (msg.type === "user" ? (state.emotionalTone !== "neutral" ? '<span class="emotion-tag ' + state.emotionalTone + '">' + state.emotionalTone + '</span>' : "") + "You" : state.activeAgent.name) + '</div>' +
+            '<div class="msg-header">' + (msg.type === "user" ? (state.emotionalTone !== "neutral" ? '<span class="emotion-tag ' + state.emotionalTone + '">' + state.emotionalTone + '</span>' : "") + (state.lang==="zh"?"你":"You") : state.activeAgent.name) + '</div>' +
             '<div class="msg-body' + (msg.streaming ? ' streaming-cursor' : '') + '" ' + (msg.id ? 'id="' + msg.id + '"' : '') + '>' +
               formatContent(msg.content) +
             '</div>' +
@@ -1356,14 +1524,14 @@ function formatContent(text) {
   text = escapeHtml(text);
   text = text.replace(/```(\w*)\n([\s\S]*?)```/g, function(_, lang, code){
     var escaped = escapeHtml(code.trim());
-    var langDisplay = lang || "code";
+    var langDisplay = lang || (state.lang==="zh" ? "代码" : "code");
     var canPreview = /html|svg|md|markdown|css/i.test(langDisplay) || (!lang && /<!doctype|<html|<svg|<body/i.test(code));
     return '<div class="code-block"><div class="code-lang">' +
       '<span>' + langDisplay + '</span>' +
       '<div class="code-actions">' +
-        '<button class="btn-copy" onclick="copyCode(this,\'' + escaped.replace(/'/g,"\\'").replace(/"/g,"&quot;").replace(/`/g,"\\`") + '\')">Copy</button>' +
-        (canPreview ? '<button class="btn-download" onclick="openArtifactFromBlock(this)" style="background:rgba(34,211,238,.1);color:var(--accent2)">Preview</button>' : '') +
-        '<button class="btn-download" onclick="downloadCode(\'' + langDisplay + '\',\'' + escaped.replace(/'/g,"\\'").replace(/"/g,"&quot;").replace(/`/g,"\\`") + '\')">Download</button>' +
+        '<button class="btn-copy" onclick="copyCode(this,\'' + escaped.replace(/'/g,"\\'").replace(/"/g,"&quot;").replace(/`/g,"\\`") + '\')">' + (state.lang==="zh"?"复制":"Copy") + '</button>' +
+        (canPreview ? '<button class="btn-download" onclick="openArtifactFromBlock(this)" style="background:rgba(34,211,238,.1);color:var(--accent2)">' + (state.lang==="zh"?"预览":"Preview") + '</button>' : '') +
+        '<button class="btn-download" onclick="downloadCode(\'' + langDisplay + '\',\'' + escaped.replace(/'/g,"\\'").replace(/"/g,"&quot;").replace(/`/g,"\\`") + '\')">' + (state.lang==="zh"?"下载":"Download") + '</button>' +
       '</div></div><pre><code data-lang="' + langDisplay + '">' + escaped + '</code></pre></div>';
   });
   text = text.replace(/`([^`]+)`/g, '<code style="background:rgba(124,92,255,.15);color:#c4b5fd;padding:2px 6px;border-radius:4px;font-family:var(--font-mono);font-size:13px">$1</code>');
@@ -1645,7 +1813,7 @@ function toggleVoice() {
 function startVoice() {
   var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SpeechRecognition) {
-    showToast("Your browser does not support voice input", "error");
+    showToast(t("voiceUnsupported"), "error");
     return;
   }
   try {
@@ -1675,7 +1843,7 @@ function startVoice() {
     voiceRecognition.start();
     voiceActive = true;
     document.getElementById("voiceBtn").classList.add("listening");
-    showToast("Listening...", "success");
+    showToast(t("listening"), "success");
   } catch(e) {
     showToast("Failed to start voice input: " + e.message, "error");
   }
@@ -1732,14 +1900,14 @@ function saveTokenConfig() {
   saveState();
   updateTokenDisplay();
   closeModal();
-  showToast("Saved", "success");
+  showToast(t("saved"), "success");
 }
 
 function resetTokenUsage() {
   state.tokenUsed = 0;
   updateTokenDisplay();
   saveState();
-  showToast("Token usage reset", "success");
+  showToast(t("tokenReset"), "success");
 }
 
 function openSettings() {
@@ -1770,7 +1938,7 @@ function openSettings() {
     '</div>' +
     '<p style="color:var(--muted);margin-bottom:8px;font-size:12px">' + t("settingsInfo") + '</p>' +
     '<p style="color:var(--muted);margin-bottom:8px;font-size:12px">' + t("featuresList") + '</p>' +
-    '<p style="color:var(--muted);margin-bottom:16px;font-size:12px">Zero cost. GitHub Pages + localStorage.</p>' +
+    '<p style="color:var(--muted);margin-bottom:16px;font-size:12px">' + t("zeroCost") + '</p>' +
     '<button class="btn-danger" onclick="clearAllData()">' + t("clearData") + '</button>';
   document.getElementById("modalTitle").textContent = t("settingsHelp");
   document.getElementById("modalOverlay").style.display = "flex";
@@ -1812,7 +1980,7 @@ function renderCodeWorkspace() {
   document.getElementById("codeCount").textContent = state.codeFiles.length;
 
   if (state.codeFiles.length === 0) {
-    container.innerHTML = '<div class="cw-empty"><div class="big-icon">📁</div><p>No code files yet.</p><p style="font-size:12px;color:var(--muted)">Code blocks from agent responses will auto-collect here. Each language gets its own file.</p></div>';
+    container.innerHTML = '<div class="cw-empty"><div class="big-icon">📁</div><p>' + t("noCodeYet") + '.</p><p style="font-size:12px;color:var(--muted)">' + (state.lang==="zh"?"AI 角色回复中的代码块会自动收集到这里，按语言分类。":"Code blocks from agent responses auto-collect here, organized by language.") + '</p></div>';
     return;
   }
 
@@ -1882,7 +2050,7 @@ function clearCodeWorkspace() {
   document.getElementById("codeCount").textContent = "0";
   document.getElementById("cwContent").innerHTML = '<div class="cw-empty"><div class="big-icon">📁</div><p>Code workspace cleared.</p></div>';
   fullSave();
-  showToast("Code workspace cleared", "success");
+  showToast(t("cwCleared"), "success");
 }
 
 function clearAllData() {
@@ -1900,7 +2068,7 @@ function clearAllData() {
   renderMessages();
   renderConvList();
   closeModal();
-  showToast("All local data cleared", "success");
+  showToast(t("allCleared"), "success");
 }
 
 function closeModal(e) {
@@ -1986,55 +2154,57 @@ function displayKBEntries(entries) {
       '<h4>' + e.t + ' <span class="diff ' + (e.d===1?"easy":e.d===2?"med":"hard") + '">' + (diffMap[e.d]||"") + '</span></h4>' +
       '<div style="font-size:13px;color:var(--text);line-height:1.6">' + e.c + '</div>' +
       '<div class="tags">' + (e.g||[]).map(function(t){return '<span>' + t + '</span>';}).join("") + '<span style="color:var(--muted);margin-left:8px">' + e.l + '/' + e.s + '</span></div></div>';
-  }).join("") || '<p style="color:var(--muted);text-align:center;padding:40px">No matching entries</p>';
+  }).join("") || '<p style="color:var(--muted);text-align:center;padding:40px">' + (state.lang==="zh"?"没有匹配的知识条目":"No matching entries") + '</p>';
 }
 
 function renderLearnPanel() {
   if (typeof SelfLearning === "undefined") return;
   var s = SelfLearning.getStats();
   document.getElementById("learnScore").textContent = s.totalInteractions;
+  var isZh = state.lang === "zh";
   document.getElementById("learnMetrics").innerHTML =
-    '<div class="learn-metric"><div class="val">' + s.totalSessions + '</div><div class="lbl">Sessions</div></div>' +
-    '<div class="learn-metric"><div class="val">' + s.totalInteractions + '</div><div class="lbl">Interactions</div></div>' +
-    '<div class="learn-metric"><div class="val">' + s.totalInsights + '</div><div class="lbl">Insights</div></div>' +
-    '<div class="learn-metric"><div class="val">' + s.totalPatterns + '</div><div class="lbl">Patterns</div></div>' +
-    '<div class="learn-metric"><div class="val">' + s.learningRate + '</div><div class="lbl">Rate</div></div>' +
-    '<div class="learn-metric"><div class="val">' + s.helpfulRate + '%</div><div class="lbl">Helpful</div></div>' +
-    '<div class="learn-metric"><div class="val">' + s.peakUsageTime + '</div><div class="lbl">Peak</div></div>' +
-    '<div class="learn-metric"><div class="val">' + s.favoriteAgent + '</div><div class="lbl">Favorite</div></div>';
-  var html = "<h4 style='margin-bottom:10px'>Recent Insights</h4>";
+    '<div class="learn-metric"><div class="val">' + s.totalSessions + '</div><div class="lbl">' + (isZh ? '会话' : 'Sessions') + '</div></div>' +
+    '<div class="learn-metric"><div class="val">' + s.totalInteractions + '</div><div class="lbl">' + (isZh ? '交互' : 'Interactions') + '</div></div>' +
+    '<div class="learn-metric"><div class="val">' + s.totalInsights + '</div><div class="lbl">' + (isZh ? '洞察' : 'Insights') + '</div></div>' +
+    '<div class="learn-metric"><div class="val">' + s.totalPatterns + '</div><div class="lbl">' + (isZh ? '模式' : 'Patterns') + '</div></div>' +
+    '<div class="learn-metric"><div class="val">' + s.learningRate + '</div><div class="lbl">' + (isZh ? '速率' : 'Rate') + '</div></div>' +
+    '<div class="learn-metric"><div class="val">' + s.helpfulRate + '%</div><div class="lbl">' + (isZh ? '有用率' : 'Helpful') + '</div></div>' +
+    '<div class="learn-metric"><div class="val">' + s.peakUsageTime + '</div><div class="lbl">' + (isZh ? '高峰' : 'Peak') + '</div></div>' +
+    '<div class="learn-metric"><div class="val">' + s.favoriteAgent + '</div><div class="lbl">' + (isZh ? '最爱' : 'Favorite') + '</div></div>';
+  var html = "<h4 style='margin-bottom:10px'>" + (isZh ? '最近洞察' : 'Recent Insights') + "</h4>";
   if (s.recentInsights.length > 0) {
     s.recentInsights.forEach(function(ins){
       html += '<div class="kb-entry"><h4>' + ins.title + '</h4><p style="font-size:13px">' + ins.message + '</p></div>';
     });
   } else {
-    html += "<p style='color:var(--muted)'>Keep conversing to generate insights...</p>";
+    html += "<p style='color:var(--muted)'>" + (isZh ? '继续对话以生成洞察...' : 'Keep conversing to generate insights...') + "</p>";
   }
-  html += "<h4 style='margin:16px 0 10px'>Suggestions</h4>";
-  html += '<div class="kb-entry"><p style="font-size:13px">The system learns from your usage patterns to recommend knowledge, match agents, and optimize workflows.</p></div>';
+  html += "<h4 style='margin:16px 0 10px'>" + (isZh ? '建议' : 'Suggestions') + "</h4>";
+  html += '<div class="kb-entry"><p style="font-size:13px">' + (isZh ? '系统从您的使用模式中学习，推荐知识、匹配角色并优化工作流。' : 'The system learns from your usage patterns to recommend knowledge, match agents, and optimize workflows.') + '</p></div>';
   document.getElementById("learnInsights").innerHTML = html;
 }
 
 function renderEvoPanel() {
+  var isZh = state.lang === "zh";
   document.getElementById("chat-container").style.display = "block";
   document.getElementById("chat-container").innerHTML = '<div style="padding:24px;max-width:800px;margin:0 auto">' +
-    '<h2 style="margin-bottom:16px">Six Evolution Directions</h2>' +
-    '<div class="evo-direction"><h4>1. Scale: 75+ → Hundreds/Thousands of Dynamic Agents</h4><p class="evo-tech">Dynamic agent generation · Role template engine · Lifecycle management</p><p class="evo-tools">OSS: LangGraph, CrewAI, AutoGen | Data: Weaviate, Qdrant, pgvector</p></div>' +
-    '<div class="evo-direction"><h4>2. Intelligence: Single Orchestrator → Parliament → Meta-Governance</h4><p class="evo-tech">ReAct/Plan-and-Execute · Collective decision · Voting mechanisms</p><p class="evo-tools">OSS: MS Agent Framework, OpenAI Agents SDK, Google ADK | Data: Neo4j, KuzuDB</p></div>' +
-    '<div class="evo-direction"><h4>3. Architecture: Static 4-Layer → Liquid Topology → Cross-Platform Federation</h4><p class="evo-tech">A2A Protocol · MCP Tool Standard · Event-driven orchestration</p><p class="evo-tools">OSS: Google A2A (150+ orgs), MCP (10+ language SDKs), LangGraph | Data: Redis, SQLite</p></div>' +
-    '<div class="evo-direction"><h4>4. Economy: Token Counting → Internal Settlement → Stake Governance</h4><p class="evo-tech">Token economy contracts · Internal billing · Cost tracking · Budget breaker</p><p class="evo-tools">OSS: Custom implementation needed | Data: SQLite (lightweight), Redis (real-time)</p></div>' +
-    '<div class="evo-direction"><h4>5. Interaction: Manual Role Selection → Auto-Match → Invisible Service</h4><p class="evo-tech">Context awareness · Intent prediction · Continuous memory · Embedded integration</p><p class="evo-tools">OSS: Mem0, LangMem, Cognee, Zep | Data: LanceDB, Chroma</p></div>' +
-    '<div class="evo-direction"><h4>6. Digital Lifeform: Self-Diagnose/Repair/Reproduce/Evolve</h4><p class="evo-tech">Self-monitoring · Self-healing · Meta-learning · Autonomous optimization</p><p class="evo-tools">OSS: Letta, Deep Agents, LangSmith | Data: Chroma, SQLite</p></div>' +
-    '<h3 style="margin:20px 0 12px">Live Self-Evolution Log (v7)</h3>' +
+    '<h2 style="margin-bottom:16px">' + (isZh ? '六大进化方向' : 'Six Evolution Directions') + '</h2>' +
+    '<div class="evo-direction"><h4>1. ' + t("evoScale") + ': ' + (isZh ? '75+ → 数百/数千动态 Agent' : '75+ → Hundreds/Thousands of Dynamic Agents') + '</h4><p class="evo-tech">' + (isZh ? '动态角色生成 · 角色模板引擎 · 生命周期管理' : 'Dynamic agent generation · Role template engine · Lifecycle management') + '</p><p class="evo-tools">OSS: LangGraph, CrewAI, AutoGen | Data: Weaviate, Qdrant, pgvector</p></div>' +
+    '<div class="evo-direction"><h4>2. ' + t("evoIntelligence") + ': ' + (isZh ? '单调度官 → 国会 → Meta-治理' : 'Single Orchestrator → Parliament → Meta-Governance') + '</h4><p class="evo-tech">ReAct/Plan-and-Execute · Collective decision · Voting mechanisms</p><p class="evo-tools">OSS: MS Agent Framework, OpenAI Agents SDK, Google ADK | Data: Neo4j, KuzuDB</p></div>' +
+    '<div class="evo-direction"><h4>3. ' + t("evoArch") + ': ' + (isZh ? '静态四层 → 液态拓扑 → 跨平台联邦' : 'Static 4-Layer → Liquid Topology → Cross-Platform Federation') + '</h4><p class="evo-tech">A2A Protocol · MCP Tool Standard · Event-driven orchestration</p><p class="evo-tools">OSS: Google A2A (150+ orgs), MCP (10+ language SDKs), LangGraph | Data: Redis, SQLite</p></div>' +
+    '<div class="evo-direction"><h4>4. ' + t("evoEconomy") + ': ' + (isZh ? 'Token 计数 → 内部结算 → 权益治理' : 'Token Counting → Internal Settlement → Stake Governance') + '</h4><p class="evo-tech">' + (isZh ? 'Token 经济合约 · 内部计费 · 成本追踪 · 预算控制' : 'Token economy contracts · Internal billing · Cost tracking · Budget breaker') + '</p><p class="evo-tools">' + (isZh ? 'OSS: 需自定义实现 | Data: SQLite (轻量), Redis (实时)' : 'OSS: Custom implementation needed | Data: SQLite (lightweight), Redis (real-time)') + '</p></div>' +
+    '<div class="evo-direction"><h4>5. ' + t("evoInteraction") + ': ' + (isZh ? '手动选择 → 自动匹配 → 无感服务' : 'Manual Role Selection → Auto-Match → Invisible Service') + '</h4><p class="evo-tech">' + (isZh ? '上下文感知 · 意图预测 · 持续记忆 · 嵌入式集成' : 'Context awareness · Intent prediction · Continuous memory · Embedded integration') + '</p><p class="evo-tools">OSS: Mem0, LangMem, Cognee, Zep | Data: LanceDB, Chroma</p></div>' +
+    '<div class="evo-direction"><h4>6. ' + t("evoLife") + ': ' + (isZh ? '自我诊断/修复/复制/进化' : 'Self-Diagnose/Repair/Reproduce/Evolve') + '</h4><p class="evo-tech">' + (isZh ? '自我监控 · 自我修复 · Meta-learning · 自主优化' : 'Self-monitoring · Self-healing · Meta-learning · Autonomous optimization') + '</p><p class="evo-tools">OSS: Letta, Deep Agents, LangSmith | Data: Chroma, SQLite</p></div>' +
+    '<h3 style="margin:20px 0 12px">' + (isZh ? '实时进化日志 (v7)' : 'Live Self-Evolution Log (v7)') + '</h3>' +
     '<div style="background:var(--card);border-radius:8px;padding:12px;max-height:200px;overflow-y:auto;font-size:11px;font-family:monospace">' +
-      (state.auditLog.length === 0 ? '<span style="color:var(--muted)">No events yet. Start chatting to generate evolution data.</span>' :
+      (state.auditLog.length === 0 ? '<span style="color:var(--muted)">' + (isZh ? '暂无事件。开始聊天以生成进化数据。' : 'No events yet. Start chatting to generate evolution data.') + '</span>' :
       state.auditLog.slice(0,20).map(function(e){
         var time = new Date(e.time).toLocaleTimeString();
         var icon = e.action === "response" ? "✅" : e.action === "error" ? "❌" : e.action === "rated_good" ? "👍" : e.action === "rated_bad" ? "👎" : e.action === "cache_hit" ? "💾" : "📌";
         return time + ' ' + icon + ' [' + e.action + '] ' + escapeHtml(e.detail || "");
       }).join('<br>')) +
     '</div>' +
-    '<h3 style="margin:16px 0 12px">Key Standards</h3>' +
+    '<h3 style="margin:16px 0 12px">' + (isZh ? '关键标准' : 'Key Standards') + '</h3>' +
     '<div style="display:flex;flex-wrap:wrap;gap:8px">' +
       '<span class="agent-chip">A2A Protocol (Google)</span>' +
       '<span class="agent-chip">MCP (Anthropic)</span>' +
@@ -2118,26 +2288,27 @@ function getAttachedContent() {
 
 // ── SOP / Marketplace ──
 var MARKET_SOPS = [
-  { id:"fullstack-web", name:"Full-Stack Web App", desc:"Orchestrator → UI Designer → Code Artisan → Test Engineer → DevOps Deployer", steps:["Intent analysis & requirement clarification","UI/UX design proposal","Full-stack code generation with tests","Security audit & performance optimization","CI/CD deployment pipeline setup"], emoji:"🌐", price:5000, tags:["web","fullstack","deploy"] },
-  { id:"api-migration", name:"API Migration Project", desc:"API Architect → Backend Engineer → Test Engineer → Tech Writer", steps:["Existing API audit & gap analysis","Database schema migration planning","New API implementation with backward compat","Automated regression test suite","OpenAPI documentation generation"], emoji:"🔌", price:3800, tags:["api","migration","backend"] },
-  { id:"security-audit-pack", name:"Security Audit Suite", desc:"Security Auditor → Vulnerability Scanner → Compliance Officer → Audit Trail", steps:["Dependency vulnerability scan (SCA)","SAST static code analysis","Penetration test plan execution","Compliance report (GDPR/SOC2)","Remediation tracking & verification"], emoji:"🔐", price:6000, tags:["security","audit","compliance"] },
-  { id:"data-pipeline", name:"Data Pipeline Builder", desc:"Lakehouse Architect → ETL Engineer → Data Quality Monitor → Dataviz Designer", steps:["Data source inventory & schema design","ETL pipeline implementation","Data quality rules & monitoring","Dashboard & visualization","Scheduled pipeline with alerting"], emoji:"🗄️", price:4500, tags:["data","etl","pipeline"] },
-  { id:"mobile-app-pack", name:"Mobile App Launch", desc:"Mobile Architect → Frontend Designer → Backend Engineer → Test Engineer", steps:["Mobile UX wireframe & prototype","Cross-platform frontend (React Native/Flutter)","Backend API for mobile","Device testing matrix execution","App store submission prep"], emoji:"📱", price:5500, tags:["mobile","app","cross-platform"] },
-  { id:"rag-setup", name:"RAG Knowledge Engine", desc:"RAG Specialist → VectorDB Operator → Embedding Tuner → Full-text Engineer", steps:["Knowledge source analysis & chunking strategy","Vector DB setup & index optimization","Embedding model selection & fine-tuning","Hybrid search (vector+BM25) pipeline","Reranking & evaluation benchmark"], emoji:"🔎", price:4200, tags:["rag","vector","search"] },
-  { id:"devops-greenfield", name:"DevOps Greenfield Setup", desc:"DevOps Deployer → Cloud Native Architect → Harness Engineer → CI Guardian", steps:["Infrastructure-as-Code (Terraform/Pulumi)","Container orchestration (K8s/Nomad)","CI/CD pipeline with quality gates","Observability stack (logs/metrics/traces)","Disaster recovery & runbook"], emoji:"🚀", price:7000, tags:["devops","infra","cloud"] }
+  { id:"fullstack-web", name:"Full-Stack Web App", nameZh:"全栈 Web 应用", desc:"Orchestrator → UI Designer → Code Artisan → Test Engineer → DevOps Deployer", descZh:"调度官 → UI设计师 → 代码工匠 → 测试工程师 → DevOps部署", steps:["Intent analysis & requirement clarification","UI/UX design proposal","Full-stack code generation with tests","Security audit & performance optimization","CI/CD deployment pipeline setup"], stepsZh:["意图分析与需求澄清","UI/UX 设计方案","全栈代码生成与测试","安全审计与性能优化","CI/CD 部署管线搭建"], emoji:"🌐", price:5000, tags:["web","fullstack","deploy"] },
+  { id:"api-migration", name:"API Migration Project", nameZh:"API 迁移项目", desc:"API Architect → Backend Engineer → Test Engineer → Tech Writer", descZh:"API架构师 → 后端工程师 → 测试工程师 → 技术文档", steps:["Existing API audit & gap analysis","Database schema migration planning","New API implementation with backward compat","Automated regression test suite","OpenAPI documentation generation"], stepsZh:["已有API审计与差异分析","数据库Schema迁移规划","新API实现(向后兼容)","自动化回归测试","OpenAPI文档生成"], emoji:"🔌", price:3800, tags:["api","migration","backend"] },
+  { id:"security-audit-pack", name:"Security Audit Suite", nameZh:"安全审计套件", desc:"Security Auditor → Vulnerability Scanner → Compliance Officer → Audit Trail", descZh:"安全审计师 → 漏洞扫描 → 合规官 → 审计追踪", steps:["Dependency vulnerability scan (SCA)","SAST static code analysis","Penetration test plan execution","Compliance report (GDPR/SOC2)","Remediation tracking & verification"], stepsZh:["依赖漏洞扫描(SCA)","SAST静态代码分析","渗透测试执行","合规报告(GDPR/SOC2)","修复追踪与验证"], emoji:"🔐", price:6000, tags:["security","audit","compliance"] },
+  { id:"data-pipeline", name:"Data Pipeline Builder", nameZh:"数据管线构建器", desc:"Lakehouse Architect → ETL Engineer → Data Quality Monitor → Dataviz Designer", descZh:"湖仓架构师 → ETL工程师 → 数据质量监控 → 可视化设计师", steps:["Data source inventory & schema design","ETL pipeline implementation","Data quality rules & monitoring","Dashboard & visualization","Scheduled pipeline with alerting"], stepsZh:["数据源盘点与Schema设计","ETL管线实现","数据质量规则与监控","仪表盘与可视化","计划管线与告警"], emoji:"🗄️", price:4500, tags:["data","etl","pipeline"] },
+  { id:"mobile-app-pack", name:"Mobile App Launch", nameZh:"移动应用发布", desc:"Mobile Architect → Frontend Designer → Backend Engineer → Test Engineer", descZh:"移动架构师 → 前端设计师 → 后端工程师 → 测试工程师", steps:["Mobile UX wireframe & prototype","Cross-platform frontend (React Native/Flutter)","Backend API for mobile","Device testing matrix execution","App store submission prep"], stepsZh:["移动UX线框与原型","跨平台前端(React Native/Flutter)","移动后端API","设备测试矩阵执行","应用商店提交准备"], emoji:"📱", price:5500, tags:["mobile","app","cross-platform"] },
+  { id:"rag-setup", name:"RAG Knowledge Engine", nameZh:"RAG 知识引擎", desc:"RAG Specialist → VectorDB Operator → Embedding Tuner → Full-text Engineer", descZh:"RAG专家 → 向量库运维 → 嵌入调优 → 全文检索引擎", steps:["Knowledge source analysis & chunking strategy","Vector DB setup & index optimization","Embedding model selection & fine-tuning","Hybrid search (vector+BM25) pipeline","Reranking & evaluation benchmark"], stepsZh:["知识源分析与分块策略","向量库搭建与索引优化","嵌入模型选择与微调","混合检索(向量+BM25)","重排序与评估基准"], emoji:"🔎", price:4200, tags:["rag","vector","search"] },
+  { id:"devops-greenfield", name:"DevOps Greenfield Setup", nameZh:"DevOps 基础设施搭建", desc:"DevOps Deployer → Cloud Native Architect → Harness Engineer → CI Guardian", descZh:"DevOps部署 → 云原生架构师 → Harness工程师 → CI守护者", steps:["Infrastructure-as-Code (Terraform/Pulumi)","Container orchestration (K8s/Nomad)","CI/CD pipeline with quality gates","Observability stack (logs/metrics/traces)","Disaster recovery & runbook"], stepsZh:["基础设施即代码(Terraform/Pulumi)","容器编排(K8s/Nomad)","CI/CD管线(含质量门禁)","可观测性栈(日志/指标/追踪)","灾难恢复与操作手册"], emoji:"🚀", price:7000, tags:["devops","infra","cloud"] }
 ];
 
 function renderMarketplace() {
-  document.getElementById("marketContent").innerHTML = '<h4 style="margin-bottom:12px">Pre-built SOP Skill Packs</h4><p style="color:var(--muted);margin-bottom:16px;font-size:13px">One-click deploy complete agent workflows. Each pack orchestrates 3-5 specialized agents in a proven sequence.</p>' +
+  var isZh = state.lang === "zh";
+  document.getElementById("marketContent").innerHTML = '<h4 style="margin-bottom:12px">' + (isZh ? '预置 SOP 技能包' : 'Pre-built SOP Skill Packs') + '</h4><p style="color:var(--muted);margin-bottom:16px;font-size:13px">' + (isZh ? '一键部署完整的 Agent 工作流。每个包编排 3-5 个专业 Agent 形成经过验证的执行序列。' : 'One-click deploy complete agent workflows. Each pack orchestrates 3-5 specialized agents in a proven sequence.') + '</p>' +
     '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px">' +
     MARKET_SOPS.map(function(sop){
       return '<div class="evo-direction" style="cursor:pointer" onclick="deploySOP(\'' + sop.id + '\')">' +
-        '<h4>' + sop.emoji + ' ' + sop.name + '</h4>' +
-        '<p style="font-size:12px;color:var(--muted);margin:4px 0">' + sop.desc + '</p>' +
-        '<div style="font-size:11px;color:var(--green);margin-top:6px">Steps: ' + sop.steps.map(function(s,i){return (i+1)+'. '+s;}).join(' → ') + '</div>' +
+        '<h4>' + sop.emoji + ' ' + (isZh && sop.nameZh ? sop.nameZh : sop.name) + '</h4>' +
+        '<p style="font-size:12px;color:var(--muted);margin:4px 0">' + (isZh && sop.descZh ? sop.descZh : sop.desc) + '</p>' +
+        '<div style="font-size:11px;color:var(--green);margin-top:6px">' + (isZh ? '步骤: ' : 'Steps: ') + (isZh && sop.stepsZh ? sop.stepsZh : sop.steps).map(function(s,i){return (i+1)+'. '+s;}).join(' → ') + '</div>' +
         '<div style="display:flex;align-items:center;gap:10px;margin-top:10px">' +
-          '<span style="font-size:16px;font-weight:700;color:var(--accent2)">' + formatNumber(sop.price) + ' tokens</span>' +
-          '<span style="font-size:11px;color:var(--muted)">est.</span>' +
+          '<span style="font-size:16px;font-weight:700;color:var(--accent2)">' + formatNumber(sop.price) + (isZh ? ' tokens' : ' tokens') + '</span>' +
+          '<span style="font-size:11px;color:var(--muted)">' + (isZh ? '预估' : 'est.') + '</span>' +
           sop.tags.map(function(t){return '<span style="font-size:10px;background:rgba(124,92,255,.1);padding:2px 8px;border-radius:8px">'+t+'</span>';}).join("") +
         '</div>' +
       '</div>';
@@ -2147,12 +2318,14 @@ function renderMarketplace() {
 function deploySOP(id) {
   var sop = MARKET_SOPS.find(function(s){return s.id===id;});
   if (!sop) return;
-  requestConfirmation("Deploy SOP \"" + sop.name + "\"?\nThis will trigger a " + sop.steps.length + "-step agent workflow.\nEstimated cost: " + formatNumber(sop.price) + " tokens.", function(){
+  var isZh = state.lang === "zh";
+  var sopName = isZh && sop.nameZh ? sop.nameZh : sop.name;
+  requestConfirmation((isZh ? '部署 SOP "' : 'Deploy SOP "') + sopName + (isZh ? '"?\n这将触发一个 ' : '"?\nThis will trigger a ') + sop.steps.length + (isZh ? ' 步的 Agent 工作流。\n预估费用: ' : '-step agent workflow.\nEstimated cost: ') + formatNumber(sop.price) + ' tokens.', function(){
     var msg = "Execute SOP: " + sop.name + "\nAgent chain: " + sop.desc + "\nSteps:\n" + sop.steps.map(function(s,i){return (i+1)+". "+s;}).join("\n") + "\n\nStart from step 1.";
     document.getElementById("userInput").value = msg;
     switchTab("chat");
     sendMessage();
-    showToast("SOP deployed: " + sop.name, "success");
+  showToast(t("deployed") + ": " + sop.name, "success");
   });
 }
 
@@ -2262,31 +2435,33 @@ function renderBillingPanel() {
   var costIn = (estIn/1000) * rate.in;
   var costOut = (estOut/1000) * rate.out;
   var totalCost = costIn + costOut;
+  var isZh = state.lang === "zh";
   var html = '<div class="learn-metrics" style="margin-bottom:16px">' +
-    '<div class="learn-metric"><div class="val">' + formatNumber(state.tokenUsed) + '</div><div class="lbl">Total Tokens</div></div>' +
-    '<div class="learn-metric"><div class="val">$' + totalCost.toFixed(4) + '</div><div class="lbl">Est. Cost (USD)</div></div>' +
-    '<div class="learn-metric"><div class="val">' + (state.tokenLimit ? (state.tokenUsed/state.tokenLimit*100).toFixed(1)+'%' : '∞') + '</div><div class="lbl">Quota Used</div></div>' +
-    '<div class="learn-metric"><div class="val">' + model + '</div><div class="lbl">Current Model</div></div>' +
+    '<div class="learn-metric"><div class="val">' + formatNumber(state.tokenUsed) + '</div><div class="lbl">' + (isZh ? '总Token' : 'Total Tokens') + '</div></div>' +
+    '<div class="learn-metric"><div class="val">$' + totalCost.toFixed(4) + '</div><div class="lbl">' + (isZh ? '估算费用(USD)' : 'Est. Cost (USD)') + '</div></div>' +
+    '<div class="learn-metric"><div class="val">' + (state.tokenLimit ? (state.tokenUsed/state.tokenLimit*100).toFixed(1)+'%' : '∞') + '</div><div class="lbl">' + (isZh ? '配额使用' : 'Quota Used') + '</div></div>' +
+    '<div class="learn-metric"><div class="val">' + model + '</div><div class="lbl">' + (isZh ? '当前模型' : 'Current Model') + '</div></div>' +
   '</div>' +
-  '<h4 style="margin-bottom:10px">Rate Card ($/1M tokens)</h4>' +
+  '<h4 style="margin-bottom:10px">' + (isZh ? '费率卡 ($/百万 Token)' : 'Rate Card ($/1M tokens)') + '</h4>' +
   '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px">';
   for (var m in BILLING_RATES) {
     var r = BILLING_RATES[m];
     var active = m===model;
     html += '<div class="kb-entry" style="' + (active?'border-color:var(--accent);background:var(--bg2)':'') + '">' +
-      '<strong style="font-size:13px">' + m + (active?' <span style="color:var(--green);font-size:10px">(active)</span>':'') + '</strong>' +
-      '<div style="font-size:11px;color:var(--muted);margin-top:4px">Input: $' + r.in.toFixed(2) + ' | Output: $' + r.out.toFixed(2) + '</div>' +
-      '<div style="font-size:10px;color:var(--accent2);margin-top:2px">~$' + ((r.in+r.out)/2).toFixed(2) + '/M avg</div>' +
+      '<strong style="font-size:13px">' + m + (active?' <span style="color:var(--green);font-size:10px">(' + (isZh ? '当前' : 'active') + ')</span>':'') + '</strong>' +
+      '<div style="font-size:11px;color:var(--muted);margin-top:4px">' + (isZh ? '输入: $' : 'Input: $') + r.in.toFixed(2) + (isZh ? ' | 输出: $' : ' | Output: $') + r.out.toFixed(2) + '</div>' +
+      '<div style="font-size:10px;color:var(--accent2);margin-top:2px">' + (isZh ? '~$' : '~$') + ((r.in+r.out)/2).toFixed(2) + (isZh ? '/M 均价' : '/M avg') + '</div>' +
     '</div>';
   }
   html += '</div>' +
-    '<p style="color:var(--muted);font-size:11px;margin-top:12px">Billing simulation. Actual costs depend on provider. HopeAgent Pro is free — you only pay your own API key usage.</p>';
+    '<p style="color:var(--muted);font-size:11px;margin-top:12px">' + (isZh ? '计费模拟。实际费用取决于服务商。HopeAgent Pro 免费 — 您只需支付自己的 API Key 费用。' : 'Billing simulation. Actual costs depend on provider. HopeAgent Pro is free — you only pay your own API key usage.') + '</p>';
   document.getElementById("billContent").innerHTML = html;
 }
 
 // ── System Monitoring Dashboard ──
 function renderMonitorPanel() {
   var agentsOnline = 74;
+  var isZh = state.lang === "zh";
   if (typeof SelfLearning !== "undefined") {
     var s = SelfLearning.getStats();
     var healthScore = Math.min(99, 70 + (s.helpfulRate||0) * 0.3);
@@ -2302,46 +2477,46 @@ function renderMonitorPanel() {
   var avgMsgScore = state.failureCases.length > 0 ? Math.max(30, Math.round(100 - totalFailures * 3)) + "%" : "100%";
   document.getElementById("monitorContent").innerHTML =
     '<div class="learn-metrics" style="margin-bottom:16px">' +
-      '<div class="learn-metric"><div class="val" style="color:' + (healthScore>80?'var(--green)':healthScore>50?'var(--amber)':'var(--red)') + '">' + healthScore + '%</div><div class="lbl">System Health</div></div>' +
-      '<div class="learn-metric"><div class="val">' + agentsOnline + '/75</div><div class="lbl">Agents Online</div></div>' +
-      '<div class="learn-metric"><div class="val">' + avgLatency + 'ms</div><div class="lbl">Avg Latency</div></div>' +
-      '<div class="learn-metric"><div class="val">' + formatNumber(state.tokenUsed) + '</div><div class="lbl">Tokens Used</div></div>' +
-      '<div class="learn-metric"><div class="val">99.9%</div><div class="lbl">Uptime</div></div>' +
-      '<div class="learn-metric"><div class="val">4/4</div><div class="lbl">Layers Active</div></div>' +
+      '<div class="learn-metric"><div class="val" style="color:' + (healthScore>80?'var(--green)':healthScore>50?'var(--amber)':'var(--red)') + '">' + healthScore + '%</div><div class="lbl">' + (isZh ? '系统健康' : 'System Health') + '</div></div>' +
+      '<div class="learn-metric"><div class="val">' + agentsOnline + '/75</div><div class="lbl">' + (isZh ? '在线Agent' : 'Agents Online') + '</div></div>' +
+      '<div class="learn-metric"><div class="val">' + avgLatency + 'ms</div><div class="lbl">' + (isZh ? '平均延迟' : 'Avg Latency') + '</div></div>' +
+      '<div class="learn-metric"><div class="val">' + formatNumber(state.tokenUsed) + '</div><div class="lbl">' + (isZh ? 'Token消耗' : 'Tokens Used') + '</div></div>' +
+      '<div class="learn-metric"><div class="val">99.9%</div><div class="lbl">' + (isZh ? '运行时间' : 'Uptime') + '</div></div>' +
+      '<div class="learn-metric"><div class="val">4/4</div><div class="lbl">' + (isZh ? '活跃层' : 'Layers Active') + '</div></div>' +
     '</div>' +
-    '<h4 style="margin-bottom:10px">Prompt Evolution (v7)</h4>' +
+    '<h4 style="margin-bottom:10px">' + (isZh ? 'Prompt 进化 (v7)' : 'Prompt Evolution (v7)') + '</h4>' +
     '<div style="display:flex;gap:12px;margin-bottom:16px">' +
-      '<div class="learn-metric"><div class="val">' + versionCount + '</div><div class="lbl">Snapshots</div></div>' +
-      '<div class="learn-metric"><div class="val" style="color:' + (cacheRate>30?'var(--green)':'var(--muted)') + '">' + cacheRate + '%</div><div class="lbl">Cache Rate</div></div>' +
-      '<div class="learn-metric"><div class="val" style="color:' + (totalFailures<3?'var(--green)':totalFailures<8?'var(--amber)':'var(--red)') + '">' + totalFailures + '</div><div class="lbl">Failures</div></div>' +
-      '<div class="learn-metric"><div class="val">' + avgMsgScore + '</div><div class="lbl">Quality Score</div></div>' +
+      '<div class="learn-metric"><div class="val">' + versionCount + '</div><div class="lbl">' + (isZh ? '快照' : 'Snapshots') + '</div></div>' +
+      '<div class="learn-metric"><div class="val" style="color:' + (cacheRate>30?'var(--green)':'var(--muted)') + '">' + cacheRate + '%</div><div class="lbl">' + (isZh ? '缓存命中' : 'Cache Rate') + '</div></div>' +
+      '<div class="learn-metric"><div class="val" style="color:' + (totalFailures<3?'var(--green)':totalFailures<8?'var(--amber)':'var(--red)') + '">' + totalFailures + '</div><div class="lbl">' + (isZh ? '失败数' : 'Failures') + '</div></div>' +
+      '<div class="learn-metric"><div class="val">' + avgMsgScore + '</div><div class="lbl">' + (isZh ? '质量分' : 'Quality Score') + '</div></div>' +
     '</div>' +
-    '<h4 style="margin:16px 0 10px">ROI Estimator</h4>' +
+    '<h4 style="margin:16px 0 10px">' + (isZh ? 'ROI 估算' : 'ROI Estimator') + '</h4>' +
     '<div style="display:flex;gap:12px;margin-bottom:16px">' +
-      '<div class="learn-metric"><div class="val">' + roi.hours + 'h</div><div class="lbl">Hours Saved</div></div>' +
-      '<div class="learn-metric"><div class="val">$' + roi.saved + '</div><div class="lbl">Value Saved</div></div>' +
-      '<div class="learn-metric"><div class="val">$' + roi.cost + '</div><div class="lbl">API Cost</div></div>' +
+      '<div class="learn-metric"><div class="val">' + roi.hours + 'h</div><div class="lbl">' + (isZh ? '节省小时' : 'Hours Saved') + '</div></div>' +
+      '<div class="learn-metric"><div class="val">$' + roi.saved + '</div><div class="lbl">' + (isZh ? '节省价值' : 'Value Saved') + '</div></div>' +
+      '<div class="learn-metric"><div class="val">$' + roi.cost + '</div><div class="lbl">' + (isZh ? 'API费用' : 'API Cost') + '</div></div>' +
       '<div class="learn-metric"><div class="val" style="color:var(--green)">' + roi.roi + '%</div><div class="lbl">ROI</div></div>' +
     '</div>' +
-    (totalFailures > 0 ? '<h4 style="margin:16px 0 10px">Failure Patterns</h4>' +
+    (totalFailures > 0 ? '<h4 style="margin:16px 0 10px">' + (isZh ? '失败模式分析' : 'Failure Patterns') + '</h4>' +
     '<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">' +
       Object.keys(failuresByType).map(function(k){
         return '<span style="background:var(--card);padding:4px 10px;border-radius:12px;font-size:11px">' + k + ': ' + failuresByType[k] + '</span>';
       }).join("") +
     '</div>' : '') +
-    (state.failureCases.length > 0 ? '<h4 style="margin:16px 0 10px">Recent Failures</h4>' +
+    (state.failureCases.length > 0 ? '<h4 style="margin:16px 0 10px">' + (isZh ? '最近失败' : 'Recent Failures') + '</h4>' +
     '<div style="max-height:120px;overflow-y:auto;font-size:11px;color:var(--muted)">' +
       state.failureCases.slice(0,5).map(function(f){
         var score = getMemoryScore(f);
         return '<div style="padding:4px 8px;margin:4px 0;background:var(--card);border-radius:6px;border-left:3px solid ' + (score>60?'var(--green)':score>30?'var(--amber)':'var(--red)') + '">' +
           '<span style="font-weight:600;text-transform:uppercase;font-size:10px">' + f.pattern + '</span> ' +
           '<span style="opacity:.6;margin-left:8px">' + new Date(f.time).toLocaleTimeString() + '</span> ' +
-          '<span style="opacity:.4">Score:' + score + '</span>' +
+          (isZh ? '<span style="opacity:.4">评分:' : '<span style="opacity:.4">Score:') + score + '</span>' +
           '<div>' + escapeHtml(f.snippet.slice(0,120)) + '...</div>' +
         '</div>';
       }).join("") +
     '</div>' : '') +
-    '<h4 style="margin:16px 0 10px">Agent Layer Status</h4>' +
+    '<h4 style="margin:16px 0 10px">' + (isZh ? 'Agent层级状态' : 'Agent Layer Status') + '</h4>' +
     '<div style="display:flex;flex-direction:column;gap:8px">' +
       ['L1','L2','L3','L4'].map(function(l){
         var layerAgents = AGENTS.filter(function(a){return a.layer===l;}).length;
@@ -2358,7 +2533,7 @@ function renderMonitorPanel() {
         '</div>';
       }).join("") +
     '</div>' +
-    '<p style="color:var(--muted);font-size:11px;margin-top:20px">v7 Self-Evolution Dashboard. Real deployment: OpenTelemetry + Grafana + RLHF pipeline.</p>';
+    '<p style="color:var(--muted);font-size:11px;margin-top:20px">' + (isZh ? 'v7 自进化仪表盘。真实部署: OpenTelemetry + Grafana + RLHF 管线。' : 'v7 Self-Evolution Dashboard. Real deployment: OpenTelemetry + Grafana + RLHF pipeline.') + '</p>';
 }
 
 // ── v7: Self-Evolution Engine ──
@@ -2475,26 +2650,33 @@ function renderACIPanel() {
   var st = state.taskPlan;
   var blocks = state.skillBlocks;
   var hasParallel = state.parallelAgents.length > 0;
+  var isZh = state.lang === "zh";
+  var zh = {idle:"空闲",running:"运行中",done:"完成",steps:"步骤",status:"状态",progress:"进度",skillBlocks:"技能模块",subAgents:"子Agent",attribs:"归因"};
+  var en = {idle:"idle",running:"running",done:"done",steps:"Steps",status:"Status",progress:"Progress",skillBlocks:"Skill Blocks",subAgents:"Sub-Agents",attribs:"Attributions"};
+  var L = isZh ? zh : en;
+  var statLabel = st.status === "done" ? L.done : st.status === "running" ? L.running : L.idle;
+  var statColor = st.status === "done" ? "var(--green)" : st.status === "running" ? "var(--amber)" : "var(--muted)";
+  var ppVal = st.current + 1 < 0 ? 0 : st.current + 1;
   var html = '<div style="padding:24px;max-width:1000px;margin:0 auto">' +
-    '<h2 style="margin-bottom:8px">ACI Workspace <span style="font-size:11px;color:var(--muted);font-weight:400">Agent-Computer Interface v9</span></h2>' +
-    '<p style="font-size:12px;color:var(--muted);margin:0 0 16px">Skill Factory . Parallel Agents . Self-Attribution . Sandbox Isolation</p>' +
+    '<h2 style="margin-bottom:8px">' + t("aciWorkspace") + ' <span style="font-size:11px;color:var(--muted);font-weight:400">Agent-Computer Interface v9</span></h2>' +
+    '<p style="font-size:12px;color:var(--muted);margin:0 0 16px">' + t("skillFactory") + ' . ' + t("parallelAgents") + ' . ' + t("selfAttrib") + ' . ' + t("sandboxIso") + '</p>' +
     '<div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap">'+
-      '<div class="learn-metric"><div class="val">' + (st.steps.length || 0) + '</div><div class="lbl">Steps</div></div>' +
-      '<div class="learn-metric"><div class="val" style="color:' + (st.status==="done"?'var(--green)':st.status==="running"?'var(--amber)':'var(--muted)') + '">' + (st.status||"idle") + '</div><div class="lbl">Status</div></div>' +
-      '<div class="learn-metric"><div class="val">' + (st.current+1 < 0 ? 0 : st.current+1) + '/' + (st.steps.length||0) + '</div><div class="lbl">Progress</div></div>' +
-      '<div class="learn-metric"><div class="val">' + blocks.length + '</div><div class="lbl">Skill Blocks</div></div>' +
-      '<div class="learn-metric"><div class="val">' + state.parallelAgents.length + '</div><div class="lbl">Sub-Agents</div></div>' +
-      '<div class="learn-metric"><div class="val">' + Object.keys(state.stepAttributions).length + '</div><div class="lbl">Attributions</div></div>' +
+      '<div class="learn-metric"><div class="val">' + (st.steps.length || 0) + '</div><div class="lbl">' + L.steps + '</div></div>' +
+      '<div class="learn-metric"><div class="val" style="color:' + statColor + '">' + statLabel + '</div><div class="lbl">' + L.status + '</div></div>' +
+      '<div class="learn-metric"><div class="val">' + ppVal + '/' + (st.steps.length||0) + '</div><div class="lbl">' + L.progress + '</div></div>' +
+      '<div class="learn-metric"><div class="val">' + blocks.length + '</div><div class="lbl">' + L.skillBlocks + '</div></div>' +
+      '<div class="learn-metric"><div class="val">' + state.parallelAgents.length + '</div><div class="lbl">' + L.subAgents + '</div></div>' +
+      '<div class="learn-metric"><div class="val">' + Object.keys(state.stepAttributions).length + '</div><div class="lbl">' + L.attribs + '</div></div>' +
     '</div>' +
     '<div style="display:flex;gap:12px;margin-bottom:20px">' +
-      '<textarea id="aciTaskInput" style="flex:1;background:var(--bg2);border:1px solid var(--line);border-radius:8px;padding:12px;color:var(--text);font-size:13px;resize:vertical;min-height:60px" placeholder="Describe your task..."></textarea>' +
+      '<textarea id="aciTaskInput" style="flex:1;background:var(--bg2);border:1px solid var(--line);border-radius:8px;padding:12px;color:var(--text);font-size:13px;resize:vertical;min-height:60px" placeholder="' + t("askAnything") + '"></textarea>' +
       '<div style="display:flex;flex-direction:column;gap:8px;align-self:flex-start">' +
-        '<button style="padding:12px 20px;background:var(--accent);color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:600" onclick="planTask()">Plan</button>' +
-        '<button id="aciParallelBtn" style="padding:6px 12px;background:' + (hasParallel?'var(--accent2)':'var(--bg2)') + ';border:1px solid var(--line);border-radius:6px;cursor:pointer;font-size:11px;color:' + (hasParallel?'#000':'var(--muted)') + '" onclick="toggleParallelMode()">' + (hasParallel?'Parallel ON':'Parallel') + '</button>' +
+        '<button style="padding:12px 20px;background:var(--accent);color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:600" onclick="planTask()">' + t("plan") + '</button>' +
+        '<button id="aciParallelBtn" style="padding:6px 12px;background:' + (hasParallel?'var(--accent2)':'var(--bg2)') + ';border:1px solid var(--line);border-radius:6px;cursor:pointer;font-size:11px;color:' + (hasParallel?'#000':'var(--muted)') + '" onclick="toggleParallelMode()">' + (hasParallel ? (isZh ? '并行开启' : 'Parallel ON') : (isZh ? '并行' : 'Parallel')) + '</button>' +
       '</div>' +
     '</div>' +
     // Skill Blocks section
-    (blocks.length > 0 ? '<h4 style="margin:12px 0 8px">Skill Blocks <span style="font-weight:400;font-size:11px;color:var(--muted)">Auto-detected reusable patterns</span></h4>' +
+    (blocks.length > 0 ? '<h4 style="margin:12px 0 8px">' + t("skillFactory") + ' <span style="font-weight:400;font-size:11px;color:var(--muted)">' + (isZh ? '自动检测的可复用模式' : 'Auto-detected reusable patterns') + '</span></h4>' +
     '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px">' +
       blocks.map(function(b){
         return '<div style="background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px 14px;cursor:pointer;transition:all .2s;min-width:180px" onclick="applySkillBlock(\'' + b.id + '\')">' +
@@ -2508,7 +2690,7 @@ function renderACIPanel() {
       }).join("") +
     '</div>' : '') +
     // Task Plan with risk + attribution
-    (st.steps.length > 0 ? '<h4 style="margin:16px 0 8px">Task Plan ' + (hasParallel?'<span style="font-size:11px;color:var(--accent2);font-weight:400">Parallel Mode</span>':'') + '</h4><div style="display:flex;flex-direction:column;gap:8px">' +
+    (st.steps.length > 0 ? '<h4 style="margin:16px 0 8px">' + (isZh ? '任务计划' : 'Task Plan') + ' ' + (hasParallel?'<span style="font-size:11px;color:var(--accent2);font-weight:400">' + (isZh ? '并行模式' : 'Parallel Mode') + '</span>':'') + '</h4><div style="display:flex;flex-direction:column;gap:8px">' +
       st.steps.map(function(s,i){
         var cls = i < st.current ? "done" : i === st.current ? "running" : "pending";
         var icon = cls==="done"?"✅":cls==="running"?"🔄":"⏳";
@@ -2526,7 +2708,7 @@ function renderACIPanel() {
       }).join("") +
     '</div>' +
     // Parallel sub-agents
-    (state.parallelAgents.length > 0 ? '<h4 style="margin:16px 0 8px">Sub-Agent Pool</h4>' +
+    (state.parallelAgents.length > 0 ? '<h4 style="margin:16px 0 8px">' + (isZh ? '子Agent池' : 'Sub-Agent Pool') + '</h4>' +
     '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px">' +
       state.parallelAgents.map(function(a){
         return '<div style="background:var(--card);border-radius:8px;padding:12px;border:1px solid var(--line)">' +
@@ -2539,19 +2721,19 @@ function renderACIPanel() {
               '<div style="width:' + a.progress + '%;height:100%;background:var(--accent);border-radius:2px;transition:width .5s"></div>' +
             '</div>' +
             '<span style="font-size:10px;color:var(--muted)">' + a.progress + '%</span>' +
-            '<span style="padding:2px 6px;border-radius:8px;font-size:9px;font-weight:600;background:' + (a.sandbox?'rgba(168,85,247,.1)':'rgba(34,197,94,.1)') + ';color:' + (a.sandbox?'#a855f7':'var(--green)') + '">' + (a.sandbox?'SANDBOX':'SAFE') + '</span>' +
+            '<span style="padding:2px 6px;border-radius:8px;font-size:9px;font-weight:600;background:' + (a.sandbox?'rgba(168,85,247,.1)':'rgba(34,197,94,.1)') + ';color:' + (a.sandbox?'#a855f7':'var(--green)') + '">' + (a.sandbox?(isZh ? '沙盒' : 'SANDBOX'):(isZh ? '安全' : 'SAFE')) + '</span>' +
           '</div>' +
           (a.result ? '<div style="margin-top:6px;font-size:10px;color:var(--accent2);font-family:monospace">' + escapeHtml(a.result) + '</div>' : '') +
         '</div>';
       }).join("") +
     '</div>' : '') +
     (st.status !== "idle" ? '<div style="display:flex;gap:8px;margin-top:16px">' +
-      '<button style="padding:8px 16px;background:var(--green);color:#fff;border:none;border-radius:6px;cursor:pointer" onclick="executeTaskPlan()">Execute All</button>' +
-      '<button style="padding:8px 16px;background:var(--bg2);border:1px solid var(--line);border-radius:6px;cursor:pointer;color:var(--text)" onclick="clearTaskPlan()">Clear</button>' +
+      '<button style="padding:8px 16px;background:var(--green);color:#fff;border:none;border-radius:6px;cursor:pointer" onclick="executeTaskPlan()">' + t("execute") + '</button>' +
+      '<button style="padding:8px 16px;background:var(--bg2);border:1px solid var(--line);border-radius:6px;cursor:pointer;color:var(--text)" onclick="clearTaskPlan()">' + t("clear") + '</button>' +
     '</div>' : '') : '') +
-    '<h4 style="margin:24px 0 12px">Meta-Prompt Builder</h4>' +
+    '<h4 style="margin:24px 0 12px">' + (isZh ? 'Meta-Prompt 构建器' : 'Meta-Prompt Builder') + '</h4>' +
     '<div style="background:var(--card);border-radius:8px;padding:16px;font-family:var(--font-mono);font-size:12px;color:var(--accent2);max-height:150px;overflow-y:auto;white-space:pre-wrap" id="metaPromptDisplay">' + generateMetaPrompt() + '</div>' +
-    '<p style="font-size:11px;color:var(--muted);margin-top:8px">Self-evolving: ' + state.promptVersions.length + ' snapshots, ' + state.failureCases.length + ' failures analyzed. Pattern repetition: ' + detectPatternRepetition() + '</p>' +
+    '<p style="font-size:11px;color:var(--muted);margin-top:8px">' + (isZh ? '自进化: ' + state.promptVersions.length + ' 快照, ' + state.failureCases.length + ' 失败分析. 模式重复率: ' + detectPatternRepetition() : 'Self-evolving: ' + state.promptVersions.length + ' snapshots, ' + state.failureCases.length + ' failures analyzed. Pattern repetition: ' + detectPatternRepetition()) + '</p>' +
   '</div>';
   document.getElementById("aciContent").innerHTML = html;
 }
@@ -2630,7 +2812,7 @@ function applySkillBlock(id) {
   block.frequency++;
   logAudit("skill_applied", "Skill: " + block.name);
   renderACIPanel();
-  showToast("Applied: " + block.name, "success");
+  showToast(t("appliedSkill") + ": " + block.name, "success");
 }
 
 function planTask() {
@@ -2770,29 +2952,30 @@ function generateMetaPrompt() {
 // ── Security Vault ──
 function renderVaultPanel() {
   var hasPwd = !!state.securityVault.password;
+  var isZh = state.lang === "zh";
   var html = '<div style="padding:24px;max-width:900px;margin:0 auto">' +
-    '<h2 style="margin-bottom:16px">Security Vault <span style="font-size:11px;color:var(--muted);font-weight:400">Credential Isolation + PII Masking</span></h2>' +
+    '<h2 style="margin-bottom:16px">' + t("securityVault") + ' <span style="font-size:11px;color:var(--muted);font-weight:400">' + (isZh ? '凭据隔离 + PII 脱敏' : 'Credential Isolation + PII Masking') + '</span></h2>' +
     '<div style="display:flex;gap:12px;margin-bottom:16px">' +
-      '<div class="learn-metric"><div class="val" style="color:' + (hasPwd?'var(--green)':'var(--red)') + '">' + (hasPwd?'Locked':'Unlocked') + '</div><div class="lbl">Vault Status</div></div>' +
-      '<div class="learn-metric"><div class="val">' + Object.keys(state.securityVault.tokens).length + '</div><div class="lbl">Stored Keys</div></div>' +
-      '<div class="learn-metric"><div class="val" style="color:' + (state.piMaskEnabled?'var(--green)':'var(--muted)') + '">' + (state.piMaskEnabled?'ON':'OFF') + '</div><div class="lbl">PII Mask</div></div>' +
+      '<div class="learn-metric"><div class="val" style="color:' + (hasPwd?'var(--green)':'var(--red)') + '">' + (hasPwd ? (isZh ? '已锁定' : 'Locked') : (isZh ? '未锁定' : 'Unlocked')) + '</div><div class="lbl">' + (isZh ? '保险库状态' : 'Vault Status') + '</div></div>' +
+      '<div class="learn-metric"><div class="val">' + Object.keys(state.securityVault.tokens).length + '</div><div class="lbl">' + (isZh ? '已存密钥' : 'Stored Keys') + '</div></div>' +
+      '<div class="learn-metric"><div class="val" style="color:' + (state.piMaskEnabled?'var(--green)':'var(--muted)') + '">' + (state.piMaskEnabled ? (isZh ? '开' : 'ON') : (isZh ? '关' : 'OFF')) + '</div><div class="lbl">' + (isZh ? 'PII脱敏' : 'PII Mask') + '</div></div>' +
     '</div>' +
     (!hasPwd ?
       '<div style="background:var(--card);border-radius:8px;padding:16px;margin-bottom:16px">' +
-        '<p style="margin:0 0 12px;font-size:13px">Set a vault password to secure your credentials. Passwords are hashed locally and never sent to any server.</p>' +
+        '<p style="margin:0 0 12px;font-size:13px">' + (isZh ? '设置保险库密码来保护您的凭据。密码在本地哈希处理，不会发送到任何服务器。' : 'Set a vault password to secure your credentials. Passwords are hashed locally and never sent to any server.') + '</p>' +
         '<div style="display:flex;gap:8px">' +
-          '<input type="password" id="vaultPwdInput" style="flex:1;background:var(--bg2);border:1px solid var(--line);border-radius:6px;padding:10px;color:var(--text);font-size:13px" placeholder="Create vault password...">' +
-          '<button style="padding:10px 20px;background:var(--accent);color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:600" onclick="setVaultPassword()">Lock Vault</button>' +
+          '<input type="password" id="vaultPwdInput" style="flex:1;background:var(--bg2);border:1px solid var(--line);border-radius:6px;padding:10px;color:var(--text);font-size:13px" placeholder="' + (isZh ? '创建保险库密码...' : 'Create vault password...') + '">' +
+          '<button style="padding:10px 20px;background:var(--accent);color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:600" onclick="setVaultPassword()">' + (isZh ? '锁定保险库' : 'Lock Vault') + '</button>' +
         '</div>' +
       '</div>' :
       '<div style="background:var(--card);border-radius:8px;padding:16px;margin-bottom:16px">' +
-        '<p style="margin:0 0 12px;font-size:13px;color:var(--green)">Vault is secured. Credentials are encrypted at rest.</p>' +
+        '<p style="margin:0 0 12px;font-size:13px;color:var(--green)">' + (isZh ? '保险库已安全锁定。凭据已加密存储。' : 'Vault is secured. Credentials are encrypted at rest.') + '</p>' +
         '<div style="display:flex;gap:8px">' +
-          '<button style="padding:8px 16px;background:var(--red);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px" onclick="unlockVault()">Unlock</button>' +
-          '<button style="padding:8px 16px;background:var(--bg2);border:1px solid var(--line);border-radius:6px;cursor:pointer;color:var(--text);font-size:12px" onclick="state.piMaskEnabled=!state.piMaskEnabled;renderVaultPanel();saveState()">' + (state.piMaskEnabled?'Disable':'Enable') + ' PII Mask</button>' +
+          '<button style="padding:8px 16px;background:var(--red);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px" onclick="unlockVault()">' + (isZh ? '解锁' : 'Unlock') + '</button>' +
+          '<button style="padding:8px 16px;background:var(--bg2);border:1px solid var(--line);border-radius:6px;cursor:pointer;color:var(--text);font-size:12px" onclick="state.piMaskEnabled=!state.piMaskEnabled;renderVaultPanel();saveState()">' + (state.piMaskEnabled ? (isZh ? '关闭' : 'Disable') : (isZh ? '启用' : 'Enable')) + ' ' + (isZh ? 'PII脱敏' : 'PII Mask') + '</button>' +
         '</div>' +
       '</div>') +
-    (hasPwd ? '<h4 style="margin:16px 0 10px">Stored Tokens</h4>' +
+    (hasPwd ? '<h4 style="margin:16px 0 10px">' + (isZh ? '已存Token' : 'Stored Tokens') + '</h4>' +
     '<div style="display:flex;flex-direction:column;gap:8px">' +
       Object.keys(state.securityVault.tokens).map(function(k){
         return '<div style="display:flex;align-items:center;padding:10px 14px;background:var(--card);border-radius:8px;gap:12px">' +
@@ -2802,14 +2985,14 @@ function renderVaultPanel() {
         '</div>';
       }).join("") +
     '</div>' : '') +
-    '<h4 style="margin:24px 0 10px">PII Masking Test</h4>' +
+    '<h4 style="margin:24px 0 10px">' + (isZh ? 'PII脱敏测试' : 'PII Masking Test') + '</h4>' +
     '<div style="background:var(--card);border-radius:8px;padding:16px;font-family:var(--font-mono);font-size:12px;margin-bottom:16px" id="piiDemo"></div>' +
-    '<p style="font-size:11px;color:var(--muted);margin-top:8px">PII masking auto-detects: emails, phone numbers, IPs, credit card numbers, and API keys.</p>' +
+    '<p style="font-size:11px;color:var(--muted);margin-top:8px">' + (isZh ? 'PII脱敏自动检测：邮箱、电话、IP、信用卡号、API密钥。' : 'PII masking auto-detects: emails, phone numbers, IPs, credit card numbers, and API keys.') + '</p>' +
   '</div>';
   document.getElementById("vaultContent").innerHTML = html;
   // PII demo
   var samples = ["test@example.com user +86-13800138000 IP 192.168.1.1 card 4111-1111-1111-1111"];
-  document.getElementById("piiDemo").innerHTML = state.piMaskEnabled ? samples.map(function(s){return piiMask(s);}).join("<br>") + '<br><span style="color:var(--muted)">Original: ' + samples[0] + '</span>' : 'PII masking disabled. Raw output: ' + samples[0];
+  document.getElementById("piiDemo").innerHTML = state.piMaskEnabled ? samples.map(function(s){return piiMask(s);}).join("<br>") + '<br><span style="color:var(--muted)">' + (isZh ? '原始: ' : 'Original: ') + samples[0] + '</span>' : (isZh ? 'PII脱敏已禁用。原始输出: ' : 'PII masking disabled. Raw output: ') + samples[0];
 }
 
 function piiMask(text) {
@@ -2827,7 +3010,7 @@ function setVaultPassword() {
   if (pwd.length < 4) { showToast("Password too short (min 4 chars)", "error"); return; }
   state.securityVault.password = btoa(pwd); // simple encode, real app uses PBKDF2
   logAudit("vault_locked", "Password set");
-  showToast("Vault locked successfully", "success");
+    showToast(t("vaultLocked"), "success");
   renderVaultPanel();
   saveState();
 }
@@ -2835,7 +3018,7 @@ function setVaultPassword() {
 function unlockVault() {
   state.securityVault.password = null;
   logAudit("vault_unlocked", "Password removed");
-  showToast("Vault unlocked", "warning");
+  showToast(t("vaultUnlocked"), "warning");
   renderVaultPanel();
   saveState();
 }
@@ -2908,14 +3091,15 @@ function filterCommandPalette() {
     }
   }
   // Search tabs/commands
+  var zhCmds = state.lang === "zh";
   var cmds = [
-    { type: "cmd", name: "ACI Workspace", emoji: "⚙️", desc: "Task planner + skill blocks", action: "switchTab('aci');closeCommandPalette()" },
-    { type: "cmd", name: "Security Vault", emoji: "🔐", desc: "Credential isolation + PII mask", action: "switchTab('vault');closeCommandPalette()" },
-    { type: "cmd", name: "Export Conversation", emoji: "📥", desc: "Export current chat as Markdown", action: "exportConversation()" },
-    { type: "cmd", name: "New Conversation", emoji: "🆕", desc: "Start a fresh chat", action: "newConversation();renderSidebar();closeCommandPalette()" },
-    { type: "cmd", name: "Settings", emoji: "⚙️", desc: "API configuration & preferences", action: "openSettings();closeCommandPalette()" },
-    { type: "cmd", name: "Monitor Dashboard", emoji: "📊", desc: "System health & metrics", action: "switchTab('monitor');closeCommandPalette()" },
-    { type: "cmd", name: "Dashboard Overview", emoji: "🏠", desc: "System overview & stats", action: "switchTab('dashboard');closeCommandPalette()" },
+    { type: "cmd", name: zhCmds ? "ACI 工作区" : "ACI Workspace", emoji: "⚙️", desc: zhCmds ? "任务规划 + 技能模块" : "Task planner + skill blocks", action: "switchTab('aci');closeCommandPalette()" },
+    { type: "cmd", name: zhCmds ? "安全保险库" : "Security Vault", emoji: "🔐", desc: zhCmds ? "凭据隔离 + PII脱敏" : "Credential isolation + PII mask", action: "switchTab('vault');closeCommandPalette()" },
+    { type: "cmd", name: zhCmds ? "导出对话" : "Export Conversation", emoji: "📥", desc: zhCmds ? "导出当前对话为Markdown" : "Export current chat as Markdown", action: "exportConversation()" },
+    { type: "cmd", name: zhCmds ? "新对话" : "New Conversation", emoji: "🆕", desc: zhCmds ? "开始新对话" : "Start a fresh chat", action: "newConversation();renderSidebar();closeCommandPalette()" },
+    { type: "cmd", name: zhCmds ? "设置" : "Settings", emoji: "⚙️", desc: zhCmds ? "API配置与偏好" : "API configuration & preferences", action: "openSettings();closeCommandPalette()" },
+    { type: "cmd", name: zhCmds ? "监控仪表盘" : "Monitor Dashboard", emoji: "📊", desc: zhCmds ? "系统健康与指标" : "System health & metrics", action: "switchTab('monitor');closeCommandPalette()" },
+    { type: "cmd", name: zhCmds ? "系统概览" : "Dashboard Overview", emoji: "🏠", desc: zhCmds ? "系统总览与统计" : "System overview & stats", action: "switchTab('dashboard');closeCommandPalette()" },
   ];
   if (q) cmds.forEach(function(c){ if (c.name.toLowerCase().indexOf(q)!==-1||c.desc.toLowerCase().indexOf(q)!==-1) results.push(c); });
   else results = results.concat(cmds);
@@ -2927,7 +3111,7 @@ function filterCommandPalette() {
       '<span style="font-size:10px;color:var(--muted)">' + r.type.toUpperCase() + '</span>' +
     '</div>';
   }).join("");
-  document.getElementById("cmdResults").innerHTML = html || '<div style="padding:20px;text-align:center;color:var(--muted)">No results</div>';
+  document.getElementById("cmdResults").innerHTML = html || '<div style="padding:20px;text-align:center;color:var(--muted)">' + (state.lang==="zh"?"无匹配结果":"No results") + '</div>';
 }
 
 function handleCmdKey(e) {
@@ -2965,7 +3149,8 @@ function closeNotifications() {
 }
 
 function renderNotifications() {
-  var html = state.notifications.length === 0 ? '<div style="padding:24px;text-align:center;color:var(--muted)">No notifications yet</div>' :
+  var isZh = state.lang === "zh";
+  var html = state.notifications.length === 0 ? '<div style="padding:24px;text-align:center;color:var(--muted)">' + t("noNotifications") + '</div>' :
     state.notifications.map(function(n){
       var icon = n.type === "success" ? "✅" : n.type === "error" ? "❌" : n.type === "warning" ? "⚠️" : "ℹ️";
       var time = new Date(n.time).toLocaleString();
@@ -2984,7 +3169,7 @@ function exportConversation() {
   text += "Exported: " + new Date().toISOString() + "\n";
   text += "Agent: " + state.activeAgent.name + " | Mode: " + state.mode + " | Tone: " + state.tone + "\n\n---\n\n";
   state.messages.forEach(function(m){
-    var role = m.type === "user" ? "You" : state.activeAgent.name;
+    var role = m.type === "user" ? (state.lang==="zh"?"你":"You") : state.activeAgent.name;
     text += "### " + role + "\n\n" + (m.content || "") + "\n\n";
   });
   text += "\n---\n*Exported from HopeAgent Pro v10*";
@@ -2995,7 +3180,7 @@ function exportConversation() {
   a.click(); URL.revokeObjectURL(url);
   addNotification("Export complete", "Conversation exported as Markdown", "success");
   closeCommandPalette();
-  showToast("Exported as Markdown", "success");
+  showToast(t("exportedMD"), "success");
 }
 
 // Dashboard
@@ -3004,41 +3189,42 @@ function renderDashboard() {
   var unread = state.notifications.filter(function(n){return !n.read;}).length;
   var pvCount = state.promptVersions.length;
   var ratingSummary = "N/A";
+  var isZh = state.lang === "zh";
   var ratedMsgs = state.messages.filter(function(m){return m.rated;});
   if (ratedMsgs.length > 0) {
     var good = ratedMsgs.filter(function(m){return m.rated==="good";}).length;
-    ratingSummary = Math.round(good/ratedMsgs.length*100) + "% positive";
+    ratingSummary = Math.round(good/ratedMsgs.length*100) + (isZh ? "% 好评" : "% positive");
   }
   document.getElementById("dashboardContent").innerHTML =
     '<div style="padding:24px;max-width:1000px;margin:0 auto">' +
-      '<h2 style="margin-bottom:8px">System Overview</h2>' +
+      '<h2 style="margin-bottom:8px">' + t("systemDashboard") + '</h2>' +
       '<div class="learn-metrics" style="margin-bottom:20px">' +
-        '<div class="learn-metric"><div class="val">' + state.conversations.length + '</div><div class="lbl">Conversations</div></div>' +
-        '<div class="learn-metric"><div class="val">' + state.messages.length + '</div><div class="lbl">Messages</div></div>' +
+        '<div class="learn-metric"><div class="val">' + state.conversations.length + '</div><div class="lbl">' + (isZh ? '对话' : 'Conversations') + '</div></div>' +
+        '<div class="learn-metric"><div class="val">' + state.messages.length + '</div><div class="lbl">' + (isZh ? '消息' : 'Messages') + '</div></div>' +
         '<div class="learn-metric"><div class="val">' + formatNumber(state.tokenUsed) + '</div><div class="lbl">Tokens</div></div>' +
-        '<div class="learn-metric"><div class="val" style="color:var(--green)">$' + roi.saved + '</div><div class="lbl">Value Saved</div></div>' +
+        '<div class="learn-metric"><div class="val" style="color:var(--green)">$' + roi.saved + '</div><div class="lbl">' + (isZh ? '节省价值' : 'Value Saved') + '</div></div>' +
         '<div class="learn-metric"><div class="val">' + roi.roi + '%</div><div class="lbl">ROI</div></div>' +
-        '<div class="learn-metric"><div class="val">' + unread + '</div><div class="lbl">Unread Alerts</div></div>' +
+        '<div class="learn-metric"><div class="val">' + unread + '</div><div class="lbl">' + (isZh ? '未读通知' : 'Unread Alerts') + '</div></div>' +
       '</div>' +
-      '<h4 style="margin-bottom:10px">Agent Layer Distribution</h4>' +
+      '<h4 style="margin-bottom:10px">' + (isZh ? 'Agent层级分布' : 'Agent Layer Distribution') + '</h4>' +
       '<div style="display:flex;gap:12px;margin-bottom:20px">' +
         ['L1','L2','L3','L4'].map(function(l){
           var cnt = AGENTS.filter(function(a){return a.layer===l;}).length;
           return '<div class="learn-metric"><div class="val">' + cnt + '</div><div class="lbl">' + L[l].name + '</div></div>';
         }).join("") +
       '</div>' +
-      '<h4 style="margin-bottom:10px">Evolution Stats</h4>' +
+      '<h4 style="margin-bottom:10px">' + (isZh ? '进化统计' : 'Evolution Stats') + '</h4>' +
       '<div style="display:flex;gap:12px;margin-bottom:20px">' +
-        '<div class="learn-metric"><div class="val">' + pvCount + '</div><div class="lbl">Prompt Versions</div></div>' +
-        '<div class="learn-metric"><div class="val">' + state.failureCases.length + '</div><div class="lbl">Failures Tracked</div></div>' +
-        '<div class="learn-metric"><div class="val">' + state.skillBlocks.length + '</div><div class="lbl">Skill Blocks</div></div>' +
-        '<div class="learn-metric"><div class="val">' + state.auditLog.length + '</div><div class="lbl">Audit Events</div></div>' +
-        '<div class="learn-metric"><div class="val">' + ratingSummary + '</div><div class="lbl">Rating</div></div>' +
-        '<div class="learn-metric"><div class="val">' + getCacheRate() + '%</div><div class="lbl">Cache Hits</div></div>' +
+        '<div class="learn-metric"><div class="val">' + pvCount + '</div><div class="lbl">' + (isZh ? 'Prompt版本' : 'Prompt Versions') + '</div></div>' +
+        '<div class="learn-metric"><div class="val">' + state.failureCases.length + '</div><div class="lbl">' + (isZh ? '追踪失败' : 'Failures Tracked') + '</div></div>' +
+        '<div class="learn-metric"><div class="val">' + state.skillBlocks.length + '</div><div class="lbl">' + (isZh ? '技能模块' : 'Skill Blocks') + '</div></div>' +
+        '<div class="learn-metric"><div class="val">' + state.auditLog.length + '</div><div class="lbl">' + (isZh ? '审计事件' : 'Audit Events') + '</div></div>' +
+        '<div class="learn-metric"><div class="val">' + ratingSummary + '</div><div class="lbl">' + (isZh ? '评分' : 'Rating') + '</div></div>' +
+        '<div class="learn-metric"><div class="val">' + getCacheRate() + '%</div><div class="lbl">' + (isZh ? '缓存命中' : 'Cache Hits') + '</div></div>' +
       '</div>' +
-      '<h4 style="margin-bottom:10px">Recent Activity</h4>' +
+      '<h4 style="margin-bottom:10px">' + (isZh ? '最近活动' : 'Recent Activity') + '</h4>' +
       '<div style="background:var(--card);border-radius:8px;padding:12px;max-height:200px;overflow-y:auto;font-size:12px;font-family:monospace">' +
-        (state.auditLog.length === 0 ? '<span style="color:var(--muted)">No activity yet</span>' :
+        (state.auditLog.length === 0 ? '<span style="color:var(--muted)">' + (isZh ? '暂无活动' : 'No activity yet') + '</span>' :
         state.auditLog.slice(0,15).map(function(e){
           return '<div style="padding:3px 0;border-bottom:1px solid var(--line)"><span style="color:var(--muted)">' + new Date(e.time).toLocaleTimeString() + '</span> [' + e.action + '] ' + escapeHtml(e.detail||"") + '</div>';
         }).join("")) +
@@ -3054,7 +3240,7 @@ function branchConversation() {
     messages: state.messages.slice(), createdAt: Date.now()
   };
   addNotification("Branch created", "Forked conversation at message #" + state.messages.length, "info");
-  showToast("Branch created. Continue exploring alternate paths.", "success");
+  showToast(t("branchCreatedToast"), "success");
 }
 
 // ── v12: Artifacts Preview + Progress + Multi-Format ──
@@ -3191,7 +3377,7 @@ function addThinkingOutline(outline) {
   var container = document.getElementById("chat-container");
   if (!container) return;
   var items = outline.map(function(o){return '<li>' + o + '</li>';}).join("");
-  var html = '<div class="thinking-outline"><h4>Thinking...</h4><ul>' + items + '</ul></div>';
+  var html = '<div class="thinking-outline"><h4>' + t("thinking_") + '</h4><ul>' + items + '</ul></div>';
   var existing = container.querySelector(".thinking-outline:last-of-type");
   if (existing) existing.outerHTML = html;
   // Save as thinking message
@@ -3335,7 +3521,7 @@ function init() {
     fullSave();
     newConversation();
     renderSidebar();
-    showToast("New conversation created", "success");
+    showToast(t("newConversation"), "success");
   });
   document.getElementById("btnDaily").addEventListener("click", function(){ setMode("daily"); });
   document.getElementById("btnDeep").addEventListener("click", function(){ setMode("deep"); });
