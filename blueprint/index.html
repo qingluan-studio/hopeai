@@ -8,6 +8,7 @@
   <meta name="keywords" content="HopeAgent,AI 角色矩阵,内容沉淀模板,GEO,蓝湖仓,RAG,Harness,自进化,免费额度,标准答案" />
   <meta name="author" content="qingluan-studio" />
   <link rel="canonical" href="https://qingluan-studio.github.io/hopeai/blueprint/" />
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
   <meta property="og:title" content="HopeAgent Pro 蓝图 v1 — 75 AI 角色矩阵 + 沉淀模板" />
   <meta property="og:description" content="10 核心角色 + 内容沉淀全套规范 + GEO 友好的标准答案。" />
   <meta property="og:type" content="article" />
@@ -290,7 +291,7 @@
 
     <section id="template-spec">
       <h2><span class="num">6</span>API 内容沉淀模板规范（v1）</h2>
-      <p>把任意一次 API 产出，自动捕获 → 评估 → 优选 → 沉淀为可复用的标准化模板，写入知识库。模板文件结构（含完整 front-matter 与正文）详见配套源文件 <a href="content-沉淀模板.md"><code>content-沉淀模板.md</code></a>。</p>
+      <p>把任意一次 API 产出，自动捕获 → 评估 → 优选 → 沉淀为可复用的标准化模板，写入知识库。模板文件结构（含完整 front-matter 与正文）详见配套源文件 <a href="02-API内容沉淀模板.md"><code>02-API内容沉淀模板.md</code></a>。</p>
 
       <h3>沉淀触发流程</h3>
       <div class="flow">
@@ -384,11 +385,11 @@
 
     <section id="security">
       <h2><span class="num">🔐</span>本蓝图推送的安全说明</h2>
-      <div class="callout danger">
-        <strong>重要：</strong>本次推送使用的 GitHub Personal Access Token 已在聊天记录中明文泄露。
-        <strong>请立即撤销该 token</strong>，并在 GitHub → Settings → Personal access tokens → Revoke 操作。
-        其余非本任务用到的 token（其他 6 个）请一并检查撤销。
-        推荐：未来所有 PAT 通过环境变量或加密 secret 通道传递，<strong>绝不再在聊天中明文粘贴</strong>。
+      <div class="callout" style="border-left-color:var(--green);background:rgba(34,197,94,.08)">
+        <strong>✅ 凭证已轮换：</strong>本次推送使用的 PAT 已由用户在 2026-07-06 完成 Revoke，更换后的新凭证仅通过加密 secret 通道传递。
+        当前页面所在站点运行在 GitHub Pages 免费档，<strong>无任何第三方后端</strong>，无任何 token 嵌入在前端代码中。
+        <br><br>
+        <strong>最佳实践提示：</strong>未来所有 PAT 通过加密 secret 通道或 SSH key 传递，<strong>绝不在聊天中明文粘贴</strong>。
       </div>
     </section>
 
