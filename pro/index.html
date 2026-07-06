@@ -389,12 +389,15 @@ input:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(
         <option value="creative">Creative</option>
       </select>
       <div class="token-bar">
+        <button class="header-icon" id="btnSearch" onclick="openCommandPalette()" title="Search (Ctrl+P)" style="cursor:pointer;background:none;border:none;font-size:16px;color:var(--muted);padding:4px 8px">🔍</button>
+        <button class="header-icon" id="btnNotify" onclick="openNotifications()" title="Notifications" style="cursor:pointer;background:none;border:none;font-size:16px;color:var(--muted);padding:4px 8px;position:relative">🔔<span id="notifyBadge" style="position:absolute;top:-2px;right:-2px;background:var(--red);color:#fff;font-size:9px;min-width:14px;height:14px;border-radius:7px;display:none;align-items:center;justify-content:center;line-height:1">0</span></button>
         <svg class="progress-ring" viewBox="0 0 28 28"><circle cx="14" cy="14" r="12" fill="none" stroke="var(--line)" stroke-width="3"/><circle cx="14" cy="14" r="12" fill="none" stroke="var(--accent2)" stroke-width="3" stroke-dasharray="75.4" stroke-dashoffset="30" stroke-linecap="round" id="tokenRing"/></svg>
         <span><span class="used" id="tokenUsed">0</span>/<span class="limit" id="tokenLimit">∞</span> tokens</span>
       </div>
     </header>
     <div class="main-tabs" id="mainTabs">
       <button class="active" data-tab="chat" onclick="switchTab('chat')">Chat</button>
+      <button data-tab="dashboard" onclick="switchTab('dashboard')">Dashboard</button>
       <button data-tab="kb" onclick="switchTab('kb')">KB (<span id="kbCount">0</span>)</button>
       <button data-tab="learn" onclick="switchTab('learn')">Learn (<span id="learnScore">0</span>)</button>
       <button data-tab="code" onclick="switchTab('code')">Code (<span id="codeCount">0</span>)</button>
@@ -434,6 +437,11 @@ input:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(
       <div class="cw-header"><h3>System Monitor</h3></div>
       <div id="monitorContent"></div>
     </div>
+    <!-- Dashboard -->
+    <div class="cw-panel" id="dashboardPanel">
+      <div class="cw-header"><h3>System Dashboard</h3></div>
+      <div id="dashboardContent"></div>
+    </div>
     <!-- ACI Workspace -->
     <div class="cw-panel" id="aciPanel">
       <div class="cw-header"><h3>ACI Task Planner</h3></div>
@@ -448,6 +456,24 @@ input:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(
     <div class="cw-panel" id="billPanel">
       <div class="cw-header"><h3>Token Billing & Cost</h3></div>
       <div id="billContent"></div>
+    </div>
+    <!-- Notification Panel -->
+    <div id="notifyPanel" style="display:none;position:fixed;right:16px;top:60px;width:340px;max-height:80vh;background:var(--bg2);border:1px solid var(--line);border-radius:12px;z-index:70;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,.5)">
+      <div style="padding:12px 16px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center">
+        <h4 style="margin:0;font-size:14px">Notifications</h4>
+        <button style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px" onclick="closeNotifications()">&times;</button>
+      </div>
+      <div id="notifyContent" style="max-height:60vh;overflow-y:auto"></div>
+    </div>
+    <!-- Command Palette -->
+    <div id="cmdPalette" style="display:none;position:fixed;inset:0;z-index:80">
+      <div style="position:fixed;inset:0;background:rgba(0,0,0,.5)" onclick="closeCommandPalette()"></div>
+      <div style="position:relative;margin:15vh auto 0;width:540px;max-width:95vw;background:var(--bg2);border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.6)">
+        <div style="padding:16px">
+          <input id="cmdInput" style="width:100%;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:12px 16px;color:var(--text);font-size:15px;outline:none" placeholder="Search agents, knowledge, conversations... (Esc to close)" oninput="filterCommandPalette()" onkeydown="handleCmdKey(event)" autofocus>
+        </div>
+        <div id="cmdResults" style="max-height:50vh;overflow-y:auto;padding:0 8px 8px"></div>
+      </div>
     </div>
     <div id="input-area">
       <div class="input-row">
@@ -615,7 +641,11 @@ let state = {
   skillBlocks: [],
   parallelAgents: [],
   stepAttributions: {},
-  sandboxPools: []
+  sandboxPools: [],
+  notifications: [],
+  conversationBranches: {},
+  commandPaletteOpen: false,
+  dashboardMode: "overview"
 };
 
 let streamController = null;
@@ -1796,6 +1826,7 @@ function switchTab(tab) {
   document.getElementById("cwPanel").classList.toggle("show", tab === "code");
   document.getElementById("marketPanel").classList.toggle("show", tab === "market");
   document.getElementById("monitorPanel").classList.toggle("show", tab === "monitor");
+  document.getElementById("dashboardPanel").classList.toggle("show", tab === "dashboard");
   document.getElementById("aciPanel").classList.toggle("show", tab === "aci");
   document.getElementById("vaultPanel").classList.toggle("show", tab === "vault");
   document.getElementById("billPanel").classList.toggle("show", tab === "bill");
@@ -1812,6 +1843,7 @@ function switchTab(tab) {
   if (tab === "market") renderMarketplace();
   if (tab === "bill") renderBillingPanel();
   if (tab === "monitor") renderMonitorPanel();
+  if (tab === "dashboard") renderDashboard();
   if (tab === "aci") renderACIPanel();
   if (tab === "vault") renderVaultPanel();
 }
@@ -2461,6 +2493,7 @@ function detectSkillPattern() {
             source: topics[k].samples[0], createdAt: Date.now()
           });
           logAudit("skill_detected", "Auto-detected: " + k);
+  addNotification("Skill Detected", "New skill block: " + k, "success");
         }
       }
     }
@@ -2720,6 +2753,196 @@ function judgeResponse(content) {
   return { score: score, remarks: remarks.join("; ") || "Passable" };
 }
 
+// ── v10: Global Search + Notifications + Dashboard + Export + Analytics ──
+function openCommandPalette() {
+  document.getElementById("cmdPalette").style.display = "block";
+  document.getElementById("cmdInput").focus();
+  state.commandPaletteOpen = true;
+  filterCommandPalette();
+}
+
+function closeCommandPalette() {
+  document.getElementById("cmdPalette").style.display = "none";
+  state.commandPaletteOpen = false;
+}
+
+function filterCommandPalette() {
+  var q = (document.getElementById("cmdInput").value || "").toLowerCase();
+  var results = [];
+  // Search agents
+  AGENTS.forEach(function(a){
+    if (!q || a.name.toLowerCase().indexOf(q) !== -1 || a.role.toLowerCase().indexOf(q) !== -1 || a.tools.toLowerCase().indexOf(q) !== -1) {
+      results.push({ type: "agent", id: a.id, name: a.name, emoji: a.emoji, desc: a.role, layer: a.layer });
+    }
+  });
+  // Search conversations
+  state.conversations.forEach(function(c){
+    if (!q || c.title.toLowerCase().indexOf(q) !== -1) {
+      results.push({ type: "conv", id: c.id, name: c.title, emoji: "💬", desc: c.msgCount + " messages", layer: "" });
+    }
+  });
+  // Search knowledge
+  if (q && typeof HOPEAI_KB !== "undefined") {
+    var found = 0;
+    for (var i = 0; i < Math.min(20, HOPEAI_KB.entries.length); i++) {
+      var e = HOPEAI_KB.entries[i];
+      if (e.title.toLowerCase().indexOf(q) !== -1 || e.desc.toLowerCase().indexOf(q) !== -1) {
+        results.push({ type: "kb", id: "kb_" + i, name: e.title, emoji: "📚", desc: e.desc.slice(0,80), layer: e.layer });
+        found++;
+        if (found >= 5) break;
+      }
+    }
+  }
+  // Search tabs/commands
+  var cmds = [
+    { type: "cmd", name: "ACI Workspace", emoji: "⚙️", desc: "Task planner + skill blocks", action: "switchTab('aci');closeCommandPalette()" },
+    { type: "cmd", name: "Security Vault", emoji: "🔐", desc: "Credential isolation + PII mask", action: "switchTab('vault');closeCommandPalette()" },
+    { type: "cmd", name: "Export Conversation", emoji: "📥", desc: "Export current chat as Markdown", action: "exportConversation()" },
+    { type: "cmd", name: "New Conversation", emoji: "🆕", desc: "Start a fresh chat", action: "newConversation();renderSidebar();closeCommandPalette()" },
+    { type: "cmd", name: "Settings", emoji: "⚙️", desc: "API configuration & preferences", action: "openSettings();closeCommandPalette()" },
+    { type: "cmd", name: "Monitor Dashboard", emoji: "📊", desc: "System health & metrics", action: "switchTab('monitor');closeCommandPalette()" },
+    { type: "cmd", name: "Dashboard Overview", emoji: "🏠", desc: "System overview & stats", action: "switchTab('dashboard');closeCommandPalette()" },
+  ];
+  if (q) cmds.forEach(function(c){ if (c.name.toLowerCase().indexOf(q)!==-1||c.desc.toLowerCase().indexOf(q)!==-1) results.push(c); });
+  else results = results.concat(cmds);
+  var html = results.slice(0, 20).map(function(r, i){
+    return '<div class="cmd-item" style="display:flex;align-items:center;gap:10px;padding:10px 12px;cursor:pointer;border-radius:8px;margin:2px 0;transition:background .15s" onmouseover="this.style.background=\'var(--bg)\'" onmouseout="this.style.background=\'\'" onclick="' +       (r.action||(r.type==="agent"?"selectAgent(\\\''+r.id+'\\\');closeCommandPalette()":r.type==="conv"?"switchConversation(\\\''+r.id+'\\\');closeCommandPalette()":"closeCommandPalette()")) + '">' +
+      '<span style="font-size:20px">' + r.emoji + '</span>' +
+      '<div style="flex:1"><div style="font-size:14px;font-weight:600">' + r.name + '</div><div style="font-size:11px;color:var(--muted)">' + r.desc + '</div></div>' +
+      (r.layer?'<span style="font-size:10px;background:var(--bg);padding:2px 6px;border-radius:4px;color:var(--accent)">' + r.layer + '</span>':'') +
+      '<span style="font-size:10px;color:var(--muted)">' + r.type.toUpperCase() + '</span>' +
+    '</div>';
+  }).join("");
+  document.getElementById("cmdResults").innerHTML = html || '<div style="padding:20px;text-align:center;color:var(--muted)">No results</div>';
+}
+
+function handleCmdKey(e) {
+  if (e.key === "Escape") closeCommandPalette();
+  if (e.key === "Enter") {
+    var first = document.querySelector(".cmd-item");
+    if (first) first.click();
+  }
+}
+
+// Notifications
+function addNotification(title, body, type) {
+  state.notifications.unshift({ time: Date.now(), title: title, body: body, type: type||"info", read: false });
+  if (state.notifications.length > 50) state.notifications.length = 50;
+  updateNotifyBadge();
+}
+
+function updateNotifyBadge() {
+  var unread = state.notifications.filter(function(n){return !n.read;}).length;
+  var badge = document.getElementById("notifyBadge");
+  if (unread > 0) { badge.style.display = "flex"; badge.textContent = unread > 99 ? "99+" : unread; }
+  else { badge.style.display = "none"; }
+}
+
+function openNotifications() {
+  var panel = document.getElementById("notifyPanel");
+  panel.style.display = panel.style.display === "none" ? "block" : "none";
+  state.notifications.forEach(function(n){ n.read = true; });
+  updateNotifyBadge();
+  renderNotifications();
+}
+
+function closeNotifications() {
+  document.getElementById("notifyPanel").style.display = "none";
+}
+
+function renderNotifications() {
+  var html = state.notifications.length === 0 ? '<div style="padding:24px;text-align:center;color:var(--muted)">No notifications yet</div>' :
+    state.notifications.map(function(n){
+      var icon = n.type === "success" ? "✅" : n.type === "error" ? "❌" : n.type === "warning" ? "⚠️" : "ℹ️";
+      var time = new Date(n.time).toLocaleString();
+      return '<div style="padding:10px 16px;border-bottom:1px solid var(--line);font-size:12px;opacity:' + (n.read?'.6':'1') + '">' +
+        '<span>' + icon + '</span> <strong>' + n.title + '</strong>' +
+        '<div style="color:var(--muted);margin-top:4px">' + n.body + '</div>' +
+        '<div style="font-size:10px;color:var(--muted);margin-top:4px">' + time + '</div>' +
+      '</div>';
+    }).join("");
+  document.getElementById("notifyContent").innerHTML = html;
+}
+
+// Export
+function exportConversation() {
+  var text = "# HopeAgent Pro Conversation\n\n";
+  text += "Exported: " + new Date().toISOString() + "\n";
+  text += "Agent: " + state.activeAgent.name + " | Mode: " + state.mode + " | Tone: " + state.tone + "\n\n---\n\n";
+  state.messages.forEach(function(m){
+    var role = m.type === "user" ? "You" : state.activeAgent.name;
+    text += "### " + role + "\n\n" + (m.content || "") + "\n\n";
+  });
+  text += "\n---\n*Exported from HopeAgent Pro v10*";
+  var blob = new Blob([text], { type: "text/markdown" });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement("a");
+  a.href = url; a.download = "hopeagent-conversation-" + new Date().toISOString().slice(0,10) + ".md";
+  a.click(); URL.revokeObjectURL(url);
+  addNotification("Export complete", "Conversation exported as Markdown", "success");
+  closeCommandPalette();
+  showToast("Exported as Markdown", "success");
+}
+
+// Dashboard
+function renderDashboard() {
+  var roi = calculateROI();
+  var unread = state.notifications.filter(function(n){return !n.read;}).length;
+  var pvCount = state.promptVersions.length;
+  var ratingSummary = "N/A";
+  var ratedMsgs = state.messages.filter(function(m){return m.rated;});
+  if (ratedMsgs.length > 0) {
+    var good = ratedMsgs.filter(function(m){return m.rated==="good";}).length;
+    ratingSummary = Math.round(good/ratedMsgs.length*100) + "% positive";
+  }
+  document.getElementById("dashboardContent").innerHTML =
+    '<div style="padding:24px;max-width:1000px;margin:0 auto">' +
+      '<h2 style="margin-bottom:8px">System Overview</h2>' +
+      '<div class="learn-metrics" style="margin-bottom:20px">' +
+        '<div class="learn-metric"><div class="val">' + state.conversations.length + '</div><div class="lbl">Conversations</div></div>' +
+        '<div class="learn-metric"><div class="val">' + state.messages.length + '</div><div class="lbl">Messages</div></div>' +
+        '<div class="learn-metric"><div class="val">' + formatNumber(state.tokenUsed) + '</div><div class="lbl">Tokens</div></div>' +
+        '<div class="learn-metric"><div class="val" style="color:var(--green)">$' + roi.saved + '</div><div class="lbl">Value Saved</div></div>' +
+        '<div class="learn-metric"><div class="val">' + roi.roi + '%</div><div class="lbl">ROI</div></div>' +
+        '<div class="learn-metric"><div class="val">' + unread + '</div><div class="lbl">Unread Alerts</div></div>' +
+      '</div>' +
+      '<h4 style="margin-bottom:10px">Agent Layer Distribution</h4>' +
+      '<div style="display:flex;gap:12px;margin-bottom:20px">' +
+        ['L1','L2','L3','L4'].map(function(l){
+          var cnt = AGENTS.filter(function(a){return a.layer===l;}).length;
+          return '<div class="learn-metric"><div class="val">' + cnt + '</div><div class="lbl">' + L[l].name + '</div></div>';
+        }).join("") +
+      '</div>' +
+      '<h4 style="margin-bottom:10px">Evolution Stats</h4>' +
+      '<div style="display:flex;gap:12px;margin-bottom:20px">' +
+        '<div class="learn-metric"><div class="val">' + pvCount + '</div><div class="lbl">Prompt Versions</div></div>' +
+        '<div class="learn-metric"><div class="val">' + state.failureCases.length + '</div><div class="lbl">Failures Tracked</div></div>' +
+        '<div class="learn-metric"><div class="val">' + state.skillBlocks.length + '</div><div class="lbl">Skill Blocks</div></div>' +
+        '<div class="learn-metric"><div class="val">' + state.auditLog.length + '</div><div class="lbl">Audit Events</div></div>' +
+        '<div class="learn-metric"><div class="val">' + ratingSummary + '</div><div class="lbl">Rating</div></div>' +
+        '<div class="learn-metric"><div class="val">' + getCacheRate() + '%</div><div class="lbl">Cache Hits</div></div>' +
+      '</div>' +
+      '<h4 style="margin-bottom:10px">Recent Activity</h4>' +
+      '<div style="background:var(--card);border-radius:8px;padding:12px;max-height:200px;overflow-y:auto;font-size:12px;font-family:monospace">' +
+        (state.auditLog.length === 0 ? '<span style="color:var(--muted)">No activity yet</span>' :
+        state.auditLog.slice(0,15).map(function(e){
+          return '<div style="padding:3px 0;border-bottom:1px solid var(--line)"><span style="color:var(--muted)">' + new Date(e.time).toLocaleTimeString() + '</span> [' + e.action + '] ' + escapeHtml(e.detail||"") + '</div>';
+        }).join("")) +
+      '</div>' +
+    '</div>';
+}
+
+// Conversation branching
+function branchConversation() {
+  var branchId = "branch_" + Date.now();
+  state.conversationBranches[branchId] = {
+    id: branchId, fromConvId: state.currentConvId, fromMsgIdx: state.messages.length,
+    messages: state.messages.slice(), createdAt: Date.now()
+  };
+  addNotification("Branch created", "Forked conversation at message #" + state.messages.length, "info");
+  showToast("Branch created. Continue exploring alternate paths.", "success");
+}
+
 function init() {
   loadState();
   loadFailures();
@@ -2751,10 +2974,21 @@ function init() {
 
   document.addEventListener("keydown", function(e){
     if (e.key === "Escape") {
-      if (state.thinking) stopStreaming();
+      if (state.commandPaletteOpen) closeCommandPalette();
+      else if (state.thinking) stopStreaming();
       else closeModal();
     }
+    if ((e.ctrlKey || e.metaKey) && e.key === "p") {
+      e.preventDefault();
+      if (state.commandPaletteOpen) closeCommandPalette();
+      else openCommandPalette();
+    }
   });
+  document.addEventListener("click", function(e){
+    var np = document.getElementById("notifyPanel");
+    if (np.style.display === "block" && !np.contains(e.target) && e.target.id !== "btnNotify") closeNotifications();
+  });
+  updateNotifyBadge();
 
   if (window.innerWidth < 769) {
     document.getElementById("bottomNav").style.display = "block";
