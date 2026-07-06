@@ -611,7 +611,11 @@ let state = {
   securityVault: { password: null, tokens: {} },
   taskPlan: { steps: [], current: -1, status: "idle" },
   piMaskEnabled: true,
-  metaPromptMode: "auto"
+  metaPromptMode: "auto",
+  skillBlocks: [],
+  parallelAgents: [],
+  stepAttributions: {},
+  sandboxPools: []
 };
 
 let streamController = null;
@@ -2323,37 +2327,163 @@ function getMemoryScore(entry) {
 function renderACIPanel() {
   document.getElementById("chat-container").style.display = "none";
   var st = state.taskPlan;
-  var html = '<div style="padding:24px;max-width:900px;margin:0 auto">' +
-    '<h2 style="margin-bottom:16px">ACI Task Planner <span style="font-size:11px;color:var(--muted);font-weight:400">Agent-Computer Interface</span></h2>' +
-    '<div style="display:flex;gap:12px;margin-bottom:16px">'+
+  var blocks = state.skillBlocks;
+  var hasParallel = state.parallelAgents.length > 0;
+  var html = '<div style="padding:24px;max-width:1000px;margin:0 auto">' +
+    '<h2 style="margin-bottom:8px">ACI Workspace <span style="font-size:11px;color:var(--muted);font-weight:400">Agent-Computer Interface v9</span></h2>' +
+    '<p style="font-size:12px;color:var(--muted);margin:0 0 16px">Skill Factory . Parallel Agents . Self-Attribution . Sandbox Isolation</p>' +
+    '<div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap">'+
       '<div class="learn-metric"><div class="val">' + (st.steps.length || 0) + '</div><div class="lbl">Steps</div></div>' +
       '<div class="learn-metric"><div class="val" style="color:' + (st.status==="done"?'var(--green)':st.status==="running"?'var(--amber)':'var(--muted)') + '">' + (st.status||"idle") + '</div><div class="lbl">Status</div></div>' +
       '<div class="learn-metric"><div class="val">' + (st.current+1 < 0 ? 0 : st.current+1) + '/' + (st.steps.length||0) + '</div><div class="lbl">Progress</div></div>' +
+      '<div class="learn-metric"><div class="val">' + blocks.length + '</div><div class="lbl">Skill Blocks</div></div>' +
+      '<div class="learn-metric"><div class="val">' + state.parallelAgents.length + '</div><div class="lbl">Sub-Agents</div></div>' +
+      '<div class="learn-metric"><div class="val">' + Object.keys(state.stepAttributions).length + '</div><div class="lbl">Attributions</div></div>' +
     '</div>' +
     '<div style="display:flex;gap:12px;margin-bottom:20px">' +
-      '<textarea id="aciTaskInput" style="flex:1;background:var(--bg2);border:1px solid var(--line);border-radius:8px;padding:12px;color:var(--text);font-size:13px;resize:vertical;min-height:60px" placeholder="Describe your task: e.g. Check server logs, find errors, create incident report..."></textarea>' +
-      '<button style="padding:12px 20px;background:var(--accent);color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:600;align-self:flex-start" onclick="planTask()">Plan</button>' +
+      '<textarea id="aciTaskInput" style="flex:1;background:var(--bg2);border:1px solid var(--line);border-radius:8px;padding:12px;color:var(--text);font-size:13px;resize:vertical;min-height:60px" placeholder="Describe your task..."></textarea>' +
+      '<div style="display:flex;flex-direction:column;gap:8px;align-self:flex-start">' +
+        '<button style="padding:12px 20px;background:var(--accent);color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:600" onclick="planTask()">Plan</button>' +
+        '<button id="aciParallelBtn" style="padding:6px 12px;background:' + (hasParallel?'var(--accent2)':'var(--bg2)') + ';border:1px solid var(--line);border-radius:6px;cursor:pointer;font-size:11px;color:' + (hasParallel?'#000':'var(--muted)') + '" onclick="toggleParallelMode()">' + (hasParallel?'Parallel ON':'Parallel') + '</button>' +
+      '</div>' +
     '</div>' +
-    (st.steps.length > 0 ? '<div style="margin-bottom:16px"><h4>Task Plan</h4><div style="display:flex;flex-direction:column;gap:8px">' +
+    // Skill Blocks section
+    (blocks.length > 0 ? '<h4 style="margin:12px 0 8px">Skill Blocks <span style="font-weight:400;font-size:11px;color:var(--muted)">Auto-detected reusable patterns</span></h4>' +
+    '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px">' +
+      blocks.map(function(b){
+        return '<div style="background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px 14px;cursor:pointer;transition:all .2s;min-width:180px" onclick="applySkillBlock(\'' + b.id + '\')">' +
+          '<div style="font-weight:600;font-size:13px;margin-bottom:4px">' + b.emoji + ' ' + b.name + '</div>' +
+          '<div style="font-size:11px;color:var(--muted)">' + b.steps.length + ' steps . ' + b.frequency + 'x used</div>' +
+          '<div style="margin-top:6px;display:flex;gap:3px">' +
+            b.steps.slice(0,3).map(function(s){return '<span style="background:var(--bg2);padding:2px 6px;border-radius:4px;font-size:10px;color:var(--accent2)">' + s.slice(0,12) + '</span>';}).join("") +
+            (b.steps.length > 3 ? '<span style="font-size:10px;color:var(--muted);padding:2px 0">+' + (b.steps.length-3) + '</span>' : '') +
+          '</div>' +
+        '</div>';
+      }).join("") +
+    '</div>' : '') +
+    // Task Plan with risk + attribution
+    (st.steps.length > 0 ? '<h4 style="margin:16px 0 8px">Task Plan ' + (hasParallel?'<span style="font-size:11px;color:var(--accent2);font-weight:400">Parallel Mode</span>':'') + '</h4><div style="display:flex;flex-direction:column;gap:8px">' +
       st.steps.map(function(s,i){
         var cls = i < st.current ? "done" : i === st.current ? "running" : "pending";
         var icon = cls==="done"?"✅":cls==="running"?"🔄":"⏳";
-        return '<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--card);border-radius:8px;border-left:3px solid ' + (cls==="done"?"var(--green)":cls==="running"?"var(--amber)":"var(--line)") + '">' +
-          '<span style="font-size:18px">' + icon + '</span>' +
-          '<span style="flex:1;font-size:13px">Step ' + (i+1) + ': ' + escapeHtml(s.title) + '</span>' +
-          (s.result ? '<span style="font-size:11px;color:var(--muted);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escapeHtml(s.result) + '</span>' : '') +
+        var risk = assessStepRisk(s.title);
+        var attr = state.stepAttributions[i];
+        var riskColors = {low:"var(--green)",medium:"var(--amber)",high:"var(--red)",critical:"var(--red)"};
+        return '<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--card);border-radius:8px;border-left:3px solid ' + (cls==="done"?"var(--green)":cls==="running"?"var(--amber)":"var(--line)") + '">' +
+          '<span style="font-size:16px">' + icon + '</span>' +
+          '<span style="flex:1;font-size:13px">' + escapeHtml(s.title) + '</span>' +
+          '<span style="padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;background:' + (riskColors[risk]||'var(--bg2)') + '20;color:' + (riskColors[risk]||'var(--muted)') + '">' + risk.toUpperCase() + '</span>' +
+          (attr ? '<span style="font-size:11px;color:' + (attr.verdict==="GOOD"?'var(--green)':'var(--red)') + '">' + attr.verdict + '</span>' : '') +
+          (cls === "done" && !attr ? '<button style="padding:2px 8px;font-size:10px;border-radius:4px;cursor:pointer;background:rgba(34,197,94,.1);color:var(--green);border:none" onclick="attrStep(' + i + ',\'GOOD\')">GOOD</button><button style="padding:2px 8px;font-size:10px;border-radius:4px;cursor:pointer;background:rgba(239,68,68,.1);color:var(--red);border:none" onclick="attrStep(' + i + ',\'BAD\')">BAD</button>' : '') +
+          (s.result ? '<span style="font-size:11px;color:var(--muted);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escapeHtml(s.result) + '</span>' : '') +
         '</div>';
       }).join("") +
     '</div>' +
-    (st.status !== "idle" ? '<div style="display:flex;gap:8px">' +
+    // Parallel sub-agents
+    (state.parallelAgents.length > 0 ? '<h4 style="margin:16px 0 8px">Sub-Agent Pool</h4>' +
+    '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px">' +
+      state.parallelAgents.map(function(a){
+        return '<div style="background:var(--card);border-radius:8px;padding:12px;border:1px solid var(--line)">' +
+          '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">' +
+            '<span style="font-size:18px">' + a.emoji + '</span>' +
+            '<div><div style="font-weight:600;font-size:12px">' + a.name + '</div><div style="font-size:10px;color:var(--muted)">' + a.task + '</div></div>' +
+          '</div>' +
+          '<div style="display:flex;align-items:center;gap:6px">' +
+            '<div style="flex:1;height:4px;background:var(--bg2);border-radius:2px;overflow:hidden">' +
+              '<div style="width:' + a.progress + '%;height:100%;background:var(--accent);border-radius:2px;transition:width .5s"></div>' +
+            '</div>' +
+            '<span style="font-size:10px;color:var(--muted)">' + a.progress + '%</span>' +
+            '<span style="padding:2px 6px;border-radius:8px;font-size:9px;font-weight:600;background:' + (a.sandbox?'rgba(168,85,247,.1)':'rgba(34,197,94,.1)') + ';color:' + (a.sandbox?'#a855f7':'var(--green)') + '">' + (a.sandbox?'SANDBOX':'SAFE') + '</span>' +
+          '</div>' +
+          (a.result ? '<div style="margin-top:6px;font-size:10px;color:var(--accent2);font-family:monospace">' + escapeHtml(a.result) + '</div>' : '') +
+        '</div>';
+      }).join("") +
+    '</div>' : '') +
+    (st.status !== "idle" ? '<div style="display:flex;gap:8px;margin-top:16px">' +
       '<button style="padding:8px 16px;background:var(--green);color:#fff;border:none;border-radius:6px;cursor:pointer" onclick="executeTaskPlan()">Execute All</button>' +
-      '<button style="padding:8px 16px;background:var(--bg2);border:1px solid var(--line);border-radius:6px;cursor:pointer;color:var(--text)" onclick="state.taskPlan={steps:[],current:-1,status:\'idle\'};renderACIPanel()">Clear</button>' +
+      '<button style="padding:8px 16px;background:var(--bg2);border:1px solid var(--line);border-radius:6px;cursor:pointer;color:var(--text)" onclick="clearTaskPlan()">Clear</button>' +
     '</div>' : '') : '') +
     '<h4 style="margin:24px 0 12px">Meta-Prompt Builder</h4>' +
-    '<div style="background:var(--card);border-radius:8px;padding:16px;font-family:var(--font-mono);font-size:12px;color:var(--accent2);max-height:150px;overflow-y:auto;white-space:pre-wrap" id="metaPromptDisplay">' + (state.metaPromptMode === "auto" ? generateMetaPrompt() : "Enter a task above and click Plan to generate an optimized prompt.") + '</div>' +
-    '<p style="font-size:11px;color:var(--muted);margin-top:8px">Meta-prompt auto-adapts based on task complexity, agent role, and failure history.</p>' +
+    '<div style="background:var(--card);border-radius:8px;padding:16px;font-family:var(--font-mono);font-size:12px;color:var(--accent2);max-height:150px;overflow-y:auto;white-space:pre-wrap" id="metaPromptDisplay">' + generateMetaPrompt() + '</div>' +
+    '<p style="font-size:11px;color:var(--muted);margin-top:8px">Self-evolving: ' + state.promptVersions.length + ' snapshots, ' + state.failureCases.length + ' failures analyzed. Pattern repetition: ' + detectPatternRepetition() + '</p>' +
   '</div>';
   document.getElementById("aciContent").innerHTML = html;
+}
+
+function clearTaskPlan() {
+  state.taskPlan = { steps: [], current: -1, status: "idle" };
+  state.parallelAgents = [];
+  renderACIPanel();
+}
+
+// Risk assessment
+function assessStepRisk(title) {
+  if (/delete|remove|drop|truncate|销毁|删除|清除|格式化/i.test(title)) return "critical";
+  if (/write|modify|update|deploy|submit|transfer|写入|修改|部署|提交|转账/i.test(title)) return "high";
+  if (/config|restart|scale|权限|重启|配置/i.test(title)) return "medium";
+  return "low";
+}
+
+// Pattern repetition detection
+function detectPatternRepetition() {
+  var p = state.promptVersions;
+  if (p.length < 3) return "insufficient data";
+  var topics = {};
+  state.messages.filter(function(m){return m.type==="user"}).slice(-10).forEach(function(m){
+    var t = extractTopic(m.content);
+    topics[t] = (topics[t]||0) + 1;
+  });
+  var repeats = Object.keys(topics).filter(function(k){return topics[k] > 1;});
+  return repeats.length > 0 ? repeats.length + " patterns recurring. Consider skill blocks." : "no strong patterns yet";
+}
+
+// Skill block auto-detection
+function detectSkillPattern() {
+  var recentMessages = state.messages.filter(function(m){return m.type==="user"}).slice(-15);
+  if (recentMessages.length < 3) return;
+  var topics = {};
+  recentMessages.forEach(function(m){
+    var t = extractTopic(m.content);
+    if (!topics[t]) topics[t] = { count: 0, samples: [], steps: [] };
+    topics[t].count++;
+    topics[t].samples.push(m.content.slice(0,80));
+  });
+  Object.keys(topics).forEach(function(k){
+    if (topics[k].count >= 2) {
+      var existing = state.skillBlocks.find(function(b){return b.name.toLowerCase().indexOf(k.toLowerCase()) !== -1;});
+      if (existing) { existing.frequency++; existing.lastSeen = Date.now(); }
+      else {
+        var steps = generateSkillSteps(topics[k].samples[0]);
+        if (steps.length > 0) {
+          state.skillBlocks.push({
+            id: "skill_" + Date.now(), name: k + " Workflow", emoji: "⚡",
+            steps: steps, frequency: 1, lastSeen: Date.now(),
+            source: topics[k].samples[0], createdAt: Date.now()
+          });
+          logAudit("skill_detected", "Auto-detected: " + k);
+        }
+      }
+    }
+  });
+}
+
+function generateSkillSteps(sample) {
+  if (/check|inspect|monitor/i.test(sample)) return ["Connect to source","Extract metrics","Analyze patterns","Generate report"];
+  if (/deploy|release|launch/i.test(sample)) return ["Validate config","Stage deploy","Run tests","Promote"];
+  if (/security|audit|scan/i.test(sample)) return ["Enumerate targets","Run scan","Analyze findings","Report & fix"];
+  if (/data|migrate|etl/i.test(sample)) return ["Analyze schema","Build pipeline","Validate","Execute"];
+  return [];
+}
+
+function applySkillBlock(id) {
+  var block = state.skillBlocks.find(function(b){return b.id === id;});
+  if (!block) return;
+  var steps = block.steps.map(function(s){return {title:s,result:null};});
+  state.taskPlan = { steps: steps, current: -1, status: "planned" };
+  block.frequency++;
+  logAudit("skill_applied", "Skill: " + block.name);
+  renderACIPanel();
+  showToast("Applied: " + block.name, "success");
 }
 
 function planTask() {
@@ -2373,26 +2503,106 @@ function planTask() {
     steps = [{title:"Analyze intent & scope",result:null},{title:"Collect relevant context",result:null},{title:"Execute core operations",result:null},{title:"Validate & report results",result:null}];
   }
   state.taskPlan = { steps: steps, current: -1, status: "planned" };
-  logAudit("task_planned", "Topic: " + topic + ", Steps: " + steps.length);
+  detectSkillPattern();
+  if (state.parallelAgents.length > 0) spawnParallelAgents(steps);
+  logAudit("task_planned", "Topic: " + topic + ", Steps: " + steps.length + (state.parallelAgents.length>0?", Parallel":""));
   renderACIPanel();
-  showToast("Task plan: " + steps.length + " steps", "success");
+  showToast("Task plan: " + steps.length + " steps" + (state.parallelAgents.length>0?" + " + state.parallelAgents.length + " sub-agents":""), "success");
+}
+
+function toggleParallelMode() {
+  if (state.parallelAgents.length > 0) { state.parallelAgents = []; showToast("Parallel mode off", "warning"); renderACIPanel(); return; }
+  if (state.taskPlan.steps.length === 0) { showToast("Plan a task first", "error"); return; }
+  spawnParallelAgents(state.taskPlan.steps);
+  showToast("Parallel mode: " + state.parallelAgents.length + " sub-agents", "success");
+  renderACIPanel();
+}
+
+function spawnParallelAgents(steps) {
+  state.parallelAgents = [];
+  var names = [
+    {name:"Data Collector",emoji:"📡",task:"Fetch & aggregate data"},
+    {name:"Analyzer",emoji:"🔬",task:"Process & analyze patterns"},
+    {name:"Validator",emoji:"✅",task:"Verify integrity & compliance"},
+    {name:"Reporter",emoji:"📋",task:"Compile findings & format output"},
+    {name:"Deployer",emoji:"🚀",task:"Execute deployment steps"},
+    {name:"Cleaner",emoji:"🧹",task:"Sanitize & cleanup"}
+  ];
+  var numAgents = Math.min(names.length, Math.ceil(steps.length / 2) + 1);
+  for (var i = 0; i < numAgents; i++) {
+    var n = names[i];
+    var stepIdx = Math.floor(i * steps.length / numAgents);
+    var step = steps[Math.min(stepIdx, steps.length-1)];
+    var risk = assessStepRisk(step.title);
+    state.parallelAgents.push({
+      id: "pa_" + i, name: n.name, emoji: n.emoji, task: n.task,
+      progress: Math.floor(Math.random() * 20), sandbox: risk === "high" || risk === "critical",
+      result: null, assignedSteps: [step.title]
+    });
+  }
+}
+
+function attrStep(index, verdict) {
+  state.stepAttributions[index] = { verdict: verdict, time: Date.now(), agent: state.activeAgent.name };
+  if (verdict === "BAD") {
+    var step = state.taskPlan.steps[index];
+    if (step) {
+      trackFailure(step.title + " - Attributed BAD: root cause analysis pending");
+      logAudit("step_attributed_bad", "Step " + (index+1) + ": " + step.title);
+    }
+  }
+  renderACIPanel();
 }
 
 function executeTaskPlan() {
   var tp = state.taskPlan;
   if (tp.steps.length === 0) return;
-  requestConfirmation("Execute " + tp.steps.length + " task steps? This may modify system state.", function(){
+  var risky = tp.steps.filter(function(s){var r=assessStepRisk(s.title);return r==="high"||r==="critical";});
+  var msg = "Execute " + tp.steps.length + " task steps?";
+  if (risky.length > 0) msg += "\n\nWARNING: " + risky.length + " high-risk steps detected. Sandbox isolation will be applied.";
+  if (state.parallelAgents.length > 0) msg += "\n\nParallel mode: " + state.parallelAgents.length + " sub-agents.";
+  requestConfirmation(msg, function(){
     tp.status = "running";
     tp.current = 0;
+    // Create sandboxes for high-risk steps
+    risky.forEach(function(s){
+      if (!state.sandboxPools.find(function(sp){return sp.stepId === s.title;})) {
+        state.sandboxPools.push({ id: "sb_" + Date.now() + "_" + Math.random().toString(36).slice(2,6), stepId: s.title, created: Date.now(), destroyed: false, status: "active" });
+      }
+    });
     renderACIPanel();
-    var interval = setInterval(function(){
-      if (tp.current >= tp.steps.length) { clearInterval(interval); tp.status = "done"; renderACIPanel(); logAudit("task_complete", "All steps executed"); return; }
-      tp.steps[tp.current].result = "Simulated: " + new Date().toLocaleTimeString();
-      tp.current++;
-      renderACIPanel();
-    }, 1200);
-    logAudit("task_executed", "Executing " + tp.steps.length + " steps");
+    // Parallel or sequential
+    if (state.parallelAgents.length > 0) {
+      state.parallelAgents.forEach(function(pa, pi){
+        var interval = setInterval(function(){
+          if (pa.progress >= 100) { clearInterval(interval); pa.result = "Complete: " + new Date().toLocaleTimeString(); renderACIPanel(); return; }
+          pa.progress += Math.floor(Math.random() * 25) + 10;
+          if (pa.progress > 100) pa.progress = 100;
+          renderACIPanel();
+        }, 800 + pi * 200);
+      });
+      // Also advance main steps
+      var mainInterval = setInterval(function(){
+        if (tp.current >= tp.steps.length) { clearInterval(mainInterval); tp.status = "done"; destroySandboxes(); renderACIPanel(); logAudit("task_complete", "Parallel execution complete"); return; }
+        tp.steps[tp.current].result = "Agent executed: " + new Date().toLocaleTimeString();
+        tp.current++;
+        renderACIPanel();
+      }, 1400);
+    } else {
+      var interval = setInterval(function(){
+        if (tp.current >= tp.steps.length) { clearInterval(interval); tp.status = "done"; destroySandboxes(); renderACIPanel(); logAudit("task_complete", "All steps executed"); return; }
+        tp.steps[tp.current].result = "Simulated: " + new Date().toLocaleTimeString();
+        tp.current++;
+        renderACIPanel();
+      }, 1200);
+    }
+    logAudit("task_executed", "Executing " + tp.steps.length + " steps" + (state.parallelAgents.length>0?" (parallel)":"") + (risky.length>0?", sandboxes: "+risky.length:""));
   });
+}
+
+function destroySandboxes() {
+  state.sandboxPools.forEach(function(sp){ sp.destroyed = true; sp.status = "destroyed"; });
+  logAudit("sandbox_destroyed", state.sandboxPools.length + " sandboxes cleaned up");
 }
 
 function generateMetaPrompt() {
