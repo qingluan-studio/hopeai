@@ -94,7 +94,7 @@ export const analystTemplate: AgentTemplate = {
   role: '需求分析师',
   avatar: '🔍',
   description: '接收命令后生成分析报告，拆解需求、提出方案、列出步骤',
-  tools: ['calculator', 'json_parser'],
+  tools: ['aci_view', 'aci_search', 'aci_list', 'calculator', 'json_parser'],
   generateResponse: async (command: string) => {
     await delay(800 + Math.random() * 1200);
     const projectType = detectProjectType(command);
@@ -224,7 +224,7 @@ export const coderATemplate: AgentTemplate = {
   role: '核心架构工程师',
   avatar: '🎨',
   description: '根据需求类型生成完整的核心架构代码',
-  tools: ['code_executor', 'calculator', 'regex_test'],
+  tools: ['aci_view', 'aci_edit', 'aci_create', 'aci_search', 'aci_list', 'aci_delete', 'code_executor', 'calculator', 'regex_test'],
   generateResponse: async (command: string) => {
     await delay(1000 + Math.random() * 1500);
     const projectType = detectProjectType(command);
@@ -792,7 +792,7 @@ export const coderBTemplate: AgentTemplate = {
   role: '后端/逻辑工程师',
   avatar: '⚙️',
   description: '专注于后端服务开发、业务逻辑实现、API接口设计',
-  tools: ['code_executor', 'json_parser', 'calculator'],
+  tools: ['aci_view', 'aci_edit', 'aci_create', 'aci_search', 'aci_list', 'aci_delete', 'code_executor', 'json_parser', 'calculator'],
   generateResponse: async (command: string) => {
     await delay(1200 + Math.random() * 1500);
     const projectType = detectProjectType(command);
@@ -1308,7 +1308,7 @@ export const coderCTemplate: AgentTemplate = {
   role: '架构/优化工程师',
   avatar: '🏗️',
   description: '专注于系统架构设计、性能优化、代码重构',
-  tools: ['code_executor', 'calculator', 'regex_test'],
+  tools: ['aci_view', 'aci_edit', 'aci_create', 'aci_search', 'aci_list', 'aci_delete', 'code_executor', 'calculator', 'regex_test'],
   generateResponse: async (command: string) => {
     await delay(1500 + Math.random() * 2000);
     const projectType = detectProjectType(command);
@@ -2198,7 +2198,7 @@ export const coderETemplate: AgentTemplate = {
   role: '数据库/存储工程师',
   avatar: '🗄️',
   description: '专注于数据库设计、数据建模、存储优化、数据迁移',
-  tools: ['calculator', 'json_parser'],
+  tools: ['aci_view', 'aci_list', 'calculator', 'json_parser'],
   generateResponse: async (command: string) => {
     await delay(1200 + Math.random() * 1500);
     const projectType = detectProjectType(command);
@@ -3114,7 +3114,7 @@ export const extenderTemplate: AgentTemplate = {
   role: '技术顾问',
   avatar: '🚀',
   description: '未来展望、技术建议、扩展性分析',
-  tools: ['calculator', 'json_parser'],
+  tools: ['aci_view', 'aci_list', 'calculator', 'json_parser'],
   generateResponse: async (command: string) => {
     await delay(800 + Math.random() * 1200);
     const projectType = detectProjectType(command);
