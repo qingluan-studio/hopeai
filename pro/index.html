@@ -369,7 +369,51 @@ input:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(
 .msg-status{font-size:10px;color:var(--muted);margin-top:4px;display:flex;align-items:center;gap:4px}
 .msg-status.sent{color:var(--green)}
 .msg-status.error{color:var(--red)}
-</style>
+/* ── Artifacts Preview Panel ── */
+#artifactsPanel{position:fixed;right:0;top:0;width:50vw;min-width:420px;max-width:800px;height:100vh;background:var(--bg);border-left:1px solid var(--line);z-index:45;transform:translateX(100%);transition:transform .35s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;box-shadow:-8px 0 30px rgba(0,0,0,.4)}
+#artifactsPanel.open{transform:translateX(0)}
+.artifacts-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--line);flex-shrink:0}
+.artifacts-header h3{margin:0;font-size:14px;display:flex;align-items:center;gap:8px}
+.artifacts-header .close-btn{background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;padding:4px 8px;border-radius:6px}
+.artifacts-header .close-btn:hover{background:var(--bg2)}
+.artifacts-tabs{display:flex;gap:0;padding:0 16px;border-bottom:1px solid var(--line);flex-shrink:0}
+.artifacts-tab{padding:10px 16px;font-size:12px;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;font-weight:500}
+.artifacts-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.artifacts-tab:hover{color:var(--text)}
+.artifacts-body{flex:1;overflow:hidden;display:flex;flex-direction:column}
+.artifacts-preview{flex:1;position:relative}
+.artifacts-preview iframe{width:100%;height:100%;border:none;background:#fff}
+.artifacts-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--muted);gap:12px}
+.artifacts-empty .big-icon{font-size:48px;opacity:.5}
+.artifacts-code{flex:1;overflow-y:auto;padding:16px;font-family:var(--font-mono);font-size:12px;line-height:1.6;color:#c4b5fd;background:#000820;white-space:pre-wrap;display:none}
+.artifacts-code.show{display:block}
+.artifacts-info{padding:12px 16px;border-top:1px solid var(--line);flex-shrink:0;display:flex;align-items:center;gap:12px;font-size:12px}
+.file-badge{padding:3px 10px;border-radius:12px;font-size:10px;font-weight:600}
+.file-badge.html{background:rgba(239,68,68,.12);color:#ef4444}
+.file-badge.svg{background:rgba(168,85,247,.12);color:#a855f7}
+.file-badge.md{background:rgba(59,130,246,.12);color:#3b82f6}
+.file-badge.py{background:rgba(34,197,94,.12);color:#22c55e}
+.file-badge.js{background:rgba(251,191,36,.12);color:#fbbf24}
+.file-badge.json{background:rgba(251,146,60,.12);color:#fb923c}
+.file-badge.css{background:rgba(96,165,250,.12);color:#60a5fa}
+.file-badge.txt{background:rgba(148,163,184,.12);color:#94a3b8}
+.file-badge.ppt{background:rgba(239,68,68,.12);color:#ef4444}
+/* ── Progress Steps ── */
+.progress-steps{display:flex;flex-direction:column;gap:8px;padding:12px 16px;border-bottom:1px solid var(--line);flex-shrink:0}
+.progress-step{display:flex;align-items:center;gap:10px;font-size:12px;padding:8px 12px;border-radius:8px;background:var(--card);transition:all .3s}
+.progress-step.active{background:var(--accent);color:#fff}
+.progress-step.done{opacity:.6}
+.progress-step .step-icon{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;background:var(--bg2)}
+.progress-step.active .step-icon{background:rgba(255,255,255,.2)}
+.progress-step.done .step-icon{background:var(--green);color:#fff}
+.progress-step .step-body{flex:1;min-width:0}
+.progress-step .step-name{font-weight:600}
+.progress-step .step-detail{font-size:10px;opacity:.7;margin-top:2px}
+.thinking-outline{background:var(--card);border-radius:8px;padding:12px 16px;margin:8px 0;border-left:3px solid var(--accent2)}
+.thinking-outline h4{font-size:12px;color:var(--accent2);margin:0 0 8px}
+.thinking-outline ul{margin:0;padding-left:18px;font-size:12px;color:var(--muted)}
+.thinking-outline li{margin-bottom:4px}
+@media(max-width:768px){#artifactsPanel{width:100vw;min-width:unset;max-width:unset}}
 </head>
 <body>
 <div id="app">
@@ -546,6 +590,34 @@ input:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(
       <button onclick="closeModal()">✕</button>
     </div>
     <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<!-- Artifacts Preview Panel -->
+<div id="artifactsPanel">
+  <div class="artifacts-header">
+    <h3 id="artifactsTitle">📄 Preview</h3>
+    <div style="display:flex;gap:8px">
+      <button onclick="toggleArtifactsTab('preview')" class="artifacts-tab active" id="artTabPreview">Preview</button>
+      <button onclick="toggleArtifactsTab('code')" class="artifacts-tab" id="artTabCode">Code</button>
+      <button class="close-btn" onclick="closeArtifacts()">&times;</button>
+    </div>
+  </div>
+  <div class="progress-steps" id="progressSteps" style="display:none"></div>
+  <div class="artifacts-body">
+    <div class="artifacts-preview" id="artifactsPreview">
+      <div class="artifacts-empty">
+        <div class="big-icon">📄</div>
+        <p style="font-size:14px">Click "Preview" on any code block to render here</p>
+        <p style="font-size:11px">Supports HTML, SVG, Markdown, and more</p>
+      </div>
+    </div>
+    <div class="artifacts-code" id="artifactsCode"></div>
+  </div>
+  <div class="artifacts-info" id="artifactsInfo" style="display:none">
+    <span class="file-badge html" id="artifactsBadge">HTML</span>
+    <span style="font-size:11px;color:var(--muted)" id="artifactsSize">0 lines</span>
+    <button style="margin-left:auto;padding:5px 12px;background:var(--accent);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:11px" onclick="downloadArtifact()">Download</button>
   </div>
 </div>
 
@@ -1285,12 +1357,14 @@ function formatContent(text) {
   text = text.replace(/```(\w*)\n([\s\S]*?)```/g, function(_, lang, code){
     var escaped = escapeHtml(code.trim());
     var langDisplay = lang || "code";
+    var canPreview = /html|svg|md|markdown|css/i.test(langDisplay) || (!lang && /<!doctype|<html|<svg|<body/i.test(code));
     return '<div class="code-block"><div class="code-lang">' +
       '<span>' + langDisplay + '</span>' +
       '<div class="code-actions">' +
         '<button class="btn-copy" onclick="copyCode(this,\'' + escaped.replace(/'/g,"\\'").replace(/"/g,"&quot;").replace(/`/g,"\\`") + '\')">Copy</button>' +
+        (canPreview ? '<button class="btn-download" onclick="openArtifactFromBlock(this)" style="background:rgba(34,211,238,.1);color:var(--accent2)">Preview</button>' : '') +
         '<button class="btn-download" onclick="downloadCode(\'' + langDisplay + '\',\'' + escaped.replace(/'/g,"\\'").replace(/"/g,"&quot;").replace(/`/g,"\\`") + '\')">Download</button>' +
-      '</div></div><pre><code>' + escaped + '</code></pre></div>';
+      '</div></div><pre><code data-lang="' + langDisplay + '">' + escaped + '</code></pre></div>';
   });
   text = text.replace(/`([^`]+)`/g, '<code style="background:rgba(124,92,255,.15);color:#c4b5fd;padding:2px 6px;border-radius:4px;font-family:var(--font-mono);font-size:13px">$1</code>');
   text = text.replace(/\n/g, "<br>");
@@ -1304,6 +1378,13 @@ function formatContent(text) {
 function escapeHtml(text) {
   if (!text) return "";
   return text.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+
+function openArtifactFromBlock(btn) {
+  var codeEl = btn.closest(".code-block").querySelector("code");
+  var code = codeEl ? codeEl.textContent : "";
+  var lang = codeEl ? codeEl.getAttribute("data-lang") || "" : "";
+  openArtifact(code, lang);
 }
 
 function copyCode(btn, code) {
@@ -2976,7 +3057,150 @@ function branchConversation() {
   showToast("Branch created. Continue exploring alternate paths.", "success");
 }
 
-// ── v11: APP Polish ──
+// ── v12: Artifacts Preview + Progress + Multi-Format ──
+var currentArtifact = null;
+var fileFormats = {
+  html: { name:"HTML", ext:".html", badge:"html", mime:"text/html", preview:true },
+  svg: { name:"SVG", ext:".svg", badge:"svg", mime:"image/svg+xml", preview:true },
+  md: { name:"Markdown", ext:".md", badge:"md", mime:"text/markdown", preview:true },
+  py: { name:"Python", ext:".py", badge:"py", mime:"text/x-python", preview:false },
+  js: { name:"JavaScript", ext:".js", badge:"js", mime:"text/javascript", preview:false },
+  json: { name:"JSON", ext:".json", badge:"json", mime:"application/json", preview:false },
+  css: { name:"CSS", ext:".css", badge:"css", mime:"text/css", preview:false },
+  go: { name:"Go", ext:".go", badge:"py", mime:"text/x-go", preview:false },
+  rs: { name:"Rust", ext:".rs", badge:"py", mime:"text/x-rust", preview:false },
+  ts: { name:"TypeScript", ext:".ts", badge:"js", mime:"text/typescript", preview:false },
+  sql: { name:"SQL", ext:".sql", badge:"md", mime:"text/x-sql", preview:false },
+  sh: { name:"Shell", ext:".sh", badge:"md", mime:"text/x-sh", preview:false },
+  yaml: { name:"YAML", ext:".yaml", badge:"json", mime:"text/yaml", preview:false },
+  xml: { name:"XML", ext:".xml", badge:"html", mime:"text/xml", preview:false },
+  txt: { name:"Text", ext:".txt", badge:"txt", mime:"text/plain", preview:false },
+};
+
+function detectFileFormat(code, lang) {
+  if (lang) {
+    var l = lang.toLowerCase();
+    if (fileFormats[l]) return fileFormats[l];
+    var map = { python:"py", javascript:"js", typescript:"ts", golang:"go", rust:"rs", bash:"sh", shell:"sh", markdown:"md", html:"html" };
+    var key = map[l] || l;
+    if (fileFormats[key]) return fileFormats[key];
+  }
+  if (/<!doctype|<html|<body|<div|<svg/i.test(code)) return fileFormats.html;
+  if (/<svg/i.test(code)) return fileFormats.svg;
+  if (/^#\s|^##\s|^-\s|^\*\s/m.test(code)) return fileFormats.md;
+  if (/def |import |class |print\(|lambda/i.test(code)) return fileFormats.py;
+  if (/function |const |let |var |=>|require\(|import /i.test(code) && !/<[a-z]/i.test(code)) return fileFormats.js;
+  if (/^\{|^\s*\{|"[^"]+":/m.test(code)) return fileFormats.json;
+  if (/[.#][a-z-]+\s*\{/i.test(code) && !/<[a-z]/i.test(code)) return fileFormats.css;
+  return fileFormats.txt;
+}
+
+function openArtifact(code, lang) {
+  var fmt = detectFileFormat(code, lang);
+  currentArtifact = { code: code, format: fmt, lang: lang||fmt.ext.slice(1) };
+  document.getElementById("artifactsPanel").classList.add("open");
+  document.getElementById("artifactsTitle").textContent = fmt.name + " Preview";
+  document.getElementById("artifactsBadge").textContent = fmt.name.toUpperCase();
+  document.getElementById("artifactsBadge").className = "file-badge " + (fmt.badge);
+  document.getElementById("artifactsSize").textContent = code.split("\n").length + " lines";
+  document.getElementById("artifactsInfo").style.display = "flex";
+  document.getElementById("artifactsCode").textContent = code;
+  renderArtifactPreview(code, fmt);
+  toggleArtifactsTab("preview");
+  logAudit("artifact_open", "Format: " + fmt.name + ", " + code.split("\n").length + " lines");
+}
+
+function renderArtifactPreview(code, fmt) {
+  var container = document.getElementById("artifactsPreview");
+  if (!fmt.preview) {
+    container.innerHTML = '<div class="artifacts-empty"><div class="big-icon">📝</div><p>Preview not available for ' + fmt.name + '</p><p style="font-size:11px">Switch to Code tab to view source</p></div>';
+    return;
+  }
+  if (fmt.name === "HTML" || fmt.name === "SVG") {
+    var blob = new Blob([code], { type: "text/html" });
+    var url = URL.createObjectURL(blob);
+    container.innerHTML = '<iframe src="' + url + '" sandbox="allow-scripts allow-same-origin" style="width:100%;height:100%;border:none;background:#fff"></iframe>';
+  } else if (fmt.name === "Markdown") {
+    var mdHtml = '<div style="padding:20px;font-size:14px;line-height:1.8;max-width:800px;margin:0 auto;color:#1a1a2e">' +
+      code.replace(/^### (.+)$/gm,'<h3>$1</h3>').replace(/^## (.+)$/gm,'<h2>$1</h2>').replace(/^# (.+)$/gm,'<h1>$1</h1>')
+      .replace(/^- (.+)$/gm,'<li>$1</li>').replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+      .replace(/`([^`]+)`/g,'<code>$1</code>').replace(/\n\n/g,'<br><br>') +
+    '</div>';
+    container.innerHTML = mdHtml;
+  } else {
+    container.innerHTML = '<div class="artifacts-empty"><div class="big-icon">📝</div><p>Switch to Code tab to view source</p></div>';
+  }
+}
+
+function closeArtifacts() {
+  document.getElementById("artifactsPanel").classList.remove("open");
+}
+
+function toggleArtifactsTab(tab) {
+  document.getElementById("artifactsPreview").style.display = tab === "preview" ? "" : "none";
+  document.getElementById("artifactsCode").classList.toggle("show", tab === "code");
+  document.getElementById("artTabPreview").classList.toggle("active", tab === "preview");
+  document.getElementById("artTabCode").classList.toggle("active", tab === "code");
+}
+
+function downloadArtifact() {
+  if (!currentArtifact) return;
+  var blob = new Blob([currentArtifact.code], { type: currentArtifact.format.mime });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement("a");
+  a.href = url;
+  a.download = "artifact" + currentArtifact.format.ext;
+  a.click();
+  URL.revokeObjectURL(url);
+  addNotification("Downloaded", "File: artifact" + currentArtifact.format.ext, "success");
+}
+
+// Progress step system (Kimi-style thinking process)
+function showProgressSteps(steps) {
+  var html = steps.map(function(s, i){
+    return '<div class="progress-step ' + (i===0?'active':'') + '" id="progStep' + i + '">' +
+      '<span class="step-icon">' + (i+1) + '</span>' +
+      '<div class="step-body"><div class="step-name">' + s.title + '</div>' +
+      '<div class="step-detail">' + (s.detail||'Pending...') + '</div></div>' +
+    '</div>';
+  }).join("");
+  document.getElementById("progressSteps").innerHTML = html;
+  document.getElementById("progressSteps").style.display = "flex";
+}
+
+function advanceProgressStep(index, detail) {
+  var steps = document.querySelectorAll(".progress-step");
+  steps.forEach(function(s, i){
+    if (i < index) { s.classList.remove("active"); s.classList.add("done"); s.querySelector(".step-icon").textContent = "✓"; }
+    else if (i === index) s.classList.add("active");
+  });
+  var step = document.getElementById("progStep" + index);
+  if (step && detail) step.querySelector(".step-detail").textContent = detail;
+}
+
+function completeAllSteps() {
+  document.querySelectorAll(".progress-step").forEach(function(s){
+    s.classList.remove("active"); s.classList.add("done");
+    s.querySelector(".step-icon").textContent = "✓";
+  });
+  setTimeout(function(){ document.getElementById("progressSteps").style.display = "none"; }, 2000);
+}
+
+// Thinking outline display
+function addThinkingOutline(outline) {
+  var container = document.getElementById("chat-container");
+  if (!container) return;
+  var items = outline.map(function(o){return '<li>' + o + '</li>';}).join("");
+  var html = '<div class="thinking-outline"><h4>Thinking...</h4><ul>' + items + '</ul></div>';
+  var existing = container.querySelector(".thinking-outline:last-of-type");
+  if (existing) existing.outerHTML = html;
+  // Save as thinking message
+  var lastMsg = state.messages[state.messages.length - 1];
+  if (!lastMsg || lastMsg.type !== "thinking") {
+    state.messages.push({ type: "thinking", content: outline.join("\n"), time: Date.now() });
+  }
+}
+
 var appState = { scrollLocked: false, online: true, lastScrollTop: 0, touchStartX: 0, touchStartY: 0 };
 
 function scrollToBottom() {
