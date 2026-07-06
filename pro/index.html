@@ -300,6 +300,37 @@ input:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(
 
 /* Stop button */
 .stop-btn{background:var(--red)!important}
+
+/* Code Workspace Panel */
+.cw-panel{display:none;flex:1;overflow-y:auto;padding:16px}
+.cw-panel.show{display:block}
+.cw-header{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.cw-header h3{font-size:16px;color:var(--accent2)}
+.cw-actions{display:flex;gap:6px;margin-left:auto}
+.cw-actions button{padding:7px 14px;border-radius:8px;font-size:12px;font-weight:600;transition:all .2s}
+.cw-download-all{background:rgba(34,211,238,.12);color:var(--accent2)}
+.cw-download-all:hover{background:rgba(34,211,238,.2)}
+.cw-clear{background:rgba(239,68,68,.12);color:var(--red)}
+.cw-clear:hover{background:rgba(239,68,68,.2)}
+.cw-file-list{display:flex;flex-direction:column;gap:6px}
+.cw-file{background:var(--card);border:1px solid var(--line);border-radius:var(--r-sm);overflow:hidden}
+.cw-file-header{display:flex;align-items:center;gap:8px;padding:10px 14px;cursor:pointer;user-select:none;transition:background .2s}
+.cw-file-header:hover{background:var(--bg2)}
+.cw-file-icon{font-size:16px;flex-shrink:0}
+.cw-file-name{font-weight:600;font-size:13px;flex:1}
+.cw-file-meta{font-size:11px;color:var(--muted);font-family:var(--font-mono)}
+.cw-file-actions{display:flex;gap:4px}
+.cw-file-actions button{padding:3px 8px;border-radius:4px;font-size:11px;transition:all .2s}
+.cw-file-actions .cw-copy{color:var(--accent2)}
+.cw-file-actions .cw-copy:hover{background:rgba(34,211,238,.12)}
+.cw-file-actions .cw-download{color:var(--green)}
+.cw-file-actions .cw-download:hover{background:rgba(34,197,94,.12)}
+.cw-file-body{display:none;padding:0 14px 14px;border-top:1px solid var(--line)}
+.cw-file.open .cw-file-body{display:block}
+.cw-file pre{margin:0;overflow-x:auto;font-family:var(--font-mono);font-size:12px;line-height:1.5;color:#c4b5fd;padding-top:10px;tab-size:2;max-height:300px;overflow-y:auto}
+.cw-empty{text-align:center;padding:40px;color:var(--muted)}
+.cw-empty .big-icon{font-size:48px;margin-bottom:12px}
+@media(max-width:768px){.cw-header{flex-direction:column;align-items:flex-start}.cw-actions{margin-left:0}}
 </style>
 </head>
 <body>
@@ -348,6 +379,7 @@ input:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(
       <button class="active" data-tab="chat" onclick="switchTab('chat')">Chat</button>
       <button data-tab="kb" onclick="switchTab('kb')">KB (<span id="kbCount">0</span>)</button>
       <button data-tab="learn" onclick="switchTab('learn')">Learn (<span id="learnScore">0</span>)</button>
+      <button data-tab="code" onclick="switchTab('code')">Code (<span id="codeCount">0</span>)</button>
       <button data-tab="evo" onclick="switchTab('evo')">Evolution</button>
     </div>
     <div id="chat-container"></div>
@@ -358,6 +390,16 @@ input:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(
     <div class="learn-panel" id="learnPanel">
       <div class="learn-metrics" id="learnMetrics"></div>
       <div id="learnInsights" style="margin-top:16px"></div>
+    </div>
+    <div class="cw-panel" id="cwPanel">
+      <div class="cw-header">
+        <h3>Code Workspace</h3>
+        <div class="cw-actions">
+          <button class="cw-download-all" onclick="downloadAllCode()">Download All (.zip)</button>
+          <button class="cw-clear" onclick="clearCodeWorkspace()">Clear All</button>
+        </div>
+      </div>
+      <div id="cwContent"></div>
     </div>
     <div id="input-area">
       <div class="input-row">
@@ -383,6 +425,7 @@ input:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(
     <button class="active" onclick="switchTab('chat')"><span class="icon">💬</span>Chat</button>
     <button onclick="switchTab('kb')"><span class="icon">📚</span>KB</button>
     <button onclick="switchTab('learn')"><span class="icon">🧠</span>Learn</button>
+    <button onclick="switchTab('code')"><span class="icon">📁</span>Code</button>
     <button onclick="switchTab('evo')"><span class="icon">🚀</span>Evo</button>
   </div>
 </div>
@@ -498,7 +541,8 @@ let state = {
   deepModel: "gpt-4o-mini",
   thinking: false,
   conversations: [],
-  currentConvId: null
+  currentConvId: null,
+  codeFiles: []
 };
 
 let streamController = null;
@@ -553,7 +597,8 @@ function fullSave() {
       messages: state.messages,
       activeAgentId: state.activeAgent.id,
       mode: state.mode,
-      tokenUsed: state.tokenUsed
+      tokenUsed: state.tokenUsed,
+      codeFiles: state.codeFiles
     }));
   } catch(e) {}
   saveState();
@@ -586,6 +631,7 @@ function ensureConv() {
       }
       if (d.mode) state.mode = d.mode;
       if (d.tokenUsed !== undefined) state.tokenUsed = d.tokenUsed;
+      state.codeFiles = d.codeFiles || [];
     }
   } catch(e) {}
 }
@@ -595,6 +641,9 @@ function newConversation() {
   var id = generateId();
   state.conversations.unshift({ id: id, title: "New Conversation", agentId: state.activeAgent.id, msgCount: 0, createdAt: Date.now() });
   state.currentConvId = id;
+  state.messages = [];
+  state.tokenUsed = 0;
+  state.codeFiles = [];
   state.messages = [];
   state.tokenUsed = 0;
   state.activeAgent = AGENTS[0];
@@ -624,13 +673,16 @@ function switchConversation(convId) {
       }
       if (d.mode) state.mode = d.mode;
       if (d.tokenUsed !== undefined) state.tokenUsed = d.tokenUsed;
+      state.codeFiles = d.codeFiles || [];
     } else {
       state.messages = [];
       state.tokenUsed = 0;
+      state.codeFiles = [];
     }
   } catch(e) {
     state.messages = [];
     state.tokenUsed = 0;
+    state.codeFiles = [];
   }
   updateHeader();
   updateTokenDisplay();
@@ -911,16 +963,6 @@ async function sendMessage() {
     renderSidebar();
   }
 
-  if (state.messages.length === 0) {
-    var kbInfo = "";
-    if (typeof HOPEAI_KB !== "undefined") {
-      kbInfo = "\n\nKnowledge base: " + HOPEAI_KB.total + " entries across 4 layers.";
-    }
-    state.messages.push({
-      type: "agent", id: "init", content: "Hi! I'm **" + state.activeAgent.name + "** from " + L[state.activeAgent.layer].name + ".\n\nRole: " + state.activeAgent.role + "\nTools: " + state.activeAgent.tools + kbInfo + "\n\nHow can I help you today?"
-    });
-  }
-
   state.messages.push({ type: "user", content: text });
   state.thinking = true;
   document.getElementById("sendBtn").style.display = "none";
@@ -937,10 +979,13 @@ async function sendMessage() {
   }
 
   var model = state.mode === "deep" ? state.deepModel : state.model;
+  var timeSeed = Date.now() % 10000;
   var sysPrompt = "You are \"" + state.activeAgent.name + "\" (" + state.activeAgent.role + ") on HopeAgent Pro." +
     (state.mode === "deep" ? " Deep thinking mode: show reasoning, then final answer." : " Be concise and efficient.") +
     "\nLayer: " + L[state.activeAgent.layer].name + "\nTools: " + state.activeAgent.tools +
-    "\nReply in user's language. Use ```lang\\ncode\\n``` for code blocks." + kbContext;
+    "\nIMPORTANT: Never use template/boilerplate introductions. Respond directly to the user's specific request without generic greetings like 'Hello' or 'I am...'." +
+    "\nVary response structure based on context. If asked same question twice, respond differently each time." +
+    "\nUse ```lang\\ncode\\n``` for code blocks. Reply in user's language. Seed:" + timeSeed + kbContext;
 
   try {
     var messages = [
@@ -1182,6 +1227,115 @@ function openSettings() {
   document.getElementById("modalOverlay").style.display = "flex";
 }
 
+// ── Code Workspace ──
+function extractCodeBlocks() {
+  var files = {};
+  state.messages.forEach(function(msg) {
+    if (msg.type !== "agent") return;
+    var content = msg.content || "";
+    var regex = /```(\w*)\n([\s\S]*?)```/g;
+    var match;
+    while ((match = regex.exec(content)) !== null) {
+      var lang = (match[1] || "txt").toLowerCase();
+      var code = match[2].trim();
+      if (!code) continue;
+      var extMap = {javascript:"js",typescript:"ts",python:"py",html:"html",css:"css",json:"json",bash:"sh",sql:"sql",yaml:"yml",markdown:"md",rust:"rs",go:"go",java:"java",cpp:"cpp",c:"c",xml:"xml",php:"php",ruby:"rb",swift:"swift",kotlin:"kt",dockerfile:"dockerfile",shell:"sh",jsx:"jsx",tsx:"tsx",vue:"vue",svelte:"svelte"};
+      var ext = extMap[lang] || lang;
+      var key = lang + ":" + ext;
+      if (!files[key]) files[key] = { lang: lang, ext: ext, codes: [], count: 0 };
+      files[key].count++;
+      files[key].codes.push(code);
+    }
+  });
+  var result = [];
+  for (var k in files) {
+    var f = files[k];
+    var allCode = f.codes.join("\n\n// --- snippet " + (f.count > 1 ? "" : "") + " ---\n\n");
+    var filename = "code_" + Date.now().toString(36) + "_" + f.count + "." + f.ext;
+    result.push({ name: filename, lang: f.lang, ext: f.ext, content: allCode, snippets: f.count });
+  }
+  return result;
+}
+
+function renderCodeWorkspace() {
+  state.codeFiles = extractCodeBlocks();
+  var container = document.getElementById("cwContent");
+  document.getElementById("codeCount").textContent = state.codeFiles.length;
+
+  if (state.codeFiles.length === 0) {
+    container.innerHTML = '<div class="cw-empty"><div class="big-icon">📁</div><p>No code files yet.</p><p style="font-size:12px;color:var(--muted)">Code blocks from agent responses will auto-collect here. Each language gets its own file.</p></div>';
+    return;
+  }
+
+  container.innerHTML = '<div class="cw-file-list">' + state.codeFiles.map(function(f, i) {
+    var firstLines = f.content.split("\n").slice(0, 3).join("\n");
+    var escapedPreview = escapeHtml(firstLines);
+    return '<div class="cw-file" id="cwFile' + i + '">' +
+      '<div class="cw-file-header" onclick="toggleCodeFile(' + i + ')">' +
+        '<span class="cw-file-icon">📄</span>' +
+        '<span class="cw-file-name">' + escapeHtml(f.name) + '</span>' +
+        '<span class="cw-file-meta">' + f.lang + ' • ' + f.snippets + ' snippets • ' + formatNumber(f.content.length) + ' chars</span>' +
+        '<div class="cw-file-actions">' +
+          '<button class="cw-copy" onclick="event.stopPropagation();copyCodeFile(' + i + ')" title="Copy">📋</button>' +
+          '<button class="cw-download" onclick="event.stopPropagation();downloadCodeFile(' + i + ')" title="Download">⬇</button>' +
+        '</div>' +
+      '</div>' +
+      '<div class="cw-file-body"><pre><code>' + escapedPreview + '</code></pre></div>' +
+    '</div>';
+  }).join("") + '</div>';
+  fullSave();
+}
+
+function toggleCodeFile(i) {
+  var el = document.getElementById("cwFile" + i);
+  if (el) el.classList.toggle("open");
+}
+
+function copyCodeFile(i) {
+  var f = state.codeFiles[i];
+  if (!f) return;
+  navigator.clipboard.writeText(f.content).then(function() {
+    showToast("Copied " + f.name, "success");
+  });
+}
+
+function downloadCodeFile(i) {
+  var f = state.codeFiles[i];
+  if (!f) return;
+  var blob = new Blob([f.content], { type: "text/plain" });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement("a");
+  a.href = url; a.download = f.name; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function downloadAllCode() {
+  var files = extractCodeBlocks();
+  if (files.length === 0) { showToast("No code to download", "error"); return; }
+  if (files.length === 1) { downloadCodeFile(0); return; }
+
+  var bundle = files.map(function(f) {
+    return "=== " + f.name + " (" + f.lang + ") ===\n" + f.content + "\n";
+  }).join("\n");
+  var blob = new Blob([bundle], { type: "text/plain" });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement("a");
+  a.href = url;
+  a.download = "hopeagent_code_bundle_" + new Date().toISOString().slice(0,10) + ".txt";
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast("Downloaded " + files.length + " files", "success");
+}
+
+function clearCodeWorkspace() {
+  state.codeFiles = [];
+  state.messages = state.messages.filter(function(m){ return m.type !== "agent" || !/```/.test(m.content); });
+  document.getElementById("codeCount").textContent = "0";
+  document.getElementById("cwContent").innerHTML = '<div class="cw-empty"><div class="big-icon">📁</div><p>Code workspace cleared.</p></div>';
+  fullSave();
+  showToast("Code workspace cleared", "success");
+}
+
 function clearAllData() {
   localStorage.clear();
   state.messages = [];
@@ -1190,6 +1344,7 @@ function clearAllData() {
   state.activeAgent = AGENTS[0];
   state.conversations = [];
   state.currentConvId = null;
+  state.codeFiles = [];
   ensureConv();
   updateHeader();
   updateTokenDisplay();
@@ -1225,6 +1380,7 @@ function switchTab(tab) {
   document.getElementById("chat-container").style.display = isChatOrEvo ? "" : "none";
   document.getElementById("kbPanel").classList.toggle("show", tab === "kb");
   document.getElementById("learnPanel").classList.toggle("show", tab === "learn");
+  document.getElementById("cwPanel").classList.toggle("show", tab === "code");
   document.getElementById("input-area").style.display = (tab === "chat") ? "" : "none";
   document.querySelectorAll(".main-tabs button").forEach(function(b){ b.classList.toggle("active", b.dataset.tab === tab); });
   document.querySelectorAll("#bottomNav button").forEach(function(b){ b.classList.remove("active"); });
@@ -1234,6 +1390,7 @@ function switchTab(tab) {
   if (tab === "kb") renderKnowledgePanel();
   if (tab === "learn") renderLearnPanel();
   if (tab === "evo") renderEvoPanel();
+  if (tab === "code") renderCodeWorkspace();
 }
 
 function renderKnowledgePanel() {
