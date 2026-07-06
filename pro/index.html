@@ -217,14 +217,18 @@ input:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(
 
 /* Responsive */
 @media(max-width:768px){
-  #sidebar{position:fixed;left:0;top:0;transform:translateX(-100%)}
+  #sidebar{position:fixed;left:0;top:0;transform:translateX(-100%);z-index:60}
   #sidebar.open{transform:translateX(0)}
   .main-header .menu-btn{display:flex}
   .msg-content{max-width:90%}
   .mode-switch button{padding:6px 12px;font-size:11px}
   .token-bar{display:none}
-  #input-area{padding:12px}
+  #input-area{padding:12px;padding-bottom:70px}
   .modal{width:95%;max-height:90vh}
+  #bottomNav{display:block}
+  .main-tabs{overflow-x:auto;white-space:nowrap}
+  .learn-metrics{grid-template-columns:repeat(2,1fr)}
+  .splash-stats{grid-template-columns:repeat(2,1fr);display:grid}
 }
 
 /* Loading dots */
@@ -244,6 +248,60 @@ input:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(
 .typing{cursor:default}
 .typing::after{content:"|";animation:blink 1s infinite;color:var(--accent)}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+
+/* Knowledge Panel */
+.kb-panel{display:none;flex:1;overflow-y:auto;padding:16px}
+.kb-panel.show{display:block}
+.kb-stats-bar{display:flex;gap:10px;padding:8px 16px;background:var(--bg2);border-bottom:1px solid var(--line);flex-wrap:wrap}
+.kb-stat{padding:4px 12px;border-radius:12px;font-size:12px;font-family:var(--font-mono);background:var(--card)}
+.kb-stat .num{color:var(--accent2);font-weight:700}
+.kb-entry{background:var(--card);border:1px solid var(--line);border-radius:var(--r-sm);padding:14px;margin-bottom:10px;transition:all .2s;cursor:pointer}
+.kb-entry:hover{border-color:var(--accent);background:var(--bg2)}
+.kb-entry h4{font-size:14px;margin:0 0 6px;display:flex;align-items:center;gap:8px}
+.kb-entry .diff{font-size:10px;padding:1px 6px;border-radius:8px;font-weight:600}
+.kb-entry .diff.easy{background:rgba(34,197,94,.15);color:var(--green)}
+.kb-entry .diff.med{background:rgba(245,158,11,.15);color:var(--amber)}
+.kb-entry .diff.hard{background:rgba(239,68,68,.15);color:var(--red)}
+.kb-entry .tags{font-size:11px;color:var(--muted);margin-top:6px}
+.kb-entry .tags span{background:rgba(124,92,255,.1);padding:1px 8px;border-radius:8px;margin-right:4px}
+
+/* Learning Dashboard */
+.learn-panel{display:none;flex:1;overflow-y:auto;padding:16px}
+.learn-panel.show{display:block}
+.learn-metrics{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:16px}
+.learn-metric{background:var(--bg2);border:1px solid var(--line);border-radius:var(--r-sm);padding:14px;text-align:center}
+.learn-metric .val{font-size:24px;font-weight:700;color:var(--accent)}
+.learn-metric .lbl{font-size:11px;color:var(--muted);margin-top:4px}
+
+/* Evolution Directions */
+.evo-direction{background:var(--card);border:1px solid var(--line);border-radius:var(--r-sm);padding:16px;margin-bottom:12px}
+.evo-direction h4{font-size:14px;margin:0 0 6px;color:var(--accent2)}
+.evo-direction .evo-tech{font-size:12px;color:var(--muted);margin:4px 0}
+.evo-direction .evo-tools{font-size:11px;color:var(--green);margin-top:8px}
+
+/* Bottom Nav (Mobile) */
+#bottomNav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--bg2);border-top:1px solid var(--line);z-index:50;padding:4px 0;padding-bottom:env(safe-area-inset-bottom)}
+#bottomNav .nav-tabs{display:flex;justify-content:space-around}
+#bottomNav button{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 0;font-size:10px;color:var(--muted);transition:all .2s}
+#bottomNav button.active{color:var(--accent)}
+#bottomNav button .icon{font-size:18px}
+
+/* Agent recommendation */
+.agent-recommend{display:flex;flex-wrap:wrap;gap:6px;padding:4px 0}
+.agent-recommend .rec-chip{padding:5px 12px;border-radius:14px;font-size:11px;background:rgba(34,211,238,.08);border:1px solid rgba(34,211,238,.2);cursor:pointer;transition:all .2s}
+.agent-recommend .rec-chip:hover{background:rgba(34,211,238,.15)}
+
+/* Desktop tabs */
+.main-tabs{display:flex;gap:2px;padding:0 20px;border-bottom:1px solid var(--line);flex-shrink:0;background:var(--bg)}
+.main-tabs button{padding:10px 18px;font-size:13px;border-bottom:2px solid transparent;transition:all .2s;color:var(--muted)}
+.main-tabs button.active{border-bottom-color:var(--accent);color:var(--text);font-weight:600}
+.main-tabs button:hover{color:var(--text)}
+
+/* Splash stats */
+.splash-stats{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin:16px 0}
+.splash-stat{text-align:center;padding:10px 18px;background:var(--card);border-radius:12px;border:1px solid var(--line)}
+.splash-stat .num{font-size:22px;font-weight:700;color:var(--accent2)}
+.splash-stat .lbl{font-size:11px;color:var(--muted)}
 </style>
 </head>
 <body>
@@ -284,7 +342,21 @@ input:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(
         <span><span class="used" id="tokenUsed">0</span>/<span class="limit" id="tokenLimit">∞</span> tokens</span>
       </div>
     </header>
+    <div class="main-tabs" id="mainTabs">
+      <button class="active" data-tab="chat" onclick="switchTab('chat')">对话</button>
+      <button data-tab="kb" onclick="switchTab('kb')">知识库 (<span id="kbCount">0</span>)</button>
+      <button data-tab="learn" onclick="switchTab('learn')">自学习 (<span id="learnScore">0</span>)</button>
+      <button data-tab="evo" onclick="switchTab('evo')">进化方向</button>
+    </div>
     <div id="chat-container"></div>
+    <div class="kb-panel" id="kbPanel">
+      <div class="kb-stats-bar" id="kbStatsBar"></div>
+      <div id="kbContent"></div>
+    </div>
+    <div class="learn-panel" id="learnPanel">
+      <div class="learn-metrics" id="learnMetrics"></div>
+      <div id="learnInsights" style="margin-top:16px"></div>
+    </div>
     <div id="input-area">
       <div class="input-row">
         <textarea id="userInput" rows="1" placeholder="输入你的需求，调度官将为你匹配最合适的 AI 角色..." onkeydown="handleKeyDown(event)"></textarea>
@@ -292,6 +364,15 @@ input:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(
       </div>
       <div class="input-hint">Enter 发送 · Shift+Enter 换行 · <a href="#" onclick="openTokenConfig()">配置 API 额度</a></div>
     </div>
+  </div>
+</div>
+
+<div id="bottomNav">
+  <div class="nav-tabs">
+    <button class="active" onclick="switchTab('chat')"><span class="icon">💬</span>对话</button>
+    <button onclick="switchTab('kb')"><span class="icon">📚</span>知识库</button>
+    <button onclick="switchTab('learn')"><span class="icon">🧠</span>自学习</button>
+    <button onclick="switchTab('evo')"><span class="icon">🚀</span>进化</button>
   </div>
 </div>
 
@@ -305,6 +386,8 @@ input:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(
   </div>
 </div>
 
+<script src="/hopeai/pro/js/knowledge.js"></script>
+<script src="/hopeai/pro/js/self-learning.js"></script>
 <script>
 const L = {
   L1: { name:"编排层", dot:"#a78bfa", emoji:"🎯" },
@@ -522,6 +605,12 @@ function renderMessages() {
       <div class="logo-lg">H</div>
       <h2>欢迎使用 HopeAgent Pro</h2>
       <p>${TOTAL_AGENTS} 个 AI 角色已就绪，覆盖编排、交付、底座、治理四层架构。选择一个角色开始协作，或直接描述你的需求，调度官将自动匹配最佳角色。</p>
+      <div class="splash-stats" id="splashStats">
+        <div class="splash-stat"><div class="num" id="splashAgents">${TOTAL_AGENTS}</div><div class="lbl">AI角色</div></div>
+        <div class="splash-stat"><div class="num" id="splashKB">0</div><div class="lbl">知识条目</div></div>
+        <div class="splash-stat"><div class="num" id="splashSessions">0</div><div class="lbl">学习会话</div></div>
+        <div class="splash-stat"><div class="num">4层</div><div class="lbl">架构层次</div></div>
+      </div>
       <div class="agent-grid">
         ${AGENTS.filter(a => a.layer === "L1").map(a =>
           `<div class="agent-chip" onclick="selectAgent('${a.id}')"><span class="emoji">${a.emoji}</span>${a.name}</div>`
@@ -537,6 +626,15 @@ function renderMessages() {
         <button class="quick-action" onclick="quickAction('设计一个API接口')">API设计</button>
       </div>
     </div>`;
+    // Update splash stats after render
+    setTimeout(function(){
+      if (typeof HOPEAI_KB !== "undefined") {
+        var el = document.getElementById("splashKB"); if(el) el.textContent = HOPEAI_KB.total;
+      }
+      if (typeof SelfLearning !== "undefined") {
+        var el2 = document.getElementById("splashSessions"); if(el2) el2.textContent = SelfLearning.getStats().totalSessions;
+      }
+    }, 100);
   } else {
     let html = "";
     state.messages.forEach((msg, i) => {
@@ -636,10 +734,23 @@ async function sendMessage() {
   input.value = "";
   input.style.height = "44px";
 
+  // Auto-match agent
+  const matched = autoMatchAgent(text);
+  if (matched && matched.id !== state.activeAgent.id) {
+    state.activeAgent = matched;
+    updateHeader();
+    renderSidebar();
+  }
+
   if (state.messages.length === 0) {
+    // Welcome with knowledge stats
+    var kbInfo = "";
+    if (typeof HOPEAI_KB !== "undefined") {
+      kbInfo = "\n\n当前知识库共 " + HOPEAI_KB.total + " 条真实技术知识，涵盖编排/交付/底座/治理四层。";
+    }
     state.messages.push({
       type: "agent",
-      content: `你好！我是 **${state.activeAgent.name}**，属于${L[state.activeAgent.layer].name}。\n\n我的核心职责：${state.activeAgent.role}\n\n必备工具：${state.activeAgent.tools}\n\n请描述你的需求，我将全力协助。`
+      content: "你好！我是 **" + state.activeAgent.name + "**，属于" + L[state.activeAgent.layer].name + "。\n\n核心职责：" + state.activeAgent.role + "\n必备工具：" + state.activeAgent.tools + kbInfo + "\n\n请描述你的需求，我将全力协助。"
     });
   }
 
@@ -648,11 +759,17 @@ async function sendMessage() {
   renderMessages();
   saveState();
 
+  // Inject relevant knowledge into system prompt
+  var kbContext = "";
+  if (typeof HOPEAI_KB !== "undefined") {
+    var kbMatches = HOPEAI_KB.search(text).slice(0, 3);
+    if (kbMatches.length > 0) {
+      kbContext = "\n\n以下知识库条目可能对回答问题有帮助：\n" + kbMatches.map(function(e){return "- " + e.t + ": " + e.c;}).join("\n");
+    }
+  }
+
   const model = state.mode === "deep" ? state.deepModel : state.model;
-  const sysPrompt = `你是 HopeAgent Pro 平台中的 "${state.activeAgent.name}"（${state.activeAgent.role}）。${state.mode === "deep" ? "你当前处于深度思考模式，请给出最详尽、最完善的回答。先展示你的思考过程，再给出最终答案。" : "请简洁高效地回答用户问题。"}
-你所属层级：${L[state.activeAgent.layer].name}
-你可以使用的工具：${state.activeAgent.tools}
-请用中文回复。如果涉及代码，使用三个反引号包裹并标注语言。`;
+  const sysPrompt = "你是 HopeAgent Pro 平台中的 \"" + state.activeAgent.name + "\"（" + state.activeAgent.role + "）。" + (state.mode === "deep" ? "你当前处于深度思考模式，请给出最详尽、最完善的回答。先展示你的思考过程，再给出最终答案。" : "请简洁高效地回答用户问题。") + "\n你所属层级：" + L[state.activeAgent.layer].name + "\n你可以使用的工具：" + state.activeAgent.tools + "\n请用中文回复。如果涉及代码，使用三个反引号包裹并标注语言。" + kbContext;
 
   try {
     const messages = [
@@ -696,8 +813,17 @@ async function sendMessage() {
     } else {
       state.messages.push({ type: "agent", content: reply });
     }
+
+    // Track with self-learning engine
+    if (typeof SelfLearning !== "undefined") {
+      SelfLearning.track(state.activeAgent.id, text, reply, true);
+      document.getElementById("learnScore").textContent = SelfLearning.getStats().totalInteractions;
+    }
   } catch(e) {
-    state.messages.push({ type: "agent", content: `调用 AI 服务时出错：${e.message}\n\n请检查你的 API 配置是否正确。点击底部的"配置 API 额度"按钮进行设置。` });
+    state.messages.push({ type: "agent", content: "调用 AI 服务时出错：" + e.message + "\n\n请检查你的 API 配置是否正确。点击底部的\"配置 API 额度\"按钮进行设置。" });
+    if (typeof SelfLearning !== "undefined") {
+      SelfLearning.track(state.activeAgent.id, text, e.message, false);
+    }
   }
 
   state.thinking = false;
@@ -832,6 +958,146 @@ function toggleSidebar() {
   document.getElementById("sidebar").classList.toggle("open");
 }
 
+// ── Tab Switching ──
+let currentTab = "chat";
+function switchTab(tab) {
+  currentTab = tab;
+  document.getElementById("chat-container").style.display = tab==="chat"?"":"none";
+  document.getElementById("kbPanel").classList.toggle("show", tab==="kb");
+  document.getElementById("learnPanel").classList.toggle("show", tab==="learn");
+  document.getElementById("input-area").style.display = (tab==="chat"||tab==="evo")?"":"none";
+  document.querySelectorAll(".main-tabs button").forEach(b => b.classList.toggle("active", b.dataset.tab===tab));
+  document.querySelectorAll("#bottomNav button").forEach(b => b.classList.remove("active"));
+  if (document.querySelector(`#bottomNav button[onclick*="${tab}"]`)) {
+    document.querySelector(`#bottomNav button[onclick*="${tab}"]`).classList.add("active");
+  }
+  if (tab==="kb") renderKnowledgePanel();
+  if (tab==="learn") renderLearnPanel();
+  if (tab==="evo") renderEvoPanel();
+}
+
+// ── Knowledge Panel ──
+function renderKnowledgePanel() {
+  if (typeof HOPEAI_KB === "undefined") return;
+  const stats = HOPEAI_KB.stats;
+  document.getElementById("kbCount").textContent = stats.total;
+  document.getElementById("kbStatsBar").innerHTML = `
+    <div class="kb-stat">总计 <span class="num">${stats.total}</span> 条</div>
+    ${Object.entries(stats.byLayer).map(([k,v])=>`<div class="kb-stat">${k} <span class="num">${v}</span></div>`).join("")}
+    <input type="text" oninput="searchKB(this.value)" placeholder="搜索知识库..." style="flex:1;min-width:120px;padding:4px 10px;font-size:12px;border-radius:12px;max-width:200px" />
+  `;
+  displayKBEntries(HOPEAI_KB.entries.slice(0, 50));
+}
+function searchKB(q) {
+  if (!q) { displayKBEntries(HOPEAI_KB.entries.slice(0, 50)); return; }
+  displayKBEntries(HOPEAI_KB.search(q));
+}
+function displayKBEntries(entries) {
+  const diffMap = {1:"easy 基础", 2:"med 进阶", 3:"hard 高级"};
+  document.getElementById("kbContent").innerHTML = entries.map(e => `
+    <div class="kb-entry" onclick="selectAgent('${e.g[0]||""}')">
+      <h4>${e.t} <span class="diff ${e.d===1?"easy":e.d===2?"med":"hard"}">${diffMap[e.d]||""}</span></h4>
+      <div style="font-size:13px;color:var(--text);line-height:1.6">${e.c}</div>
+      <div class="tags">${(e.g||[]).map(t=>`<span>${t}</span>`).join("")} <span style="color:var(--muted);margin-left:8px">${e.l}/${e.s}</span></div>
+    </div>`).join("") || "<p style='color:var(--muted);text-align:center;padding:40px'>未找到匹配的知识条目</p>";
+}
+
+// ── Learning Panel ──
+function renderLearnPanel() {
+  if (typeof SelfLearning === "undefined") return;
+  const s = SelfLearning.getStats();
+  document.getElementById("learnScore").textContent = s.totalInteractions;
+  document.getElementById("learnMetrics").innerHTML = `
+    <div class="learn-metric"><div class="val">${s.totalSessions}</div><div class="lbl">学习会话</div></div>
+    <div class="learn-metric"><div class="val">${s.totalInteractions}</div><div class="lbl">总交互</div></div>
+    <div class="learn-metric"><div class="val">${s.totalInsights}</div><div class="lbl">洞见生成</div></div>
+    <div class="learn-metric"><div class="val">${s.totalPatterns}</div><div class="lbl">模式发现</div></div>
+    <div class="learn-metric"><div class="val">${s.learningRate}</div><div class="lbl">交互/会话</div></div>
+    <div class="learn-metric"><div class="val">${s.helpfulRate}%</div><div class="lbl">有用率</div></div>
+    <div class="learn-metric"><div class="val">${s.peakUsageTime}</div><div class="lbl">高峰时段</div></div>
+    <div class="learn-metric"><div class="val">${s.favoriteAgent}</div><div class="lbl">最常用Agent</div></div>
+  `;
+  let html = "<h4 style='margin-bottom:10px'>近期洞见</h4>";
+  if (s.recentInsights.length > 0) {
+    s.recentInsights.forEach(ins => {
+      html += `<div class="kb-entry"><h4>${ins.title}</h4><p style="font-size:13px">${ins.message}</p></div>`;
+    });
+  } else {
+    html += "<p style='color:var(--muted)'>继续对话以生成学习洞见...</p>";
+  }
+  html += "<h4 style='margin:16px 0 10px'>升级建议</h4>";
+  html += `<div class="kb-entry"><p style="font-size:13px">系统会根据你的使用习惯自动推荐知识、匹配Agent、优化工作流。对话越多，学习越精准。</p></div>`;
+  document.getElementById("learnInsights").innerHTML = html;
+}
+
+// ── Evolution Directions Panel ──
+function renderEvoPanel() {
+  document.getElementById("chat-container").style.display = "block";
+  document.getElementById("chat-container").innerHTML = `<div style="padding:24px;max-width:800px;margin:0 auto">
+    <h2 style="margin-bottom:16px">六大进化方向</h2>
+    <div class="evo-direction">
+      <h4>1. 规模扩展：75+ → 数百/上千动态Agent</h4>
+      <p class="evo-tech">动态Agent生成 · 角色模板引擎 · 生命周期管理</p>
+      <p class="evo-tools">开源：LangGraph、CrewAI、AutoGen/AG2 | 数据：Weaviate、Qdrant、pgvector</p>
+    </div>
+    <div class="evo-direction">
+      <h4>2. 智能进化：单调度官 → 议会 → 元治理</h4>
+      <p class="evo-tech">ReAct/Plan-and-Execute · 集体决策算法 · 投票机制</p>
+      <p class="evo-tools">开源：MS Agent Framework、OpenAI Agents SDK(Handoff)、Google ADK(层级树) | 数据：Neo4j、KuzuDB</p>
+    </div>
+    <div class="evo-direction">
+      <h4>3. 架构演进：静态四层 → 液态拓扑 → 跨平台联邦</h4>
+      <p class="evo-tech">A2A协议 · MCP工具标准 · 事件驱动编排 · 图状态管理</p>
+      <p class="evo-tools">开源：Google A2A Protocol(150+组织)、MCP(10+语言SDK)、LangGraph、LlamaIndex Workflows | 数据：Redis、SQLite</p>
+    </div>
+    <div class="evo-direction">
+      <h4>4. 经济系统：Token计数 → 内部结算 → 持股治理</h4>
+      <p class="evo-tech">Token经济合约 · 内部结算 · 成本追踪 · 预算熔断</p>
+      <p class="evo-tools">开源：暂无成熟框架，需自定义实现 | 数据：SQLite(轻量记账)、Redis(实时计数)</p>
+    </div>
+    <div class="evo-direction">
+      <h4>5. 交互升级：用户选角色 → 自动匹配 → 无感知服务</h4>
+      <p class="evo-tech">上下文感知 · 意图预测 · 持续记忆 · 嵌入式集成</p>
+      <p class="evo-tools">开源：Mem0、LangMem、Cognee(图向量混合)、Zep | 数据：LanceDB(边缘向量)、Chroma</p>
+    </div>
+    <div class="evo-direction">
+      <h4>6. 数字生命体：自我诊断/修复/繁殖/进化</h4>
+      <p class="evo-tech">自监控 · 自愈算法 · 元学习 · 自主优化</p>
+      <p class="evo-tools">开源：Letta(自托管Agent)、Deep Agents(长运行任务)、LangSmith(观测) | 数据：Chroma、SQLite</p>
+    </div>
+    <h3 style="margin:20px 0 12px">关键技术标准</h3>
+    <div style="display:flex;flex-wrap:wrap;gap:8px">
+      <span class="agent-chip">A2A Protocol (Google开源)</span>
+      <span class="agent-chip">MCP (Anthropic开源)</span>
+      <span class="agent-chip">OpenTelemetry (可观测性)</span>
+      <span class="agent-chip">ReAct / Plan-and-Execute</span>
+    </div>
+  </div>`;
+}
+
+// ── Auto Agent Matching ──
+function autoMatchAgent(query) {
+  if (!query) return;
+  const q = query.toLowerCase();
+  let bestAgent = null;
+  let bestScore = 0;
+  AGENTS.forEach(a => {
+    let score = 0;
+    const roleWords = (a.role + a.tools + a.name).toLowerCase().split(/[\s,，、]+/);
+    const qWords = q.split(/[\s,，、]+/);
+    qWords.forEach(w => {
+      if (roleWords.some(rw => rw.includes(w))) score += 2;
+    });
+    if (q.includes(a.id)) score += 5;
+    if (q.includes(a.name)) score += 3;
+    if (score > bestScore) { bestScore = score; bestAgent = a; }
+  });
+  if (bestAgent && bestScore >= 2 && bestAgent.id !== state.activeAgent.id) {
+    return bestAgent;
+  }
+  return null;
+}
+
 function init() {
   loadState();
   renderSidebar();
@@ -864,10 +1130,16 @@ function init() {
 
   if (window.innerWidth >= 769) {
     document.getElementById("sidebar").classList.remove("open");
+  } else {
+    document.getElementById("bottomNav").style.display = "block";
   }
 
   document.getElementById("btnDaily").classList.toggle("active", state.mode === "daily");
   document.getElementById("btnDeep").classList.toggle("active", state.mode === "deep");
+
+  if (typeof HOPEAI_KB !== "undefined") {
+    document.getElementById("kbCount").textContent = HOPEAI_KB.total;
+  }
 }
 
 init();
