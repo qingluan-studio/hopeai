@@ -176,6 +176,16 @@ const HOPEAI_KB = (function() {
   $("RAG七大范式演进2026","SimpleRAG(向量检索+LLM)已降至基线地位。主流进阶：CorrectiveRAG(评估器+网络搜索回退)、SelfRAG(反思Token+自我批评)、AgenticRAG(Agent循环+动态路由)、GraphRAG(知识图谱+社区摘要)、SpeculativeRAG(多路生成+评分选择)、FusionRAG(多源检索+信息整合)。趋势代理化+轻量化+多模态融合。","RAG 范式 演进 2026","底座层","RAGVectorSearch",2);
   $("Dify低代码Agent平台","字节跳动开源的Dify在2026年成为国内最流行低代码AI应用平台，GitHub Star超8万。可视化Agent编排(拖拽工作流)、内置RAG管道、LLMOps监控、应用模板市场。支持多种LLM：OpenAI/Claude/DeepSeek/通义千问。适合非技术人员快速搭建AI应用，复杂逻辑可通过代码节点扩展。","Dify 低代码 Agent 平台","交付层","DevOpsCICD",1);
 
+  // AI编程工具与IDE知识
+  $("TRAE AI原生IDE","字节跳动旗下AI IDE，全称The Real AI Engineer。VS Code同源，三大模式：Chat(对话改代码/调试/重构)、Builder(自然语言生成完整项目)、设计稿转代码(Figma截图→React/Vue)。国内版搭载doubao-1.5-pro+DeepSeek-R1/V3，国际版GPT-4o/Claude3.5。个人版永久免费，Pro约$10/月。216天发布63个版本。支持MCP协议、自定义Agent、Cue智能预测补全。","TRAE IDE 字节 AI编程 Builder","交付层","FrontendDev",1);
+  $("Kimi K2.7 Code开源模型","月之暗面Moonshot AI发布，MoE架构1.1万亿总参(32B激活)，384专家动态8个。256K上下文窗口覆盖中型代码库。MCP Mark Verified得分81.1超越Claude Opus 4.8(76.4)。Modified MIT协议免费商用可本地部署。已接入GitHub Copilot成为平台首个开源模型。Token消耗比前代减少30%，定价不到Claude 1/6。K2系列半年发布5个版本。","Kimi K2 开源 MoonshotAI Copilot","底座层","RAGVectorSearch",2);
+  $("MonkeyCode开源AI编程平台","长亭科技推出，Apache 2.0/AGPL-3.0协议开源。覆盖需求→设计→开发→代码审查全流程。支持GitHub/GitLab/Gitee/Bitbucket代码源绑定。内置GLM/Kimi/MiniMax/Qwen/DeepSeek等全量模型。每日签到领100积分。支持编译后在线调试、私有化离线部署(Docker/K8s)、iOS/Android原生客户端。Agent v2.0规划多步推理和工具调用。","MonkeyCode 开源 AI编程 Agent","交付层","FrontendDev",1);
+  $("OpenAI Codex开源编程Agent","2026年OpenAI开源Codex(Apache 2.0)，是唯一完全开源核心的AI编程工具。多形态编程代理支持终端/IDE/Web，Rust实现高性能。默认GPT-5.5模型，可选GPT-5.4等。企业可自行审计/编译/定制。500万周活用户。支持MCP、Skill系统、Subagent子代理。与VS Code和GitHub深度集成。","Codex OpenAI 开源 Agent 编程","交付层","FrontendDev",2);
+  $("AI IDE对比2026全景","四大巨头：Claude Code(代码库级理解+质量，年化63亿$，但贵)、OpenAI Codex(Apache 2.0开源+500万周活)、Cursor(AI原生IDE+多模型+Composer，$20/月)、GitHub Copilot(生态最完整+42%市场份额)。国内：TRAE(永久免费+中文母语)、通义灵码(免费)、百度Comate、腾讯Marvis。开源：Cline(可切换任意模型)、Continue(Apache 2.0)。","AI IDE IDE 对比 Cursor Copilot Codex","交付层","FrontendDev",1);
+  $("AI编程Agent方法论","2026年AI编程从代码补全进化为自主Agent：分析代码结构→设计接口→实现逻辑→编写测试→更新文档全自动。关键能力：多文件理解(百万级上下文)、跨文件重构、工具调用(MCP)、子任务委派(Subagent)。选型原则：新手→GitHub Copilot(开箱即用)，重度→Cursor/Claude Code，开源自由→Cline+本地模型，隐私敏感→MonkeyCode私有部署。免费组合：Cursor Hobby版+通义灵码+DeepSeek。","AI编程 Agent 工具 方法","编排层","MultiAgentCoord",1);
+  $("Kimi Claw智能体框架","Kimi Claw深度适配OpenClaw 2026.4框架，登顶全球模型调用榜TOP1。零代码云原生一键部署，3分钟搭建智能体工作流。ClawHub 6000+社区技能库。K2.6技术可调度300个异构Agent协同，支持5天连续自主运行。全量开放会员和企业级API。支持网页/Windows/Mac/iOS/Android/微信小程序五端同步。","Kimi Claw Agent 框架 OpenClaw","编排层","MultiAgentCoord",2);
+  $("v0.dev AI前端代码生成","Vercel出品，输入文字描述生成React/Vue前端页面(UI组件/表单/仪表盘)。直接导出代码复制即用。基于shadcn/ui组件库+TailwindCSS。支持迭代修改(选中区域→描述改动)。适合快速原型和MVP开发，但对复杂业务逻辑支持有限。免费版有限额。与Cursor/Copilot互补：v0.dev做前端UI+AI IDE做后端逻辑。","v0 Vercel 前端 AI 生成","交付层","FrontendDev",1);
+
   // ── 统计与接口 ──
   E.forEach(function(e,i){
     e.i = 'K' + String(i+1).padStart(4,'0');
