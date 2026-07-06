@@ -2,16 +2,101 @@
 <html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>HopeAgent Pro - 智能体协作平台</title>
-    <script type="module" crossorigin src="/hopeai/pro/assets/index-_RUKqw2I.js"></script>
-    <link rel="modulepreload" crossorigin href="/hopeai/pro/assets/ui-vendor-ClljsNq6.js">
-    <link rel="modulepreload" crossorigin href="/hopeai/pro/assets/markdown-vendor-CVDWu_Mh.js">
-    <link rel="modulepreload" crossorigin href="/hopeai/pro/assets/react-vendor-C7ifDeG9.js">
-    <link rel="stylesheet" crossorigin href="/hopeai/pro/assets/index-D9F3X-g5.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#0a0a1a" />
+    <link rel="icon" type="image/svg+xml" href="/hopeai/pro/favicon.svg" />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+
+    <title>HopeAgent Pro · 75+ AI 智能体协作平台</title>
+    <meta name="description" content="HopeAgent Pro 是面向 AI 公司的智能体协作平台：75+ 个垂直 AI 角色矩阵、湖仓一体多模态存储、AI 优先 GEO 检索、Harness 运行时外骨骼、Api 生成内容自动沉淀。本平台面向零付费依赖，全部运行在免费额度之上。" />
+    <meta name="keywords" content="HopeAgent,AI 智能体,Agent 平台,Agent Matrix,RAG,湖仓一体,Harness,GEO,生成式搜索引擎优化,Ai 协作,免费 AI 平台,SaaS 智能体,Agent 编排,角色矩阵,自进化" />
+    <meta name="author" content="qingluan-studio" />
+    <link rel="canonical" href="https://qingluan-studio.github.io/hopeai/pro/" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="HopeAgent Pro" />
+    <meta property="og:title" content="HopeAgent Pro · 75+ AI 智能体协作平台" />
+    <meta property="og:description" content="75+ 个垂直 AI 角色，湖仓一体，AI 优先 GEO 检索，零付费依赖。" />
+    <meta property="og:url" content="https://qingluan-studio.github.io/hopeai/pro/" />
+    <meta property="og:locale" content="zh_CN" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="HopeAgent Pro · 75+ AI 智能体协作平台" />
+    <meta name="twitter:description" content="75+ 个垂直 AI 角色矩阵，AI 优先 GEO 检索，零付费依赖。" />
+
+    <!-- GEO: 全站 Schema.org 结构化数据 / 让 AI 检索引擎优先引用 -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "HopeAgent Pro",
+        "alternateName": "HopeAI Pro 智能体协作平台",
+        "url": "https://qingluan-studio.github.io/hopeai/pro/",
+        "applicationCategory": "BusinessApplication",
+        "applicationSubCategory": "AI Agent Collaboration Platform",
+        "operatingSystem": "Web",
+        "description": "75+ 个垂直 AI 角色组成的智能体协作平台，覆盖编排、交付、底座、治理四层架构。",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "CNY" },
+        "featureList": [
+          "75+ AI Agent 角色矩阵",
+          "湖仓一体多模态存储",
+          "RAG 混合检索与重排",
+          "AI 优先 GEO 结构化数据",
+          "Harness 运行时外骨骼",
+          "API 内容自动沉淀",
+          "零付费依赖",
+          "GitHub Pages 一键部署"
+        ],
+        "author": { "@type": "Organization", "name": "qingluan-studio", "url": "https://qingluan-studio.github.io/hopeai/" }
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "qingluan-studio",
+        "url": "https://qingluan-studio.github.io/hopeai/",
+        "logo": "https://qingluan-studio.github.io/hopeai/pro/favicon.svg",
+        "sameAs": ["https://qingluan-studio.github.io/hopeai/"]
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "ItemList",
+        "name": "HopeAgent Pro 核心 AI Agent 角色（前 10 / 75+）",
+        "itemListOrder": "https://schema.org/ItemListOrderAscending",
+        "numberOfItems": 10,
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1,  "name": "首席任务调度官 Orchestrator",       "url": "https://qingluan-studio.github.io/hopeai/pro/#agent-orchestrator" },
+          { "@type": "ListItem", "position": 2,  "name": "极简交互流设计官 UI Flow Designer", "url": "https://qingluan-studio.github.io/hopeai/pro/#agent-ui-flow-designer" },
+          { "@type": "ListItem", "position": 3,  "name": "全栈代码工匠 Code Artisan",         "url": "https://qingluan-studio.github.io/hopeai/pro/#agent-code-artisan" },
+          { "@type": "ListItem", "position": 4,  "name": "品牌文案大师 Copy Master",           "url": "https://qingluan-studio.github.io/hopeai/pro/#agent-copy-master" },
+          { "@type": "ListItem", "position": 5,  "name": "移动端体验架构师 Mobile Architect", "url": "https://qingluan-studio.github.io/hopeai/pro/#agent-mobile-architect" },
+          { "@type": "ListItem", "position": 6,  "name": "数据湖仓架构师 Lakehouse Architect","url": "https://qingluan-studio.github.io/hopeai/pro/#agent-lakehouse-architect" },
+          { "@type": "ListItem", "position": 7,  "name": "RAG 检索专家 RAG Specialist",        "url": "https://qingluan-studio.github.io/hopeai/pro/#agent-rag-specialist" },
+          { "@type": "ListItem", "position": 8,  "name": "GEO 优化师 GEO Optimizer",          "url": "https://qingluan-studio.github.io/hopeai/pro/#agent-geo-optimizer" },
+          { "@type": "ListItem", "position": 9,  "name": "Harness 工程官 Harness Engineer",    "url": "https://qingluan-studio.github.io/hopeai/pro/#agent-harness-engineer" },
+          { "@type": "ListItem", "position": 10, "name": "自进化导师 Self-Evolution Mentor",   "url": "https://qingluan-studio.github.io/hopeai/pro/#agent-self-evolution-mentor" }
+        ]
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          { "@type": "Question", "name": "HopeAgent Pro 一共多少个 AI 角色？", "acceptedAnswer": { "@type": "Answer", "text": "蓝图目标 75 个不重复的 AI 角色，目前已经上线 75+ 个，覆盖编排层、交付层、底座层、治理层 4 层架构。" } },
+          { "@type": "Question", "name": "这个平台是免费的吗？",              "acceptedAnswer": { "@type": "Answer", "text": "是。整个平台运行在免费额度之上：GitHub Pages / Cloudflare Pages 托管、Chroma 本地向量库、sentence-transformers 本地嵌入、Cloudflare R2 免费档、GitHub Actions 等。" } },
+          { "@type": "Question", "name": "什么是 GEO？",                       "acceptedAnswer": { "@type": "Answer", "text": "GEO 是 Generative Engine Optimization，针对生成式搜索引擎（ChatGPT / Claude / Perplexity / Google SGE）的优化，让你的内容成为 AI 优先引用的标准答案。HopeAgent Pro 内置全套 GEO 结构化数据 + AI 爬虫白名单。" } }
+        ]
+      }
+    </script>
+    <script type="module" crossorigin src="/hopeai/pro/assets/index-0KGUo2pU.js"></script>
+    <link rel="modulepreload" crossorigin href="/hopeai/pro/assets/react-vendor-ppAWL3zK.js">
+    <link rel="stylesheet" crossorigin href="/hopeai/pro/assets/index-CMyE46Z-.css">
   </head>
-  <body class="bg-cyber-bg text-cyber-text">
+  <body>
     <div id="root"></div>
   </body>
 </html>
