@@ -3507,8 +3507,6 @@ function initAppPolish() {
 }
 
 function init() {
-  document.getElementById("chat-container").innerHTML = '<h2>INIT STARTED</h2>';
-  try {
   loadState();
   loadFailures();
   renderSidebar();
@@ -3573,10 +3571,6 @@ function init() {
   }
   if (state.lang) updateAllUI();
   initAppPolish();
-  } catch(e) {
-    document.getElementById("chat-container").innerHTML = '<div style="padding:40px;color:var(--red);font-family:monospace"><h2>JS Error</h2><pre>' + e.message + '</pre><pre>Stack: ' + (e.stack||'none') + '</pre></div>';
-    console.error(e);
-  }
 }
 
 init();
