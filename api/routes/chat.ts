@@ -183,10 +183,10 @@ ${relevantChunk.slice(0, 600)}...`
   }
 }
 
-// 希望AI聊天接口（增强版：思维链推理 + RAG + 自我反思）
+// 希望AI聊天接口（增强版：思维链推理 + RAG + 自我反思 + 联网搜索）
 router.post('/hopeai', async (req: Request, res: Response): Promise<void> => {
   try {
-    const { messages, useChainOfThought = true, useReflection = true } = req.body
+    const { messages, useChainOfThought = true, useReflection = true, useWebSearch = true } = req.body
 
     if (!messages || !Array.isArray(messages)) {
       res.status(400).json({ success: false, error: '缺少 messages 参数' })
@@ -206,7 +206,7 @@ router.post('/hopeai', async (req: Request, res: Response): Promise<void> => {
       }
     }
 
-    // 构建系统提示词（加入思维链推理指令）
+    // 构建系统提示词
     const systemPrompt = {
       role: 'system' as const,
       content: `你是希望AI（HopeAI），一个智能对话助手。
@@ -237,7 +237,7 @@ ${useReflection ? `
 📖 知识库使用规则：
 - 优先使用知识库中的信息回答问题
 - 如果知识库中有多个相关条目，综合所有信息给出完整答案
-- 如果知识库中没有相关信息，明确说明并给出通用建议
+- 如果知识库中没有相关信息，可以使用联网搜索获取最新信息
 - 引用知识库内容时，请标注来源标题
 
 回答风格：专业、清晰、有深度，代码示例使用markdown格式。`
@@ -249,6 +249,28 @@ ${useReflection ? `
       enhancedMessages[enhancedMessages.length - 1].content += ragContext
     }
 
+    // 构建请求体
+    const requestBody: any = {
+      model: useWebSearch ? 'kimi-k2.6' : KIMI_MODEL,
+      messages: enhancedMessages,
+      temperature: useChainOfThought ? 0.8 : 0.7,
+      max_tokens: 3000
+    }
+
+    // 如果启用联网搜索，添加 $web_search 工具
+    if (useWebSearch) {
+      requestBody.tools = [
+        {
+          type: 'builtin_function',
+          function: {
+            name: '$web_search'
+          }
+        }
+      ]
+      // 使用 $web_search 时必须禁用思考能力
+      requestBody.thinking = { type: 'disabled' }
+    }
+
     // 调用 Kimi API
     const response = await fetch(KIMI_API_URL, {
       method: 'POST',
@@ -256,12 +278,7 @@ ${useReflection ? `
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${KIMI_API_KEY}`
       },
-      body: JSON.stringify({
-        model: KIMI_MODEL,
-        messages: enhancedMessages,
-        temperature: useChainOfThought ? 0.8 : 0.7,
-        max_tokens: 3000
-      })
+      body: JSON.stringify(requestBody)
     })
 
     if (!response.ok) {
@@ -271,17 +288,53 @@ ${useReflection ? `
       return
     }
 
-    const data = await response.json()
+    let data = await response.json()
+
+    // 处理 tool_calls（$web_search 的特殊流程）
+    const choice = data.choices?.[0]
+    if (choice?.message?.tool_calls && choice.finish_reason === 'tool_calls') {
+      // 原样返回 tool_call 参数（$web_search 的正确用法）
+      const toolMessages = [...enhancedMessages, choice.message]
+
+      for (const toolCall of choice.message.tool_calls) {
+        toolMessages.push({
+          role: 'tool',
+          tool_call_id: toolCall.id,
+          content: toolCall.function.arguments
+        })
+      }
+
+      // 再次调用 Kimi API，获取最终回答
+      const followUpResponse = await fetch(KIMI_API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${KIMI_API_KEY}`
+        },
+        body: JSON.stringify({
+          model: 'kimi-k2.6',
+          messages: toolMessages,
+          temperature: 0.7,
+          max_tokens: 3000,
+          tools: requestBody.tools,
+          thinking: { type: 'disabled' }
+        })
+      })
+
+      if (followUpResponse.ok) {
+        data = await followUpResponse.json()
+      }
+    }
 
     // 提取引用来源
-    const citedSources = sources.filter(s =>
-      (data.choices?.[0]?.message?.content || '').includes(s.title)
-    )
+    const aiContent = data.choices?.[0]?.message?.content || ''
+    const citedSources = sources.filter(s => aiContent.includes(s.title))
 
     res.json({
       success: true,
       data: data,
       ragUsed: ragContext ? true : false,
+      webSearchUsed: useWebSearch,
       sources: citedSources.length > 0 ? citedSources : sources.slice(0, 3),
       chainOfThought: useChainOfThought,
       reflection: useReflection

@@ -322,6 +322,7 @@
         <span class="feature-badge">🔍 自我反思</span>
         <span class="feature-badge">📚 RAG检索</span>
         <span class="feature-badge">🗺️ 知识图谱</span>
+        <span class="feature-badge">🌐 联网搜索</span>
       </div>
     </header>
     
@@ -334,7 +335,8 @@
         <strong>🧠 思维链推理</strong> - 把复杂问题拆解成一步步来思考<br>
         <strong>🔍 自我反思</strong> - 回答后自动检查是否准确<br>
         <strong>📚 知识库检索</strong> - 从知识库中查找相关知识增强回答<br>
-        <strong>🗺️ 知识图谱</strong> - 理解知识点之间的关联<br><br>
+        <strong>🗺️ 知识图谱</strong> - 理解知识点之间的关联<br>
+        <strong>🌐 联网搜索</strong> - 实时搜索互联网获取最新信息<br><br>
         有什么想问的吗？
       </div>
     </div>
@@ -353,6 +355,10 @@
           <input type="checkbox" id="reflectionToggle" checked onchange="toggleSetting(this)">
           <span>🔍 自我反思</span>
         </label>
+        <label class="setting-toggle active">
+          <input type="checkbox" id="webSearchToggle" checked onchange="toggleSetting(this)">
+          <span>🌐 联网搜索</span>
+        </label>
       </div>
       <div class="input-wrapper">
         <input type="text" id="input" placeholder="输入你的问题..." autocomplete="off">
@@ -368,6 +374,7 @@
     const stats = document.getElementById('stats');
     const cotToggle = document.getElementById('cotToggle');
     const reflectionToggle = document.getElementById('reflectionToggle');
+    const webSearchToggle = document.getElementById('webSearchToggle');
     
     let messages = [
       { role: 'assistant', content: '你好！我是希望AI，一个具备深度思考能力的智能对话助手...' }
@@ -471,7 +478,8 @@
           body: JSON.stringify({
             messages,
             useChainOfThought: cotToggle.checked,
-            useReflection: reflectionToggle.checked
+            useReflection: reflectionToggle.checked,
+            useWebSearch: webSearchToggle.checked
           })
         });
         
