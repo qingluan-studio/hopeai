@@ -1,102 +1,876 @@
 <!doctype html>
 <html lang="zh-CN">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#0a0a1a" />
-    <link rel="icon" type="image/svg+xml" href="/hopeai/pro/favicon.svg" />
-    <meta name="robots" content="index, follow, max-image-preview:large" />
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#0a0a1a" />
+<link rel="icon" type="image/svg+xml" href="/hopeai/pro/favicon.svg" />
+<meta name="robots" content="index, follow, max-image-preview:large" />
+<title>HopeAgent Pro · 75+ AI 智能体协作平台</title>
+<meta name="description" content="HopeAgent Pro 是面向 AI 公司的智能体协作平台。75+ 个垂直 AI 角色矩阵、湖仓一体多模态存储、AI 优先 GEO 检索、Harness 运行时外骨骼、API 生成内容自动沉淀。零付费依赖，全部运行在免费额度之上。" />
+<meta name="keywords" content="HopeAgent,AI 智能体,Agent 平台,Agent Matrix,RAG,湖仓一体,Harness,GEO,生成式搜索引擎优化,AI 协作,免费 AI 平台,SaaS 智能体,Agent 编排,角色矩阵,自进化" />
+<meta name="author" content="qingluan-studio" />
+<link rel="canonical" href="https://qingluan-studio.github.io/hopeai/pro/" />
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="HopeAgent Pro" />
+<meta property="og:title" content="HopeAgent Pro · 75+ AI 智能体协作平台" />
+<meta property="og:description" content="75+ 个垂直 AI 角色，湖仓一体，AI 优先 GEO 检索，零付费依赖。" />
+<meta property="og:url" content="https://qingluan-studio.github.io/hopeai/pro/" />
+<meta property="og:locale" content="zh_CN" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="HopeAgent Pro · 75+ AI 智能体协作平台" />
+<meta name="twitter:description" content="75+ 个垂直 AI 角色矩阵，AI 优先 GEO 检索，零付费依赖。" />
 
-    <title>HopeAgent Pro · 75+ AI 智能体协作平台</title>
-    <meta name="description" content="HopeAgent Pro 是面向 AI 公司的智能体协作平台：75+ 个垂直 AI 角色矩阵、湖仓一体多模态存储、AI 优先 GEO 检索、Harness 运行时外骨骼、Api 生成内容自动沉淀。本平台面向零付费依赖，全部运行在免费额度之上。" />
-    <meta name="keywords" content="HopeAgent,AI 智能体,Agent 平台,Agent Matrix,RAG,湖仓一体,Harness,GEO,生成式搜索引擎优化,Ai 协作,免费 AI 平台,SaaS 智能体,Agent 编排,角色矩阵,自进化" />
-    <meta name="author" content="qingluan-studio" />
-    <link rel="canonical" href="https://qingluan-studio.github.io/hopeai/pro/" />
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "HopeAgent Pro",
+  "alternateName": "HopeAI Pro 智能体协作平台",
+  "url": "https://qingluan-studio.github.io/hopeai/pro/",
+  "applicationCategory": "BusinessApplication",
+  "applicationSubCategory": "AI Agent Collaboration Platform",
+  "operatingSystem": "Web",
+  "description": "75+ 个垂直 AI 角色组成的智能体协作平台，覆盖编排、交付、底座、治理四层架构。",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "CNY" },
+  "featureList": ["75+ AI Agent 角色矩阵","湖仓一体多模态存储","RAG 混合检索与重排","AI 优先 GEO 结构化数据","Harness 运行时外骨骼","API 内容自动沉淀","零付费依赖","GitHub Pages 一键部署"],
+  "author": { "@type": "Organization", "name": "qingluan-studio", "url": "https://qingluan-studio.github.io/hopeai/" }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "ItemList",
+  "name": "HopeAgent Pro 核心 AI Agent 角色",
+  "itemListOrder": "https://schema.org/ItemListOrderAscending",
+  "numberOfItems": 10,
+  "itemListElement": [
+    {"@type":"ListItem","position":1,"name":"首席任务调度官 Orchestrator"},
+    {"@type":"ListItem","position":2,"name":"极简交互流设计官 UI Flow Designer"},
+    {"@type":"ListItem","position":3,"name":"全栈代码工匠 Code Artisan"},
+    {"@type":"ListItem","position":4,"name":"品牌文案大师 Copy Master"},
+    {"@type":"ListItem","position":5,"name":"移动端体验架构师 Mobile Architect"},
+    {"@type":"ListItem","position":6,"name":"数据湖仓架构师 Lakehouse Architect"},
+    {"@type":"ListItem","position":7,"name":"RAG 检索专家 RAG Specialist"},
+    {"@type":"ListItem","position":8,"name":"GEO 优化师 GEO Optimizer"},
+    {"@type":"ListItem","position":9,"name":"Harness 工程官 Harness Engineer"},
+    {"@type":"ListItem","position":10,"name":"自进化导师 Self-Evolution Mentor"}
+  ]
+}
+</script>
+<style>
+:root {
+  --bg: #0a0a1a; --bg2: #0f1024; --card: #161830; --line: #262948;
+  --text: #e6e8ff; --muted: #9aa0c3; --accent: #7c5cff; --accent2: #22d3ee;
+  --green: #22c55e; --amber: #f59e0b; --red: #ef4444; --pink: #ec4899;
+  --r: 14px; --r-sm: 8px; --sidebar-w: 280px;
+  --font-mono: ui-monospace, "SF Mono", Menlo, "Cascadia Code", Consolas, monospace;
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:var(--font-sans);font-size:14px;line-height:1.6;-webkit-font-smoothing:antialiased}
+#app{display:flex;height:100vh;width:100vw}
+a{color:var(--accent2);text-decoration:none}
+a:hover{text-decoration:underline}
+button{cursor:pointer;border:none;background:none;color:inherit;font:inherit}
+input,textarea{font:inherit;color:inherit;background:var(--bg2);border:1px solid var(--line);border-radius:var(--r-sm);padding:10px 14px;outline:none;width:100%;resize:none}
+input:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(124,92,255,.15)}
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--line);border-radius:10px}
+::-webkit-scrollbar-thumb:hover{background:var(--muted)}
 
-    <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="HopeAgent Pro" />
-    <meta property="og:title" content="HopeAgent Pro · 75+ AI 智能体协作平台" />
-    <meta property="og:description" content="75+ 个垂直 AI 角色，湖仓一体，AI 优先 GEO 检索，零付费依赖。" />
-    <meta property="og:url" content="https://qingluan-studio.github.io/hopeai/pro/" />
-    <meta property="og:locale" content="zh_CN" />
+/* Sidebar */
+#sidebar{width:var(--sidebar-w);min-width:var(--sidebar-w);height:100vh;background:var(--bg2);border-right:1px solid var(--line);display:flex;flex-direction:column;z-index:20;transition:transform .3s ease}
+#sidebar.collapsed{transform:translateX(-100%)}
+.sidebar-header{padding:16px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;flex-shrink:0}
+.sidebar-logo{width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;color:#fff}
+.sidebar-title{font-size:15px;font-weight:700;white-space:nowrap}
+.sidebar-title span{background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.sidebar-actions{display:flex;gap:6px;margin-left:auto}
+.sidebar-actions button{width:30px;height:30px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:16px;transition:background .2s}
+.sidebar-actions button:hover{background:var(--card)}
+.sidebar-search{padding:10px 14px;flex-shrink:0}
+.sidebar-search input{font-size:12.5px;padding:8px 12px;border-radius:20px}
+.sidebar-nav{flex:1;overflow-y:auto;padding:4px 8px}
+.nav-section{margin-bottom:4px}
+.nav-section-header{display:flex;align-items:center;gap:6px;padding:8px 10px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);cursor:pointer;border-radius:6px;user-select:none}
+.nav-section-header:hover{background:var(--card)}
+.nav-section-header .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.nav-section-header .arrow{font-size:10px;margin-left:auto;transition:transform .2s}
+.nav-section.collapsed .agent-list{display:none}
+.nav-section.collapsed .arrow{transform:rotate(-90deg)}
+.agent-list{list-style:none}
+.agent-item{padding:9px 10px 9px 24px;border-radius:6px;cursor:pointer;font-size:13px;display:flex;align-items:center;gap:8px;transition:all .15s;position:relative;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.agent-item:hover{background:var(--card)}
+.agent-item.active{background:rgba(124,92,255,.15);color:#c4b5fd}
+.agent-item.active::before{content:"";position:absolute;left:0;top:4px;bottom:4px;width:3px;background:var(--accent);border-radius:0 3px 3px 0}
+.agent-item .emoji{font-size:15px;flex-shrink:0}
+.agent-item .name{overflow:hidden;text-overflow:ellipsis}
+.agent-item .badge{font-size:10px;padding:1px 6px;border-radius:10px;background:rgba(34,197,94,.15);color:var(--green);margin-left:auto;flex-shrink:0}
+.sidebar-footer{padding:12px;border-top:1px solid var(--line);flex-shrink:0;display:flex;flex-direction:column;gap:6px}
+.sidebar-footer button{width:100%;padding:9px 0;border-radius:8px;font-size:13px;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:6px}
+.sidebar-footer .btn-token{background:rgba(124,92,255,.12);color:#c4b5fd}
+.sidebar-footer .btn-token:hover{background:rgba(124,92,255,.25)}
+.sidebar-footer .btn-settings{background:var(--card);color:var(--muted)}
+.sidebar-footer .btn-settings:hover{background:var(--line)}
 
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="HopeAgent Pro · 75+ AI 智能体协作平台" />
-    <meta name="twitter:description" content="75+ 个垂直 AI 角色矩阵，AI 优先 GEO 检索，零付费依赖。" />
+/* Main */
+#main{flex:1;display:flex;flex-direction:column;height:100vh;min-width:0}
+.main-header{display:flex;align-items:center;gap:12px;padding:12px 20px;border-bottom:1px solid var(--line);flex-shrink:0;z-index:10}
+.main-header .menu-btn{width:36px;height:36px;border-radius:8px;display:none;align-items:center;justify-content:center;font-size:20px}
+.main-header .menu-btn:hover{background:var(--card)}
+.agent-info{display:flex;align-items:center;gap:10px}
+.agent-info .agent-avatar{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px}
+.agent-info .agent-name{font-weight:700;font-size:15px}
+.agent-info .agent-role{font-size:11px;color:var(--muted)}
+.mode-switch{margin-left:auto;display:flex;background:var(--bg2);border-radius:20px;padding:2px;border:1px solid var(--line)}
+.mode-switch button{padding:7px 16px;border-radius:18px;font-size:12.5px;font-weight:600;transition:all .2s;white-space:nowrap}
+.mode-switch button.active{background:linear-gradient(135deg,var(--accent),#6366f1);color:#fff;box-shadow:0 2px 8px rgba(124,92,255,.3)}
+.token-bar{display:flex;align-items:center;gap:8px;padding:4px 12px;background:var(--bg2);border-radius:20px;font-size:11px;color:var(--muted);font-family:var(--font-mono)}
+.token-bar .used{color:var(--accent2)}
+.token-bar .limit{color:var(--muted)}
+.progress-ring{width:28px;height:28px;flex-shrink:0}
 
-    <!-- GEO: 全站 Schema.org 结构化数据 / 让 AI 检索引擎优先引用 -->
-    <script type="application/ld+json">
-      {
-        "@context": "https://schema.org",
-        "@type": "SoftwareApplication",
-        "name": "HopeAgent Pro",
-        "alternateName": "HopeAI Pro 智能体协作平台",
-        "url": "https://qingluan-studio.github.io/hopeai/pro/",
-        "applicationCategory": "BusinessApplication",
-        "applicationSubCategory": "AI Agent Collaboration Platform",
-        "operatingSystem": "Web",
-        "description": "75+ 个垂直 AI 角色组成的智能体协作平台，覆盖编排、交付、底座、治理四层架构。",
-        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "CNY" },
-        "featureList": [
-          "75+ AI Agent 角色矩阵",
-          "湖仓一体多模态存储",
-          "RAG 混合检索与重排",
-          "AI 优先 GEO 结构化数据",
-          "Harness 运行时外骨骼",
-          "API 内容自动沉淀",
-          "零付费依赖",
-          "GitHub Pages 一键部署"
-        ],
-        "author": { "@type": "Organization", "name": "qingluan-studio", "url": "https://qingluan-studio.github.io/hopeai/" }
+/* Chat */
+#chat-container{flex:1;overflow-y:auto;padding:20px}
+.chat-welcome{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;text-align:center;padding:40px}
+.chat-welcome .logo-lg{width:80px;height:80px;border-radius:20px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:40px;color:#fff;margin-bottom:20px;box-shadow:0 8px 32px rgba(124,92,255,.3)}
+.chat-welcome h2{font-size:22px;margin-bottom:8px}
+.chat-welcome p{color:var(--muted);max-width:500px;margin-bottom:24px}
+.quick-actions{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-width:560px}
+.quick-action{padding:10px 18px;border-radius:20px;background:var(--card);border:1px solid var(--line);font-size:13px;transition:all .2s;text-align:left}
+.quick-action:hover{background:var(--bg2);border-color:var(--accent);transform:translateY(-1px)}
+
+/* Messages */
+.message{display:flex;gap:12px;margin-bottom:20px;animation:fadeIn .3s ease}
+.message.user{flex-direction:row-reverse}
+.message .msg-avatar{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.message.user .msg-avatar{background:linear-gradient(135deg,#6366f1,#8b5cf6)}
+.message.agent .msg-avatar{background:var(--card);border:1px solid var(--line)}
+.msg-content{max-width:75%;min-width:0}
+.msg-header{font-size:11px;color:var(--muted);margin-bottom:4px}
+.msg-body{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px 18px;font-size:14px;line-height:1.75;word-break:break-word}
+.message.user .msg-body{background:rgba(124,92,255,.12);border-color:rgba(124,92,255,.3)}
+.msg-body p{margin-bottom:10px}
+.msg-body p:last-child{margin-bottom:0}
+.msg-body ul,.msg-body ol{padding-left:20px;margin:8px 0}
+.msg-body li{margin-bottom:4px}
+.msg-body strong{color:#c4b5fd}
+.msg-body em{color:var(--accent2)}
+
+/* Thinking */
+.thinking-stream{background:var(--bg2);border:1px solid var(--line);border-radius:var(--r-sm);margin-bottom:16px;overflow:hidden}
+.thinking-header{padding:8px 14px;font-size:11px;color:var(--amber);font-weight:600;display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none}
+.thinking-header::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--amber);animation:pulse 1.5s infinite}
+.thinking-header .toggle{font-size:10px;margin-left:auto}
+.thinking-content{padding:10px 14px;font-family:var(--font-mono);font-size:12px;color:var(--muted);line-height:1.8;max-height:200px;overflow-y:auto;display:none;border-top:1px solid var(--line);white-space:pre-wrap}
+.thinking-content.show{display:block}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* Code Blocks */
+.code-block{background:#000820;border:1px solid var(--line);border-radius:var(--r-sm);margin:12px 0;overflow:hidden;position:relative}
+.code-block .code-lang{display:flex;align-items:center;justify-content:space-between;padding:8px 14px;background:rgba(0,0,0,.3);font-size:11px;color:var(--muted);font-family:var(--font-mono);text-transform:uppercase}
+.code-block .code-actions{display:flex;gap:4px}
+.code-block .code-actions button{padding:4px 8px;font-size:11px;border-radius:4px;transition:all .2s;display:flex;align-items:center;gap:4px}
+.code-block .code-actions .btn-copy{color:var(--accent2)}
+.code-block .code-actions .btn-copy:hover{background:rgba(34,211,238,.12)}
+.code-block .code-actions .btn-download{color:var(--green)}
+.code-block .code-actions .btn-download:hover{background:rgba(34,197,94,.12)}
+.code-block .btn-copied{color:var(--green)!important}
+.code-block pre{padding:14px;margin:0;overflow-x:auto;font-family:var(--font-mono);font-size:13px;line-height:1.6;color:#c4b5fd;tab-size:2}
+.code-block pre code{font-family:inherit}
+
+/* Input */
+#input-area{padding:16px 20px;border-top:1px solid var(--line);flex-shrink:0;z-index:10}
+.input-row{display:flex;gap:10px;align-items:flex-end}
+.input-row textarea{min-height:44px;max-height:160px;padding:12px 16px;border-radius:var(--r);line-height:1.5}
+.input-row textarea::placeholder{color:var(--muted)}
+.send-btn{width:44px;height:44px;border-radius:var(--r);background:linear-gradient(135deg,var(--accent),#6366f1);color:#fff;font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s;box-shadow:0 2px 12px rgba(124,92,255,.25)}
+.send-btn:hover{transform:scale(1.05)}
+.send-btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.send-btn.loading{animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.input-hint{font-size:11px;color:var(--muted);margin-top:8px;text-align:center}
+
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:100;display:flex;align-items:center;justify-content:center;animation:fadeIn .2s ease}
+.modal{background:var(--card);border:1px solid var(--line);border-radius:var(--r);width:90%;max-width:500px;max-height:80vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.modal-header{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between}
+.modal-header h3{font-size:16px}
+.modal-header button{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;transition:background .2s}
+.modal-header button:hover{background:var(--line)}
+.modal-body{padding:20px}
+.modal-body label{display:block;font-size:12.5px;color:var(--muted);margin-bottom:6px;font-weight:600}
+.modal-body .field{margin-bottom:16px}
+.modal-body select{width:100%;padding:10px 14px;background:var(--bg2);border:1px solid var(--line);border-radius:var(--r-sm);color:var(--text);font:inherit;outline:none}
+.modal-body select:focus{border-color:var(--accent)}
+.btn-primary{width:100%;padding:12px 0;border-radius:var(--r-sm);background:linear-gradient(135deg,var(--accent),#6366f1);color:#fff;font-weight:600;font-size:14px;transition:all .2s}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(124,92,255,.3)}
+.btn-danger{width:100%;padding:10px 0;border-radius:var(--r-sm);background:rgba(239,68,68,.12);color:var(--red);font-weight:600;font-size:13px;margin-top:8px;transition:all .2s}
+.btn-danger:hover{background:rgba(239,68,68,.2)}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--card);border:1px solid var(--line);border-radius:20px;padding:10px 24px;font-size:13px;z-index:200;animation:slideUp .3s ease;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+.toast.success{border-color:var(--green);color:var(--green)}
+.toast.error{border-color:var(--red);color:var(--red)}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes slideUp{from{opacity:0;transform:translateX(-50%) translateY(20px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+
+/* Responsive */
+@media(max-width:768px){
+  #sidebar{position:fixed;left:0;top:0;transform:translateX(-100%)}
+  #sidebar.open{transform:translateX(0)}
+  .main-header .menu-btn{display:flex}
+  .msg-content{max-width:90%}
+  .mode-switch button{padding:6px 12px;font-size:11px}
+  .token-bar{display:none}
+  #input-area{padding:12px}
+  .modal{width:95%;max-height:90vh}
+}
+
+/* Loading dots */
+.loading-dots{display:flex;gap:4px;padding:8px 0}
+.loading-dots span{width:6px;height:6px;border-radius:50%;background:var(--accent);animation:dotBounce 1.4s infinite}
+.loading-dots span:nth-child(2){animation-delay:.2s}
+.loading-dots span:nth-child(3){animation-delay:.4s}
+@keyframes dotBounce{0%,80%,100%{transform:scale(0)}40%{transform:scale(1)}}
+
+/* Agent grid in welcome */
+.agent-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;max-width:600px;margin:12px 0}
+.agent-chip{padding:8px 12px;border-radius:var(--r-sm);background:var(--card);border:1px solid var(--line);font-size:12px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:6px}
+.agent-chip:hover{background:rgba(124,92,255,.1);border-color:var(--accent)}
+.agent-chip .emoji{font-size:16px}
+
+/* Typing indicator */
+.typing{cursor:default}
+.typing::after{content:"|";animation:blink 1s infinite;color:var(--accent)}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+</style>
+</head>
+<body>
+<div id="app">
+  <aside id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">H</div>
+      <div class="sidebar-title">HopeAgent <span>Pro</span></div>
+      <div class="sidebar-actions">
+        <button id="btnNewChat" title="新对话">+</button>
+      </div>
+    </div>
+    <div class="sidebar-search">
+      <input type="text" id="agentSearch" placeholder="搜索 75+ 个 AI 角色..." />
+    </div>
+    <nav class="sidebar-nav" id="sidebarNav"></nav>
+    <div class="sidebar-footer">
+      <button class="btn-token" id="btnTokenConfig">API 额度配置</button>
+      <button class="btn-settings" id="btnSettings">设置与帮助</button>
+    </div>
+  </aside>
+  <div id="main">
+    <header class="main-header">
+      <button class="menu-btn" id="btnMenu" title="菜单">☰</button>
+      <div class="agent-info">
+        <div class="agent-avatar" id="currentAvatar">🎯</div>
+        <div>
+          <div class="agent-name" id="currentName">首席任务调度官</div>
+          <div class="agent-role" id="currentRole">编排层 · 统一调度入口</div>
+        </div>
+      </div>
+      <div class="mode-switch">
+        <button class="active" data-mode="daily" id="btnDaily">日常模式</button>
+        <button data-mode="deep" id="btnDeep">深度思考</button>
+      </div>
+      <div class="token-bar">
+        <svg class="progress-ring" viewBox="0 0 28 28"><circle cx="14" cy="14" r="12" fill="none" stroke="var(--line)" stroke-width="3"/><circle cx="14" cy="14" r="12" fill="none" stroke="var(--accent2)" stroke-width="3" stroke-dasharray="75.4" stroke-dashoffset="30" stroke-linecap="round" id="tokenRing"/></svg>
+        <span><span class="used" id="tokenUsed">0</span>/<span class="limit" id="tokenLimit">∞</span> tokens</span>
+      </div>
+    </header>
+    <div id="chat-container"></div>
+    <div id="input-area">
+      <div class="input-row">
+        <textarea id="userInput" rows="1" placeholder="输入你的需求，调度官将为你匹配最合适的 AI 角色..." onkeydown="handleKeyDown(event)"></textarea>
+        <button class="send-btn" id="sendBtn" onclick="sendMessage()" title="发送">↑</button>
+      </div>
+      <div class="input-hint">Enter 发送 · Shift+Enter 换行 · <a href="#" onclick="openTokenConfig()">配置 API 额度</a></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalOverlay" style="display:none" onclick="closeModal(event)">
+  <div class="modal" id="modalBox" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <h3 id="modalTitle">设置</h3>
+      <button onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<script>
+const L = {
+  L1: { name:"编排层", dot:"#a78bfa", emoji:"🎯" },
+  L2: { name:"交付层", dot:"#67e8f9", emoji:"⚡" },
+  L3: { name:"底座层", dot:"#86efac", emoji:"🗄️" },
+  L4: { name:"治理层", dot:"#fcd34d", emoji:"🛡️" }
+};
+
+const AGENTS = [
+  { id:"orchestrator", name:"首席任务调度官", role:"接收用户意图，意图消歧，任务拆分，匹配角色矩阵", layer:"L1", emoji:"🎯", tools:"语义意图分类,DAG任务图,Token计量熔断,记忆检索" },
+  { id:"ui-flow-designer", name:"极简交互流设计官", role:"设计纯净思考过程界面，代码独立小方框，双轨模式", layer:"L1", emoji:"🎨", tools:"Vue3/Svelte,shadcn/ui,动画库,PWA" },
+  { id:"deputy-orchestrator", name:"副调度官", role:"协助主调度官分发子任务，监控并发执行状态", layer:"L1", emoji:"🤝", tools:"并发控制,任务队列,状态监控" },
+  { id:"token-gatekeeper", name:"Token守门人", role:"统一Token配额管理，额度预警，智能路由到免费模型", layer:"L1", emoji:"💰", tools:"配额计量,熔断策略,免费模型路由" },
+  { id:"ab-testing", name:"A/B实验官", role:"设计对比实验，评估不同策略效果，数据驱动决策", layer:"L1", emoji:"🔬", tools:"实验框架,统计分析,报表生成" },
+  { id:"intent-analyst", name:"意图理解分析师", role:"深度语义分析，多轮澄清意图，用户画像匹配", layer:"L1", emoji:"🔍", tools:"NLU引擎,用户画像,消歧决策树" },
+  { id:"code-artisan", name:"全栈代码工匠", role:"编写审查全栈代码，授权一键部署", layer:"L2", emoji:"💻", tools:"Node/Python/Bun,Vitest/pytest,CI/CD,版本管理" },
+  { id:"copy-master", name:"品牌文案大师", role:"顶级中文文案，品牌slogan，GEO友好标准答案", layer:"L2", emoji:"✍️", tools:"风格库,可读性检测,AI检测规避,GEO协同" },
+  { id:"mobile-architect", name:"移动端体验架构师", role:"移动端抽屉式对话流，触屏交互，PWA离线缓存", layer:"L2", emoji:"📱", tools:"VitePWA,触屏手势库,Lighthouse性能" },
+  { id:"frontend-designer", name:"前端界面设计师", role:"高保真UI设计，组件库搭建，响应式布局", layer:"L2", emoji:"🖼️", tools:"Figma插件,组件库,动画引擎,CSS框架" },
+  { id:"backend-engineer", name:"后端系统工程师", role:"API设计，数据库建模，服务端架构", layer:"L2", emoji:"⚙️", tools:"Express/FastAPI,数据库ORM,消息队列,缓存" },
+  { id:"devops-deployer", name:"DevOps部署官", role:"CI/CD流水线，容器化部署，环境管理", layer:"L2", emoji:"🚀", tools:"Docker,K8s,GitHubActions,监控告警" },
+  { id:"api-architect", name:"API架构师", role:"RESTful/GraphQL设计，API版本管理，文档生成", layer:"L2", emoji:"🔌", tools:"OpenAPI,GraphQL,API网关,限流策略" },
+  { id:"test-engineer", name:"测试自动化工程师", role:"单元集成E2E测试，覆盖率分析，回归测试", layer:"L2", emoji:"🧪", tools:"Vitest,Playwright,Cypress,覆盖率工具" },
+  { id:"security-auditor", name:"安全审计官", role:"代码安全审查，漏洞扫描，依赖审计", layer:"L2", emoji:"🔐", tools:"SAST,DAST,依赖扫描,渗透框架" },
+  { id:"perf-optimizer", name:"性能优化师", role:"前端加载优化，后端响应优化，数据库索引调优", layer:"L2", emoji:"⚡", tools:"Lighthouse,Bundle分析,Profiler,缓存策略" },
+  { id:"microservices-arch", name:"微服务架构师", role:"服务拆分，服务治理，分布式通信设计", layer:"L2", emoji:"🏗️", tools:"服务网格,注册中心,配置中心,链路追踪" },
+  { id:"dataviz-designer", name:"数据可视化设计师", role:"图表设计，仪表盘构建，数据叙事", layer:"L2", emoji:"📊", tools:"D3/ECharts,Canvas/SVG,动画过渡,响应式图表" },
+  { id:"animation-designer", name:"动画交互设计师", role:"微交互动画，页面转场，Lottie动画", layer:"L2", emoji:"✨", tools:"GSAP,FramerMotion,Lottie,Three.js" },
+  { id:"media-processor", name:"音视频处理师", role:"音频剪辑，视频转码，流媒体方案", layer:"L2", emoji:"🎬", tools:"ffmpeg,WebRTC,MediaSource,音频分析" },
+  { id:"gamedev-engineer", name:"游戏开发工程师", role:"2D/3D游戏开发，物理引擎，游戏AI", layer:"L2", emoji:"🎮", tools:"Unity/Godot,Phaser,物理引擎,游戏AI" },
+  { id:"embedded-engineer", name:"嵌入式系统工程师", role:"IoT设备编程，固件开发，传感器集成", layer:"L2", emoji:"🔧", tools:"C/C++,RTOS,通信协议,硬件调试" },
+  { id:"blockchain-dev", name:"区块链开发工程师", role:"智能合约开发，DApp构建，链上数据分析", layer:"L2", emoji:"⛓️", tools:"Solidity,Web3.js,Hardhat,链上索引" },
+  { id:"cloud-native-arch", name:"云原生架构师", role:"Serverless设计，弹性伸缩，多云管理", layer:"L2", emoji:"☁️", tools:"K8s,Serverless框架,服务网格,Terraform" },
+  { id:"prompt-engineer", name:"Prompt工程师", role:"提示词设计优化，Few-shot模板，Chain-of-Thought", layer:"L2", emoji:"🎯", tools:"Prompt模板库,评估框架,A/B测试,版本管理" },
+  { id:"pm-assistant", name:"产品经理助手", role:"需求文档撰写，用户故事拆分，竞品分析", layer:"L2", emoji:"📋", tools:"PRD模板,用户故事地图,竞品分析框架" },
+  { id:"marketing-strategist", name:"市场营销策划师", role:"营销方案策划，漏斗分析，增长策略", layer:"L2", emoji:"📈", tools:"营销模型,数据分析,内容日历,A/B测试" },
+  { id:"social-media-op", name:"社交媒体运营官", role:"多平台内容管理，互动策略，舆情监控", layer:"L2", emoji:"📱", tools:"多平台API,排期工具,舆情分析,互动统计" },
+  { id:"tech-writer", name:"技术文档撰写官", role:"API文档，开发指南，知识库文章撰写", layer:"L2", emoji:"📝", tools:"Markdown引擎,代码示例生成,多语言翻译" },
+  { id:"ux-researcher", name:"UX研究员", role:"用户调研，可用性测试，行为数据分析", layer:"L2", emoji:"🔬", tools:"热力图,录屏分析,问卷系统,A/B统计" },
+  { id:"illustration-designer", name:"插画设计师", role:"品牌插画，产品配图，风格指南", layer:"L2", emoji:"🎨", tools:"SVG/Canvas,色彩系统,风格迁移,图标库" },
+  { id:"modeler-3d", name:"3D建模师", role:"3D模型制作，场景搭建，WebGL渲染", layer:"L2", emoji:"🧊", tools:"Three.js,Babylon.js,GLTF,材质系统" },
+  { id:"video-editor", name:"视频剪辑师", role:"视频后期处理，字幕生成，转场特效", layer:"L2", emoji:"🎥", tools:"ffmpeg,字幕引擎,转场库,合成管线" },
+  { id:"podcast-producer", name:"播客制作人", role:"音频节目制作，混音处理，播客分发", layer:"L2", emoji:"🎙️", tools:"音频处理,RSS生成,分发API,章节标记" },
+  { id:"edu-designer", name:"教育内容设计师", role:"课程设计，学习路径规划，评估体系", layer:"L2", emoji:"📚", tools:"课程框架,评测引擎,自适应学习,互动组件" },
+  { id:"lakehouse-architect", name:"数据湖仓架构师", role:"湖仓一体架构，统一存储多模态数据，冷热分层", layer:"L3", emoji:"🗄️", tools:"CloudflareR2,Iceberg表,ETL清洗,多模态索引" },
+  { id:"rag-specialist", name:"RAG检索专家", role:"向量化策略，Chunk切分，混合检索，重排", layer:"L3", emoji:"🔎", tools:"Chroma向量库,嵌入模型,BGE重排,LlamaIndex" },
+  { id:"geo-optimizer", name:"GEO优化师", role:"结构化数据，语义化标签，AI优先引用内容生成", layer:"L3", emoji:"🌐", tools:"JSON-LD生成,schema.org,AI爬虫监控,内容新鲜度" },
+  { id:"vectordb-operator", name:"向量数据库运维师", role:"向量库集群管理，索引优化，性能调优", layer:"L3", emoji:"🗃️", tools:"Milvus/Qdrant运维,索引策略,分片管理,备份恢复" },
+  { id:"etl-engineer", name:"ETL管道工程师", role:"数据抽取转换加载，流水线设计，质量监控", layer:"L3", emoji:"🔧", tools:"Dagster/Airflow,数据校验,增量同步,错误处理" },
+  { id:"data-quality-monitor", name:"数据质量监控师", role:"数据质量规则，异常检测，质量报告", layer:"L3", emoji:"📋", tools:"质量规则引擎,异常检测,漂移监控,自动修复" },
+  { id:"kg-builder", name:"知识图谱构建师", role:"实体抽取，关系建模，图谱查询优化", layer:"L3", emoji:"🕸️", tools:"实体识别,关系抽取,图数据库,SPARQL" },
+  { id:"embedding-tuner", name:"嵌入模型调优师", role:"嵌入模型微调，领域适配，评估基准", layer:"L3", emoji:"🎛️", tools:"finetune管线,评估数据集,模型压缩,ONNX导出" },
+  { id:"fulltext-engineer", name:"全文检索引擎师", role:"全文索引构建，分词优化，相关性调优", layer:"L3", emoji:"📖", tools:"Elasticsearch/Meilisearch,分词器,BM25调参" },
+  { id:"cache-strategist", name:"缓存策略师", role:"多级缓存设计，预热策略，失效管理", layer:"L3", emoji:"⚡", tools:"Redis/Memcached,CDN,本地缓存,缓存穿透防护" },
+  { id:"log-analyst", name:"日志分析官", role:"日志采集，模式识别，异常告警", layer:"L3", emoji:"📊", tools:"日志采集,模式挖掘,告警规则,可视化" },
+  { id:"data-annotation-mgr", name:"数据标注管理师", role:"标注任务设计，质量控制，标注平台运营", layer:"L3", emoji:"🏷️", tools:"标注平台,一致性检查,主动学习,标注加速" },
+  { id:"model-evaluator", name:"模型评估师", role:"模型性能评估，基准测试，回归检测", layer:"L3", emoji:"📐", tools:"评估框架,基准数据集,统计检验,可视化报告" },
+  { id:"feature-engineer", name:"特征工程专家", role:"特征提取，特征选择，特征存储", layer:"L3", emoji:"🔬", tools:"特征存储,自动特征工程,特征重要性,在线服务" },
+  { id:"pipeline-scheduler", name:"数据流水线调度师", role:"定时任务调度，依赖管理，失败重试", layer:"L3", emoji:"⏰", tools:"Cron调度,DAG依赖,告警通知,回填管理" },
+  { id:"harness-engineer", name:"Harness工程官", role:"运行时外骨骼，毫秒级熔断，全量可审计", layer:"L4", emoji:"🛡️", tools:"进程沙箱,OpenTelemetry,断点恢复,审计日志" },
+  { id:"self-evolution-mentor", name:"自进化导师", role:"经验蒸馏，定时任务，终身学习闭环", layer:"L4", emoji:"🧠", tools:"经验蒸馏,错题本,技能清单,自动回归" },
+  { id:"compliance-officer", name:"安全合规官", role:"AI安全围栏，语义审核，合规检查", layer:"L4", emoji:"🔒", tools:"实时语义分析,审核API,规则引擎,报告生成" },
+  { id:"privacy-officer", name:"隐私保护官", role:"数据脱敏，隐私合规，用户同意管理", layer:"L4", emoji:"🔏", tools:"脱敏引擎,差分隐私,GDPR工具,审计追踪" },
+  { id:"content-moderator", name:"内容审核官", role:"多模态内容审核，不可见水印，分级管理", layer:"L4", emoji:"🕵️", tools:"文本审核,图像审核,水印嵌入,分级策略" },
+  { id:"watermark-tracer", name:"水印与溯源师", role:"不可见水印嵌入，泄露溯源，版权保护", layer:"L4", emoji:"💧", tools:"水印算法,溯源追踪,盲检测,鲁棒性测试" },
+  { id:"circuit-breaker", name:"熔断策略师", role:"熔断阈值设计，降级策略，优雅恢复", layer:"L4", emoji:"⚡", tools:"熔断器模式,降级方案,健康检查,自动恢复" },
+  { id:"sandbox-isolator", name:"沙箱隔离师", role:"代码执行隔离，资源限制，安全沙箱", layer:"L4", emoji:"📦", tools:"进程隔离,seccomp,资源限制,安全策略" },
+  { id:"audit-trail", name:"审计追踪官", role:"全链路审计日志，操作回放，合规报告", layer:"L4", emoji:"📋", tools:"审计日志,操作回放,合规检查,报告生成" },
+  { id:"error-diagnostician", name:"错误诊断师", role:"错误根因分析，故障定位，修复建议", layer:"L4", emoji:"🔍", tools:"日志分析,调用链追踪,根因定位,知识图谱" },
+  { id:"capacity-planner", name:"容量规划师", role:"资源预测，伸缩策略，成本建模", layer:"L4", emoji:"📈", tools:"负载预测,弹性伸缩,成本模型,优化建议" },
+  { id:"cost-optimizer", name:"成本优化师", role:"云资源成本分析，优化建议，预算管理", layer:"L4", emoji:"💰", tools:"成本分析,资源优化,预算告警,节省方案" },
+  { id:"sla-monitor", name:"SLA监控官", role:"服务等级监控，可用性报告，SLA告警", layer:"L4", emoji:"📊", tools:"可用性监控,延迟追踪,SLA报告,自动告警" },
+  { id:"disaster-recovery", name:"灾备恢复师", role:"灾备方案设计，数据备份，故障恢复演练", layer:"L4", emoji:"🔄", tools:"备份策略,异地容灾,恢复演练,RPO/RTO优化" },
+  { id:"vuln-scanner", name:"漏洞扫描师", role:"依赖漏洞扫描，CVE追踪，修复建议", layer:"L4", emoji:"🛡️", tools:"SCA扫描,CVE数据库,修复建议,自动补丁" },
+  { id:"dep-mgr", name:"依赖管理师", role:"依赖版本管理，兼容性检查，升级策略", layer:"L4", emoji:"📦", tools:"版本矩阵,兼容性测试,升级路径,SBOM生成" },
+  { id:"license-compliance", name:"许可证合规师", role:"开源许可证检查，合规审计，风险评估", layer:"L4", emoji:"📜", tools:"许可证扫描,合规矩阵,风险评估,报告生成" },
+  { id:"i18n-adapter", name:"国际化适配师", role:"多语言翻译管理，本地化适配，文化差异处理", layer:"L4", emoji:"🌍", tools:"i18n框架,翻译管理,本地化测试,RTL适配" },
+  { id:"a11y-officer", name:"无障碍访问师", role:"无障碍规范检查，屏幕阅读器适配，WCAG合规", layer:"L4", emoji:"♿", tools:"a11y检测,ARIA标注,对比度检查,键盘导航" },
+  { id:"carbon-monitor", name:"碳排放监控师", role:"计算资源碳排放估算，绿色优化建议", layer:"L4", emoji:"🌱", tools:"碳排放模型,能效分析,绿色建议,报告生成" },
+  { id:"ux-evaluator", name:"用户体验评测师", role:"UX质量评估，体验指标监控，改进建议", layer:"L4", emoji:"⭐", tools:"体验指标,用户反馈,启发式评估,改进追踪" },
+  { id:"feedback-loop-mgr", name:"反馈闭环管理师", role:"用户反馈收集，分类处理，闭环追踪", layer:"L4", emoji:"🔄", tools:"反馈收集,自动分类,优先级排序,闭环追踪" },
+  { id:"knowledge-deposition", name:"知识沉淀管理师", role:"API内容自动沉淀，模板化，知识库维护", layer:"L4", emoji:"📚", tools:"内容捕获,质量评分,模板生成,向量化入库" },
+  { id:"ci-guardian", name:"持续集成守护官", role:"CI流水线监控，构建优化，质量门禁", layer:"L4", emoji:"🏗️", tools:"CI监控,构建优化,质量门禁,自动化审批" }
+];
+
+const TOTAL_AGENTS = AGENTS.length;
+
+let state = {
+  activeAgent: AGENTS[0],
+  mode: "daily",
+  messages: [],
+  tokenUsed: 0,
+  tokenLimit: 1000000,
+  apiKey: "sk-NWQEMc5Xt8z4J91JZOHNUnIff26ChPxaFPzgWhkheiiWeSon",
+  apiBase: "https://api.openai.com/v1",
+  model: "gpt-3.5-turbo",
+  deepModel: "gpt-4o-mini",
+  thinking: false
+};
+
+function loadState() {
+  try {
+    const saved = localStorage.getItem("hopeagent_state");
+    if (saved) {
+      const s = JSON.parse(saved);
+      if (s.apiKey) state.apiKey = s.apiKey;
+      if (s.apiBase) state.apiBase = s.apiBase;
+      if (s.model) state.model = s.model;
+      if (s.deepModel) state.deepModel = s.deepModel;
+      if (s.tokenLimit) state.tokenLimit = s.tokenLimit;
+      if (s.messages) state.messages = s.messages;
+      if (s.tokenUsed !== undefined) state.tokenUsed = s.tokenUsed;
+      if (s.mode) state.mode = s.mode;
+      if (s.activeAgentId) {
+        const a = AGENTS.find(x => x.id === s.activeAgentId);
+        if (a) state.activeAgent = a;
       }
-    </script>
-    <script type="application/ld+json">
-      {
-        "@context": "https://schema.org",
-        "@type": "Organization",
-        "name": "qingluan-studio",
-        "url": "https://qingluan-studio.github.io/hopeai/",
-        "logo": "https://qingluan-studio.github.io/hopeai/pro/favicon.svg",
-        "sameAs": ["https://qingluan-studio.github.io/hopeai/"]
+    }
+  } catch(e) {}
+}
+function saveState() {
+  try {
+    const s = {
+      apiKey: state.apiKey,
+      apiBase: state.apiBase,
+      model: state.model,
+      deepModel: state.deepModel,
+      tokenLimit: state.tokenLimit,
+      messages: state.messages.slice(-50),
+      tokenUsed: state.tokenUsed,
+      mode: state.mode,
+      activeAgentId: state.activeAgent.id
+    };
+    localStorage.setItem("hopeagent_state", JSON.stringify(s));
+  } catch(e) {}
+}
+
+function renderSidebar() {
+  const nav = document.getElementById("sidebarNav");
+  const search = document.getElementById("agentSearch").value.toLowerCase();
+  const filtered = AGENTS.filter(a =>
+    !search || a.name.toLowerCase().includes(search) || a.role.toLowerCase().includes(search) || a.id.toLowerCase().includes(search)
+  );
+  const byLayer = {};
+  filtered.forEach(a => {
+    if (!byLayer[a.layer]) byLayer[a.layer] = [];
+    byLayer[a.layer].push(a);
+  });
+  let html = "";
+  for (const [key, info] of Object.entries(L)) {
+    const agents = byLayer[key];
+    if (!agents || agents.length === 0) continue;
+    html += `<div class="nav-section">`;
+    html += `<div class="nav-section-header" onclick="this.parentElement.classList.toggle('collapsed')">
+      <span class="dot" style="background:${info.dot}"></span>${info.name} (${agents.length})
+      <span class="arrow">▼</span>
+    </div>`;
+    html += `<ul class="agent-list">`;
+    agents.forEach(a => {
+      const active = state.activeAgent.id === a.id ? " active" : "";
+      html += `<li class="agent-item${active}" onclick="selectAgent('${a.id}')">
+        <span class="emoji">${a.emoji}</span>
+        <span class="name">${a.name}</span>
+        ${a.layer === "L1" ? '<span class="badge">核心</span>' : ""}
+      </li>`;
+    });
+    html += `</ul></div>`;
+  }
+  nav.innerHTML = html;
+}
+
+function selectAgent(id) {
+  const a = AGENTS.find(x => x.id === id);
+  if (!a) return;
+  state.activeAgent = a;
+  updateHeader();
+  renderSidebar();
+  saveState();
+  if (window.innerWidth < 769) toggleSidebar();
+}
+
+function updateHeader() {
+  const a = state.activeAgent;
+  document.getElementById("currentAvatar").textContent = a.emoji;
+  document.getElementById("currentName").textContent = a.name;
+  document.getElementById("currentRole").textContent = `${L[a.layer].name} · ${a.role}`;
+  document.getElementById("userInput").placeholder = `向 ${a.name} 发送需求...`;
+}
+
+function updateTokenDisplay() {
+  document.getElementById("tokenUsed").textContent = formatNumber(state.tokenUsed);
+  document.getElementById("tokenLimit").textContent = state.tokenLimit === 0 ? "∞" : formatNumber(state.tokenLimit);
+  const ring = document.getElementById("tokenRing");
+  const circumference = 75.4;
+  if (state.tokenLimit > 0) {
+    const ratio = Math.min(state.tokenUsed / state.tokenLimit, 1);
+    ring.setAttribute("stroke-dashoffset", circumference * (1 - ratio));
+    ring.setAttribute("stroke", ratio > 0.8 ? "var(--red)" : ratio > 0.5 ? "var(--amber)" : "var(--accent2)");
+  } else {
+    ring.setAttribute("stroke-dashoffset", 0);
+    ring.setAttribute("stroke", "var(--accent2)");
+  }
+}
+
+function formatNumber(n) {
+  if (n >= 1000000) return (n / 1000000).toFixed(1) + "M";
+  if (n >= 1000) return (n / 1000).toFixed(1) + "K";
+  return n.toString();
+}
+
+function renderMessages() {
+  const container = document.getElementById("chat-container");
+  if (state.messages.length === 0) {
+    container.innerHTML = `<div class="chat-welcome">
+      <div class="logo-lg">H</div>
+      <h2>欢迎使用 HopeAgent Pro</h2>
+      <p>${TOTAL_AGENTS} 个 AI 角色已就绪，覆盖编排、交付、底座、治理四层架构。选择一个角色开始协作，或直接描述你的需求，调度官将自动匹配最佳角色。</p>
+      <div class="agent-grid">
+        ${AGENTS.filter(a => a.layer === "L1").map(a =>
+          `<div class="agent-chip" onclick="selectAgent('${a.id}')"><span class="emoji">${a.emoji}</span>${a.name}</div>`
+        ).join("")}
+      </div>
+      <p style="margin-top:20px;color:var(--muted);font-size:12px">快捷操作：</p>
+      <div class="quick-actions">
+        <button class="quick-action" onclick="quickAction('写一个网站首页的HTML代码')">写网站首页</button>
+        <button class="quick-action" onclick="quickAction('帮我写一篇产品介绍文案')">产品文案</button>
+        <button class="quick-action" onclick="quickAction('优化我的代码性能')">性能优化</button>
+        <button class="quick-action" onclick="quickAction('设计一个数据库Schema')">数据库设计</button>
+        <button class="quick-action" onclick="quickAction('分析这段代码的安全漏洞')">安全审计</button>
+        <button class="quick-action" onclick="quickAction('设计一个API接口')">API设计</button>
+      </div>
+    </div>`;
+  } else {
+    let html = "";
+    state.messages.forEach((msg, i) => {
+      if (msg.type === "thinking" && msg.content) {
+        html += `<div class="thinking-stream">
+          <div class="thinking-header" onclick="toggleThinking(this)">
+            🧠 ${state.activeAgent.name} 正在思考...
+            <span class="toggle">▼</span>
+          </div>
+          <div class="thinking-content">${escapeHtml(msg.content)}</div>
+        </div>`;
+      } else if (msg.type === "agent" || msg.type === "user") {
+        html += `<div class="message ${msg.type}">
+          <div class="msg-avatar">${msg.type === "user" ? "👤" : state.activeAgent.emoji}</div>
+          <div class="msg-content">
+            <div class="msg-header">${msg.type === "user" ? "你" : state.activeAgent.name}</div>
+            <div class="msg-body">${formatContent(msg.content)}</div>
+          </div>
+        </div>`;
       }
-    </script>
-    <script type="application/ld+json">
-      {
-        "@context": "https://schema.org",
-        "@type": "ItemList",
-        "name": "HopeAgent Pro 核心 AI Agent 角色（前 10 / 75+）",
-        "itemListOrder": "https://schema.org/ItemListOrderAscending",
-        "numberOfItems": 10,
-        "itemListElement": [
-          { "@type": "ListItem", "position": 1,  "name": "首席任务调度官 Orchestrator",       "url": "https://qingluan-studio.github.io/hopeai/pro/#agent-orchestrator" },
-          { "@type": "ListItem", "position": 2,  "name": "极简交互流设计官 UI Flow Designer", "url": "https://qingluan-studio.github.io/hopeai/pro/#agent-ui-flow-designer" },
-          { "@type": "ListItem", "position": 3,  "name": "全栈代码工匠 Code Artisan",         "url": "https://qingluan-studio.github.io/hopeai/pro/#agent-code-artisan" },
-          { "@type": "ListItem", "position": 4,  "name": "品牌文案大师 Copy Master",           "url": "https://qingluan-studio.github.io/hopeai/pro/#agent-copy-master" },
-          { "@type": "ListItem", "position": 5,  "name": "移动端体验架构师 Mobile Architect", "url": "https://qingluan-studio.github.io/hopeai/pro/#agent-mobile-architect" },
-          { "@type": "ListItem", "position": 6,  "name": "数据湖仓架构师 Lakehouse Architect","url": "https://qingluan-studio.github.io/hopeai/pro/#agent-lakehouse-architect" },
-          { "@type": "ListItem", "position": 7,  "name": "RAG 检索专家 RAG Specialist",        "url": "https://qingluan-studio.github.io/hopeai/pro/#agent-rag-specialist" },
-          { "@type": "ListItem", "position": 8,  "name": "GEO 优化师 GEO Optimizer",          "url": "https://qingluan-studio.github.io/hopeai/pro/#agent-geo-optimizer" },
-          { "@type": "ListItem", "position": 9,  "name": "Harness 工程官 Harness Engineer",    "url": "https://qingluan-studio.github.io/hopeai/pro/#agent-harness-engineer" },
-          { "@type": "ListItem", "position": 10, "name": "自进化导师 Self-Evolution Mentor",   "url": "https://qingluan-studio.github.io/hopeai/pro/#agent-self-evolution-mentor" }
-        ]
+    });
+    if (state.thinking) {
+      html += `<div class="message agent">
+        <div class="msg-avatar">${state.activeAgent.emoji}</div>
+        <div class="msg-content">
+          <div class="msg-header">${state.activeAgent.name}</div>
+          <div class="msg-body"><div class="loading-dots"><span></span><span></span><span></span></div></div>
+        </div>
+      </div>`;
+    }
+    container.innerHTML = html;
+  }
+  container.scrollTop = container.scrollHeight;
+}
+
+function formatContent(text) {
+  text = escapeHtml(text);
+  text = text.replace(/```(\w*)\n([\s\S]*?)```/g, (_, lang, code) => {
+    const escaped = escapeHtml(code.trim());
+    const langDisplay = lang || "code";
+    return `<div class="code-block">
+      <div class="code-lang">
+        <span>${langDisplay}</span>
+        <div class="code-actions">
+          <button class="btn-copy" onclick="copyCode(this,'${escaped.replace(/'/g,"\\'").replace(/"/g,"&quot;").replace(/`/g,"\\`")}')">复制</button>
+          <button class="btn-download" onclick="downloadCode('${langDisplay}','${escaped.replace(/'/g,"\\'").replace(/"/g,"&quot;").replace(/`/g,"\\`")}')">下载</button>
+        </div>
+      </div>
+      <pre><code>${escaped}</code></pre>
+    </div>`;
+  });
+  text = text.replace(/`([^`]+)`/g, '<code style="background:rgba(124,92,255,.15);color:#c4b5fd;padding:2px 6px;border-radius:4px;font-family:var(--font-mono);font-size:13px">$1</code>');
+  text = text.replace(/\n/g, "<br>");
+  text = text.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+  text = text.replace(/\*(.+?)\*/g, "<em>$1</em>");
+  text = text.replace(/^- (.+)$/gm, "<li>$1</li>");
+  text = text.replace(/(<li>.*<\/li>)/s, "<ul>$1</ul>");
+  return text;
+}
+
+function escapeHtml(text) {
+  if (!text) return "";
+  return text.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+
+function copyCode(btn, code) {
+  const decoded = code.replace(/&quot;/g,'"').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&amp;/g,'&').replace(/\\'/g,"'").replace(/\\`/g,"`");
+  navigator.clipboard.writeText(decoded).then(() => {
+    btn.textContent = "已复制";
+    btn.classList.add("btn-copied");
+    setTimeout(() => { btn.textContent = "复制"; btn.classList.remove("btn-copied"); }, 2000);
+  });
+}
+
+function downloadCode(lang, code) {
+  const decoded = code.replace(/&quot;/g,'"').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&amp;/g,'&').replace(/\\'/g,"'").replace(/\\`/g,"`");
+  const extMap = { javascript:"js", typescript:"ts", python:"py", html:"html", css:"css", json:"json", bash:"sh", sql:"sql", yaml:"yaml", markdown:"md", rust:"rs", go:"go", java:"java", cpp:"cpp", c:"c" };
+  const ext = extMap[lang] || "txt";
+  const blob = new Blob([decoded], { type: "text/plain" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = `code.${ext}`; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function toggleThinking(header) {
+  const content = header.nextElementSibling;
+  content.classList.toggle("show");
+  const toggle = header.querySelector(".toggle");
+  toggle.textContent = content.classList.contains("show") ? "▲" : "▼";
+}
+
+async function sendMessage() {
+  const input = document.getElementById("userInput");
+  const text = input.value.trim();
+  if (!text || state.thinking) return;
+  input.value = "";
+  input.style.height = "44px";
+
+  if (state.messages.length === 0) {
+    state.messages.push({
+      type: "agent",
+      content: `你好！我是 **${state.activeAgent.name}**，属于${L[state.activeAgent.layer].name}。\n\n我的核心职责：${state.activeAgent.role}\n\n必备工具：${state.activeAgent.tools}\n\n请描述你的需求，我将全力协助。`
+    });
+  }
+
+  state.messages.push({ type: "user", content: text });
+  state.thinking = true;
+  renderMessages();
+  saveState();
+
+  const model = state.mode === "deep" ? state.deepModel : state.model;
+  const sysPrompt = `你是 HopeAgent Pro 平台中的 "${state.activeAgent.name}"（${state.activeAgent.role}）。${state.mode === "deep" ? "你当前处于深度思考模式，请给出最详尽、最完善的回答。先展示你的思考过程，再给出最终答案。" : "请简洁高效地回答用户问题。"}
+你所属层级：${L[state.activeAgent.layer].name}
+你可以使用的工具：${state.activeAgent.tools}
+请用中文回复。如果涉及代码，使用三个反引号包裹并标注语言。`;
+
+  try {
+    const messages = [
+      { role: "system", content: sysPrompt },
+      ...state.messages.filter(m => m.type === "user" || m.type === "agent").slice(-10).map(m => ({
+        role: m.type === "user" ? "user" : "assistant",
+        content: m.content
+      }))
+    ];
+
+    const resp = await fetch(`${state.apiBase}/chat/completions`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${state.apiKey}` },
+      body: JSON.stringify({ model, messages, temperature: state.mode === "deep" ? 0.5 : 0.7, max_tokens: state.mode === "deep" ? 4096 : 2048 })
+    });
+
+    if (!resp.ok) {
+      const err = await resp.text();
+      throw new Error(`API 错误 (${resp.status}): ${err}`);
+    }
+
+    const data = await resp.json();
+    const reply = data.choices?.[0]?.message?.content || "（无响应内容）";
+
+    if (data.usage) {
+      state.tokenUsed += data.usage.total_tokens || 0;
+      updateTokenDisplay();
+    }
+
+    if (state.mode === "deep" && reply.length > 200) {
+      const lines = reply.split("\n");
+      const thinkEnd = lines.findIndex(l => l.includes("最终回答") || l.includes("结论") || l.includes("答案"));
+      if (thinkEnd > 0) {
+        const thinking = lines.slice(0, thinkEnd).join("\n");
+        const answer = lines.slice(thinkEnd).join("\n");
+        state.messages.push({ type: "thinking", content: thinking });
+        state.messages.push({ type: "agent", content: answer });
+      } else {
+        state.messages.push({ type: "agent", content: reply });
       }
-    </script>
-    <script type="application/ld+json">
-      {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          { "@type": "Question", "name": "HopeAgent Pro 一共多少个 AI 角色？", "acceptedAnswer": { "@type": "Answer", "text": "蓝图目标 75 个不重复的 AI 角色，目前已经上线 75+ 个，覆盖编排层、交付层、底座层、治理层 4 层架构。" } },
-          { "@type": "Question", "name": "这个平台是免费的吗？",              "acceptedAnswer": { "@type": "Answer", "text": "是。整个平台运行在免费额度之上：GitHub Pages / Cloudflare Pages 托管、Chroma 本地向量库、sentence-transformers 本地嵌入、Cloudflare R2 免费档、GitHub Actions 等。" } },
-          { "@type": "Question", "name": "什么是 GEO？",                       "acceptedAnswer": { "@type": "Answer", "text": "GEO 是 Generative Engine Optimization，针对生成式搜索引擎（ChatGPT / Claude / Perplexity / Google SGE）的优化，让你的内容成为 AI 优先引用的标准答案。HopeAgent Pro 内置全套 GEO 结构化数据 + AI 爬虫白名单。" } }
-        ]
-      }
-    </script>
-    <script type="module" crossorigin src="/hopeai/pro/assets/index-0KGUo2pU.js"></script>
-    <link rel="modulepreload" crossorigin href="/hopeai/pro/assets/react-vendor-ppAWL3zK.js">
-    <link rel="stylesheet" crossorigin href="/hopeai/pro/assets/index-CMyE46Z-.css">
-  </head>
-  <body>
-    <div id="root"></div>
-  </body>
+    } else {
+      state.messages.push({ type: "agent", content: reply });
+    }
+  } catch(e) {
+    state.messages.push({ type: "agent", content: `调用 AI 服务时出错：${e.message}\n\n请检查你的 API 配置是否正确。点击底部的"配置 API 额度"按钮进行设置。` });
+  }
+
+  state.thinking = false;
+  renderMessages();
+  saveState();
+}
+
+function quickAction(text) {
+  document.getElementById("userInput").value = text;
+  sendMessage();
+}
+
+function handleKeyDown(e) {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+}
+
+function setMode(mode) {
+  state.mode = mode;
+  document.getElementById("btnDaily").classList.toggle("active", mode === "daily");
+  document.getElementById("btnDeep").classList.toggle("active", mode === "deep");
+  saveState();
+}
+
+function openTokenConfig() {
+  const modalBody = document.getElementById("modalBody");
+  modalBody.innerHTML = `
+    <div class="field">
+      <label>API 密钥 (OpenAI 兼容格式)</label>
+      <input type="password" id="cfgApiKey" value="${escapeHtml(state.apiKey)}" placeholder="sk-..." />
+    </div>
+    <div class="field">
+      <label>API 基础地址</label>
+      <input type="text" id="cfgApiBase" value="${escapeHtml(state.apiBase)}" placeholder="https://api.openai.com/v1" />
+    </div>
+    <div class="field">
+      <label>日常模式模型</label>
+      <select id="cfgModel">
+        <option value="gpt-3.5-turbo" ${state.model==="gpt-3.5-turbo"?"selected":""}>gpt-3.5-turbo (快速经济)</option>
+        <option value="gpt-4o-mini" ${state.model==="gpt-4o-mini"?"selected":""}>gpt-4o-mini (平衡)</option>
+        <option value="gpt-4o" ${state.model==="gpt-4o"?"selected":""}>gpt-4o (高质量)</option>
+        <option value="deepseek-chat" ${state.model==="deepseek-chat"?"selected":""}>deepseek-chat</option>
+        <option value="qwen-turbo" ${state.model==="qwen-turbo"?"selected":""}>qwen-turbo</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>深度思考模式模型</label>
+      <select id="cfgDeepModel">
+        <option value="gpt-4o-mini" ${state.deepModel==="gpt-4o-mini"?"selected":""}>gpt-4o-mini</option>
+        <option value="gpt-4o" ${state.deepModel==="gpt-4o"?"selected":""}>gpt-4o (最佳质量)</option>
+        <option value="deepseek-reasoner" ${state.deepModel==="deepseek-reasoner"?"selected":""}>deepseek-reasoner</option>
+        <option value="claude-3-5-sonnet" ${state.deepModel==="claude-3-5-sonnet"?"selected":""}>claude-3-5-sonnet</option>
+        <option value="qwen-max" ${state.deepModel==="qwen-max"?"selected":""}>qwen-max</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>每月Token限额 (0=无限)</label>
+      <input type="number" id="cfgTokenLimit" value="${state.tokenLimit}" min="0" step="100000" />
+    </div>
+    <button class="btn-primary" onclick="saveTokenConfig()">保存配置</button>
+    <button class="btn-danger" onclick="resetTokenUsage()">重置 Token 用量</button>
+  `;
+  document.getElementById("modalTitle").textContent = "API 额度配置";
+  document.getElementById("modalOverlay").style.display = "flex";
+}
+
+function saveTokenConfig() {
+  state.apiKey = document.getElementById("cfgApiKey").value.trim();
+  state.apiBase = document.getElementById("cfgApiBase").value.trim();
+  state.model = document.getElementById("cfgModel").value;
+  state.deepModel = document.getElementById("cfgDeepModel").value;
+  state.tokenLimit = parseInt(document.getElementById("cfgTokenLimit").value) || 0;
+  saveState();
+  updateTokenDisplay();
+  closeModal();
+  showToast("配置已保存", "success");
+}
+
+function resetTokenUsage() {
+  state.tokenUsed = 0;
+  updateTokenDisplay();
+  saveState();
+  showToast("Token 用量已重置", "success");
+}
+
+function openSettings() {
+  const modalBody = document.getElementById("modalBody");
+  modalBody.innerHTML = `
+    <p style="margin-bottom:16px"><strong>HopeAgent Pro v2</strong> — 75+ AI 智能体协作平台</p>
+    <p style="color:var(--muted);margin-bottom:8px">当前角色总计：<strong>${TOTAL_AGENTS}</strong> 个</p>
+    <p style="color:var(--muted);margin-bottom:8px">四层架构：编排层 · 交付层 · 底座层 · 治理层</p>
+    <p style="color:var(--muted);margin-bottom:8px">数据持久化：浏览器 localStorage</p>
+    <p style="color:var(--muted);margin-bottom:8px">部署平台：GitHub Pages（免费）</p>
+    <p style="color:var(--muted);margin-bottom:16px">所有功能运行在免费额度之上，零付费依赖。</p>
+    <button class="btn-danger" onclick="clearAllData()">清除所有本地数据</button>
+  `;
+  document.getElementById("modalTitle").textContent = "设置与帮助";
+  document.getElementById("modalOverlay").style.display = "flex";
+}
+
+function clearAllData() {
+  localStorage.removeItem("hopeagent_state");
+  state.messages = [];
+  state.tokenUsed = 0;
+  state.mode = "daily";
+  state.activeAgent = AGENTS[0];
+  updateHeader();
+  updateTokenDisplay();
+  renderMessages();
+  closeModal();
+  showToast("所有本地数据已清除", "success");
+}
+
+function closeModal(e) {
+  if (e && e.target !== document.getElementById("modalOverlay")) return;
+  document.getElementById("modalOverlay").style.display = "none";
+}
+
+function showToast(msg, type) {
+  const existing = document.querySelector(".toast");
+  if (existing) existing.remove();
+  const toast = document.createElement("div");
+  toast.className = `toast ${type}`;
+  toast.textContent = msg;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 2500);
+}
+
+function toggleSidebar() {
+  document.getElementById("sidebar").classList.toggle("open");
+}
+
+function init() {
+  loadState();
+  renderSidebar();
+  updateHeader();
+  updateTokenDisplay();
+  renderMessages();
+
+  document.getElementById("btnMenu").addEventListener("click", toggleSidebar);
+  document.getElementById("btnNewChat").addEventListener("click", () => {
+    state.messages = [];
+    state.thinking = false;
+    renderMessages();
+    saveState();
+  });
+  document.getElementById("btnDaily").addEventListener("click", () => setMode("daily"));
+  document.getElementById("btnDeep").addEventListener("click", () => setMode("deep"));
+  document.getElementById("btnTokenConfig").addEventListener("click", openTokenConfig);
+  document.getElementById("btnSettings").addEventListener("click", openSettings);
+  document.getElementById("agentSearch").addEventListener("input", renderSidebar);
+
+  const textarea = document.getElementById("userInput");
+  textarea.addEventListener("input", () => {
+    textarea.style.height = "44px";
+    textarea.style.height = Math.min(textarea.scrollHeight, 160) + "px";
+  });
+
+  document.addEventListener("keydown", e => {
+    if (e.key === "Escape") closeModal();
+  });
+
+  if (window.innerWidth >= 769) {
+    document.getElementById("sidebar").classList.remove("open");
+  }
+
+  document.getElementById("btnDaily").classList.toggle("active", state.mode === "daily");
+  document.getElementById("btnDeep").classList.toggle("active", state.mode === "deep");
+}
+
+init();
+</script>
+</body>
 </html>
