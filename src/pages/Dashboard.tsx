@@ -1,11 +1,13 @@
-import { useState, useRef, useEffect } from 'react'
-import { Send, Crown, Search, Code2, Shield, Rocket, Package, Sparkles, ChevronLeft, MoreVertical, Users, Zap, Cpu, Palette, ClipboardList, FlaskConical, FileText, Users2, Landmark, Megaphone, Headphones, ShieldAlert, Scale, Settings2, Bot, Lightbulb, BookOpen } from 'lucide-react'
+import React, { useState, useRef, useEffect } from 'react'
+import { Send, Crown, Search, Code2, Shield, Rocket, Package, Sparkles, ChevronLeft, MoreVertical, Users, Zap, Cpu, Palette, ClipboardList, FlaskConical, FileText, Users2, Landmark, Megaphone, Headphones, ShieldAlert, Scale, Settings2, Bot, Lightbulb, BookOpen, Wrench, FileCode, Calculator, FileJson, FileSearch, FileEdit, FolderOpen, Braces, Hash } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useChatStore } from '@/store/useChatStore'
 import { useAgentStore } from '@/store/useAgentStore'
 import { useKnowledgeStore } from '@/store/useKnowledgeStore'
 import { useThemeStore } from '@/store/useThemeStore'
 import { WorkflowEngine, type WorkflowProgress } from '@/engine/workflowEngine'
+import { toolEngine, type ToolDefinition } from '@/tools/toolEngine'
+import { templateStore, type Template } from '@/engine/templateStore'
 
 const roleConfig: Record<string, { name: string; color: string; bg: string; border: string; icon: any }> = {
   user: { name: '董事长', color: 'text-yellow-400', bg: 'bg-yellow-900/30', border: 'border-yellow-700/50', icon: Crown },
@@ -290,11 +292,16 @@ function DashboardView() {
   const doneAgents = agents.filter(a => a.status === 'done').length
   const departments = [...new Set(agents.map(a => a.department).filter(Boolean))]
 
+  const tools = toolEngine.getAllTools()
+  const templates = templateStore.getAll()
+  
   const stats = [
     { label: '团队成员', value: totalAgents, unit: '人', color: 'text-green-400', bg: 'bg-green-900/20', border: 'border-green-800/40' },
     { label: '活跃中', value: activeAgents, unit: '人', color: 'text-yellow-400', bg: 'bg-yellow-900/20', border: 'border-yellow-800/40' },
     { label: '知识库', value: entries.length, unit: '条', color: 'text-purple-400', bg: 'bg-purple-900/20', border: 'border-purple-800/40' },
     { label: '部门数', value: departments.length, unit: '个', color: 'text-blue-400', bg: 'bg-blue-900/20', border: 'border-blue-800/40' },
+    { label: '工具数', value: tools.length, unit: '个', color: 'text-cyan-400', bg: 'bg-cyan-900/20', border: 'border-cyan-800/40' },
+    { label: '模板数', value: templates.length, unit: '个', color: 'text-orange-400', bg: 'bg-orange-900/20', border: 'border-orange-800/40' },
   ]
 
   const quickActions = [
@@ -346,17 +353,69 @@ function DashboardView() {
             <span className="w-1 h-1 bg-green-400 rounded-full" />
             公司数据
           </div>
-          <div className="grid grid-cols-2 gap-2.5">
+          <div className="grid grid-cols-3 gap-2.5">
             {stats.map(stat => (
               <div key={stat.label} className={cn(
-                'p-3.5 rounded-xl border transition-all',
+                'p-3 rounded-xl border transition-all',
                 stat.bg, stat.border
               )}>
                 <div className="flex items-baseline gap-1 mb-1">
-                  <span className={cn('text-2xl font-mono font-bold', stat.color)}>{stat.value}</span>
+                  <span className={cn('text-xl font-mono font-bold', stat.color)}>{stat.value}</span>
                   <span className="text-[10px] text-gray-500">{stat.unit}</span>
                 </div>
-                <div className="text-[11px] text-gray-400">{stat.label}</div>
+                <div className="text-[10px] text-gray-400">{stat.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* 工具面板 */}
+        <div>
+          <div className="text-[11px] font-mono text-gray-400 px-1 mb-2 flex items-center gap-2">
+            <Wrench className="w-3 h-3" />
+            可用工具
+          </div>
+          <div className="grid grid-cols-4 gap-2">
+            {tools.slice(0, 8).map(tool => {
+              const toolIcon = getToolIcon(tool.category)
+              return (
+                <button
+                  key={tool.id}
+                  className="flex flex-col items-center gap-1 p-2.5 rounded-xl bg-gray-900/60 border border-gray-800 hover:border-cyan-700/50 transition-all active:scale-95"
+                  title={tool.description}
+                >
+                  <div className="p-1.5 rounded-lg bg-cyan-900/30 text-cyan-400">
+                    {React.createElement(toolIcon, { className: 'w-4 h-4' })}
+                  </div>
+                  <span className="text-[9px] font-mono text-gray-400 text-center line-clamp-1">{tool.name}</span>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* 模板面板 */}
+        <div>
+          <div className="text-[11px] font-mono text-gray-400 px-1 mb-2 flex items-center gap-2">
+            <FileCode className="w-3 h-3" />
+            代码模板
+          </div>
+          <div className="space-y-1.5">
+            {templates.slice(0, 4).map(template => (
+              <div 
+                key={template.id} 
+                className="p-2.5 rounded-xl bg-gray-900/50 border border-gray-800 hover:border-orange-700/40 transition-all cursor-pointer"
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-[11px] font-mono text-gray-300">{template.name}</span>
+                  <span className="text-[9px] text-gray-500 px-1.5 py-0.5 rounded bg-gray-800/50">{template.category}</span>
+                </div>
+                <div className="text-[10px] text-gray-500 truncate">{template.description}</div>
+                <div className="flex gap-1 mt-1.5">
+                  {template.tags.slice(0, 3).map(tag => (
+                    <span key={tag} className="text-[9px] text-gray-500">#{tag}</span>
+                  ))}
+                </div>
               </div>
             ))}
           </div>
@@ -855,6 +914,19 @@ ${allOutputs.slice(0, 2000)}
       )}
     </div>
   )
+}
+
+function getToolIcon(category: string) {
+  const icons: Record<string, any> = {
+    code: Code2,
+    filesystem: FolderOpen,
+    utility: Calculator,
+    search: FileSearch,
+    data: FileJson,
+    ai: Sparkles,
+    default: Wrench
+  }
+  return icons[category] || icons.default
 }
 
 export default function Dashboard({ initialView = 'chat' }: { initialView?: 'chat' | 'team' }) {

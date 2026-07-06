@@ -1,5 +1,6 @@
 import { useKnowledgeStore } from '@/store/useKnowledgeStore'
 import type { KnowledgeEntry } from '@/types'
+import { toolEngine, type ToolDefinition, type ToolResult } from '@/tools/toolEngine'
 
 export interface AgentTemplate {
   id: string;
@@ -7,7 +8,29 @@ export interface AgentTemplate {
   role: string;
   avatar: string;
   description: string;
+  tools: string[];
   generateResponse: (command: string, context?: Record<string, unknown>) => Promise<string>;
+}
+
+async function executeTool(toolId: string, args: Record<string, string>): Promise<string> {
+  try {
+    const result: ToolResult = await toolEngine.executeTool(toolId, args);
+    if (result.success) {
+      return `✅ 工具执行成功 [${toolId}]\n\n${result.output}`;
+    } else {
+      return `❌ 工具执行失败 [${toolId}]\n\n${result.error || result.output}`;
+    }
+  } catch (error) {
+    return `❌ 工具调用异常 [${toolId}]\n\n${error instanceof Error ? error.message : '未知错误'}`;
+  }
+}
+
+function getAvailableTools(): ToolDefinition[] {
+  return toolEngine.getAllTools();
+}
+
+function getToolsByCategory(category: ToolDefinition['category']): ToolDefinition[] {
+  return toolEngine.getToolsByCategory(category);
 }
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -71,6 +94,7 @@ export const analystTemplate: AgentTemplate = {
   role: '需求分析师',
   avatar: '🔍',
   description: '接收命令后生成分析报告，拆解需求、提出方案、列出步骤',
+  tools: ['calculator', 'json_parser'],
   generateResponse: async (command: string) => {
     await delay(800 + Math.random() * 1200);
     const projectType = detectProjectType(command);
@@ -200,6 +224,7 @@ export const coderATemplate: AgentTemplate = {
   role: '核心架构工程师',
   avatar: '🎨',
   description: '根据需求类型生成完整的核心架构代码',
+  tools: ['code_executor', 'calculator', 'regex_test'],
   generateResponse: async (command: string) => {
     await delay(1000 + Math.random() * 1500);
     const projectType = detectProjectType(command);
@@ -767,6 +792,7 @@ export const coderBTemplate: AgentTemplate = {
   role: '后端/逻辑工程师',
   avatar: '⚙️',
   description: '专注于后端服务开发、业务逻辑实现、API接口设计',
+  tools: ['code_executor', 'json_parser', 'calculator'],
   generateResponse: async (command: string) => {
     await delay(1200 + Math.random() * 1500);
     const projectType = detectProjectType(command);
@@ -1282,6 +1308,7 @@ export const coderCTemplate: AgentTemplate = {
   role: '架构/优化工程师',
   avatar: '🏗️',
   description: '专注于系统架构设计、性能优化、代码重构',
+  tools: ['code_executor', 'calculator', 'regex_test'],
   generateResponse: async (command: string) => {
     await delay(1500 + Math.random() * 2000);
     const projectType = detectProjectType(command);
@@ -1781,6 +1808,7 @@ export const coderDTemplate: AgentTemplate = {
   role: '测试/质量工程师',
   avatar: '🧪',
   description: '专注于单元测试、集成测试、测试用例设计、质量保障',
+  tools: ['code_executor', 'calculator'],
   generateResponse: async (command: string) => {
     await delay(1000 + Math.random() * 1500);
     const projectType = detectProjectType(command);
@@ -2170,6 +2198,7 @@ export const coderETemplate: AgentTemplate = {
   role: '数据库/存储工程师',
   avatar: '🗄️',
   description: '专注于数据库设计、数据建模、存储优化、数据迁移',
+  tools: ['calculator', 'json_parser'],
   generateResponse: async (command: string) => {
     await delay(1200 + Math.random() * 1500);
     const projectType = detectProjectType(command);
@@ -2539,6 +2568,7 @@ export const reviewerTemplate: AgentTemplate = {
   role: '代码审查员',
   avatar: '🔎',
   description: '代码审查、Bug检测、质量评分',
+  tools: ['regex_test', 'calculator'],
   generateResponse: async (command: string) => {
     await delay(1000 + Math.random() * 1500);
     const projectType = detectProjectType(command);
@@ -2726,6 +2756,7 @@ export const bugDetectorTemplate: AgentTemplate = {
   role: '质量保障工程师',
   avatar: '🐛',
   description: '专门进行Bug检测、边界测试、质量保证',
+  tools: ['code_executor', 'calculator'],
   generateResponse: async (command: string) => {
     await delay(1200 + Math.random() * 1800);
     const projectType = detectProjectType(command);
@@ -3083,6 +3114,7 @@ export const extenderTemplate: AgentTemplate = {
   role: '技术顾问',
   avatar: '🚀',
   description: '未来展望、技术建议、扩展性分析',
+  tools: ['calculator', 'json_parser'],
   generateResponse: async (command: string) => {
     await delay(800 + Math.random() * 1200);
     const projectType = detectProjectType(command);
@@ -3552,6 +3584,7 @@ export const packagerTemplate: AgentTemplate = {
   role: '交付工程师',
   avatar: '📦',
   description: '文件清单、下载链接说明、打包交付',
+  tools: ['file_list', 'json_parser'],
   generateResponse: async (command: string) => {
     await delay(600 + Math.random() * 1000);
     return `## 项目打包交付
@@ -3642,6 +3675,7 @@ export const deployerTemplate: AgentTemplate = {
   role: '部署工程师',
   avatar: '🚀',
   description: '部署进度、Git日志、成功提示',
+  tools: ['json_parser', 'calculator'],
   generateResponse: async (command: string) => {
     await delay(800 + Math.random() * 1500);
     return `## 部署进度报告
@@ -3748,6 +3782,7 @@ export const knowledgeManagerTemplate: AgentTemplate = {
   role: '知识管理工程师',
   avatar: '📚',
   description: '知识沉淀、经验总结、自动存入知识库',
+  tools: ['json_parser', 'calculator'],
   generateResponse: async (command: string) => {
     await delay(600 + Math.random() * 1000);
     const keywords = command.length > 10 ? command.slice(0, 10) + '...' : command;

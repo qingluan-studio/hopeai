@@ -414,4 +414,6 @@ export class KnowledgeEngine {
   }
 }
 
-export const defaultKnowledgeEngine = new KnowledgeEngine();
+import { extendedKnowledge } from './knowledgeData';
+
+export const defaultKnowledgeEngine = new KnowledgeEngine(extendedKnowledge);

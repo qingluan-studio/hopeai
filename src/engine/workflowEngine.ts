@@ -86,9 +86,21 @@ export interface WorkflowOptions {
   autoConfirm?: boolean;
   speedFactor?: number;
   enabledPhases?: WorkflowPhase[];
+  executionMode?: ExecutionMode;
+  maxParallelAgents?: number;
 }
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+export type ExecutionMode = 'sequential' | 'parallel' | 'mixed';
+
+export interface AgentExecutionResult {
+  agent: AgentTemplate;
+  content: string;
+  duration: number;
+  success: boolean;
+  error?: string;
+}
 
 const defaultPhases: PhaseConfig[] = [
   {
@@ -177,6 +189,8 @@ export class WorkflowEngine {
     this.options = {
       autoConfirm: true,
       speedFactor: 1,
+      executionMode: 'mixed',
+      maxParallelAgents: 4,
       ...options
     };
 
@@ -254,53 +268,15 @@ export class WorkflowEngine {
             }
           }
 
-          for (const agent of phase.agents) {
-            if (this.abortController.signal.aborted) break;
+          const mode = this.options.executionMode;
+          const shouldParallel = 
+            mode === 'parallel' || 
+            (mode === 'mixed' && phase.agents.length > 1);
 
-            this.reportProgress({
-              phase: phase.id,
-              phaseIndex: i,
-              totalPhases: this.phases.length,
-              message: `${agent.name} 正在思考...`,
-              agent,
-              isComplete: false,
-              timestamp: new Date().toISOString()
-            });
-
-            const agentDelay = (phase.minDuration + Math.random() * (phase.maxDuration - phase.minDuration)) / phase.agents.length;
-            const adjustedDelay = agentDelay / (this.options.speedFactor || 1);
-
-            let content: string;
-            const useLLM = isLLMEnabled();
-
-            if (useLLM) {
-              try {
-                const context = buildContext(prevOutputs);
-                content = await callKimi(agent.id, command, context);
-                await delay(Math.min(adjustedDelay, 800));
-              } catch (err) {
-                const fallbackContent = await agent.generateResponse(command);
-                const errMsg = err instanceof Error ? err.message : '未知错误';
-                content = `⚠️ AI模型调用失败，使用本地模板生成\n\n原因：${errMsg}\n\n---\n\n${fallbackContent}`;
-              }
-            } else {
-              await delay(adjustedDelay);
-              content = await agent.generateResponse(command);
-            }
-            
-            phaseResult.outputs.push(content);
-            prevOutputs.push(content);
-
-            this.reportProgress({
-              phase: phase.id,
-              phaseIndex: i,
-              totalPhases: this.phases.length,
-              message: `${agent.name} 完成工作`,
-              agent,
-              content,
-              isComplete: false,
-              timestamp: new Date().toISOString()
-            });
+          if (shouldParallel) {
+            await this.executeAgentsParallel(phase, command, prevOutputs, phaseResult);
+          } else {
+            await this.executeAgentsSequential(phase, command, prevOutputs, phaseResult);
           }
         } else {
           if (phase.id === 'confirmation') {
@@ -418,6 +394,131 @@ export class WorkflowEngine {
   private reportProgress(progress: WorkflowProgress): void {
     if (this.options.onProgress) {
       this.options.onProgress(progress);
+    }
+  }
+
+  private async executeAgent(
+    agent: AgentTemplate,
+    command: string,
+    context: string,
+    phase: PhaseConfig
+  ): Promise<AgentExecutionResult> {
+    const startTime = Date.now();
+    
+    this.reportProgress({
+      phase: phase.id,
+      phaseIndex: this.currentPhaseIndex,
+      totalPhases: this.phases.length,
+      message: `${agent.name} 正在思考...`,
+      agent,
+      isComplete: false,
+      timestamp: new Date().toISOString()
+    });
+
+    const agentDelay = (phase.minDuration + Math.random() * (phase.maxDuration - phase.minDuration)) / phase.agents.length;
+    const adjustedDelay = agentDelay / (this.options.speedFactor || 1);
+
+    let content: string;
+    const useLLM = isLLMEnabled();
+
+    try {
+      if (useLLM) {
+        try {
+          content = await callKimi(agent.id, command, context);
+          await delay(Math.min(adjustedDelay, 800));
+        } catch (err) {
+          const fallbackContent = await agent.generateResponse(command);
+          const errMsg = err instanceof Error ? err.message : '未知错误';
+          content = `⚠️ AI模型调用失败，使用本地模板生成\n\n原因：${errMsg}\n\n---\n\n${fallbackContent}`;
+        }
+      } else {
+        await delay(adjustedDelay);
+        content = await agent.generateResponse(command);
+      }
+
+      return {
+        agent,
+        content,
+        duration: Date.now() - startTime,
+        success: true
+      };
+    } catch (err) {
+      return {
+        agent,
+        content: `❌ ${agent.name} 执行失败: ${err instanceof Error ? err.message : '未知错误'}`,
+        duration: Date.now() - startTime,
+        success: false,
+        error: err instanceof Error ? err.message : '未知错误'
+      };
+    }
+  }
+
+  private async executeAgentsSequential(
+    phase: PhaseConfig,
+    command: string,
+    prevOutputs: string[],
+    phaseResult: WorkflowPhaseResult
+  ): Promise<void> {
+    for (const agent of phase.agents) {
+      if (this.abortController.signal.aborted) break;
+
+      const context = buildContext(prevOutputs);
+      const result = await this.executeAgent(agent, command, context, phase);
+
+      phaseResult.outputs.push(result.content);
+      prevOutputs.push(result.content);
+
+      this.reportProgress({
+        phase: phase.id,
+        phaseIndex: this.currentPhaseIndex,
+        totalPhases: this.phases.length,
+        message: `${agent.name} 完成工作`,
+        agent,
+        content: result.content,
+        isComplete: false,
+        timestamp: new Date().toISOString()
+      });
+    }
+  }
+
+  private async executeAgentsParallel(
+    phase: PhaseConfig,
+    command: string,
+    prevOutputs: string[],
+    phaseResult: WorkflowPhaseResult
+  ): Promise<void> {
+    const context = buildContext(prevOutputs);
+    const maxParallel = this.options.maxParallelAgents || 4;
+    const batches: AgentTemplate[][] = [];
+    
+    for (let i = 0; i < phase.agents.length; i += maxParallel) {
+      batches.push(phase.agents.slice(i, i + maxParallel));
+    }
+
+    for (const batch of batches) {
+      if (this.abortController.signal.aborted) break;
+
+      const tasks = batch.map(agent => 
+        this.executeAgent(agent, command, context, phase)
+      );
+
+      const results = await Promise.all(tasks);
+
+      results.forEach(result => {
+        phaseResult.outputs.push(result.content);
+        prevOutputs.push(result.content);
+
+        this.reportProgress({
+          phase: phase.id,
+          phaseIndex: this.currentPhaseIndex,
+          totalPhases: this.phases.length,
+          message: `${result.agent.name} 完成工作`,
+          agent: result.agent,
+          content: result.content,
+          isComplete: false,
+          timestamp: new Date().toISOString()
+        });
+      });
     }
   }
 

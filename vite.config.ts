@@ -54,6 +54,9 @@ export default defineConfig({
           });
         },
       }
+    },
+    watch: {
+      ignored: ['**/.pnpm-store/**', '**/node_modules/**', '**/dist/**']
     }
   }
 })
