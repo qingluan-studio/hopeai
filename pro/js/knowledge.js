@@ -161,6 +161,21 @@ const HOPEAI_KB = (function() {
   $("Mem0个性化记忆","Mem0提取用户偏好和上下文存为向量记忆，自动去重和更新。支持短期(会话内)和长期(跨会话)记忆。记忆类型：用户偏好(技术栈/风格)、历史决策、项目上下文。API自动判断添加/更新/删除记忆。","Mem0 记忆 个性化","编排层","IntentAnalysis",3);
   $("数字生命体自愈","Agent持续自监控(CPU/内存/错误率/响应延迟)。异常检测：3σ规则或孤立森林(Isolation Forest)识别指标偏离。轻度异常(CPU>80%)→降级(切换轻量模型)，中度(连续错误)→重启实例，重度(OOM)→kill并创建新实例+告警人工介入。","自愈 监控 Agent 运维","治理层","HarnessRuntime",3);
 
+  // 2026最新技术知识
+  $("MCP协议核心架构","MCP(Model Context Protocol)是Anthropic于2024年底开源的AI工具接入标准，2025年捐赠给Linux基金会托管。Client-Server架构，三大原语：Tools(执行动作)、Resources(读取数据)、Prompts(复用指令)。通信基于JSON-RPC 2.0，支持stdio和HTTP双传输模式。写一次MCP Server可被ClaudeCode/Cursor/ChatGPT等任意客户端调用，被誉为AI世界的USB-C接口。","MCP 协议 Anthropic Agent","治理层","HarnessRuntime",3);
+  $("LangGraph vs CrewAI选型对比","LangGraph综合评分8.9/10适合复杂任务(>5步流程需精确状态控制)，CrewAI评分6.8/10适合快速验证(5分钟上手但复杂任务支持弱)。AutoGen 7.2分适合多Agent对话+代码执行。选型Python新手用CrewAI，中等复杂用LangGraph，多Agent+沙箱代码执行用AutoGen。LangGraph状态图是最精确的复杂流程表达方式。","LangGraph CrewAI 框架 选型","编排层","MultiAgentCoord",3);
+  $("Agentic RAG动态检索2026","2026年RAG进入代理化阶段：不是静态管道而是由自主Agent驱动的动态工作流。模型根据任务复杂度自主决定是否需要检索、使用何种工具、何时停止迭代。核心循环：评估问题→决定检索策略→执行检索→评估结果→决定是否继续。结合Self-RAG反思Token和CorrectiveRAG检索质量评估器，复杂QA准确率提升20-35%。","Agentic RAG 动态 代理","底座层","RAGVectorSearch",3);
+  $("GraphRAG轻量化变革","微软GraphRAG通过社区检测和全局摘要解决跨文档综合推理，但索引成本高。LightRAG/nano-GraphRAG/KAG在2025-2026年成熟，大幅降低图构建成本(索引Token降低70-90%)。轻量GraphRAG使中小场景也能用上图增强检索，适合需要理解实体间复杂关系的多跳问答场景。","GraphRAG LightRAG 图检索","底座层","RAGVectorSearch",3);
+  $("OpenAI SSE流式响应实现","使用fetch+ReadableStream解析SSE：fetch设置stream:true，response.body.getReader()逐块读取，TextDecoder解码字节流。SSE格式：每行以data:开头，空行表示事件结束。OpenAI每条data:行是JSON含choices[0].delta.content字段。需用buffer处理跨chunk的不完整行。相比EventSource，fetch支持POST请求和自定义Header。","SSE 流式 OpenAI fetch","交付层","FrontendDev",2);
+  $("多模型SSE统一管道","不同AI厂商SSE格式不同：OpenAI用choices[0].delta.content、Anthropic用delta.text、通义千问用output.text。架构设计：底层SSEParser统一字节流解析(适配器模式)+各模型轻量Adapter提取文本。读ReadableStream比EventSource好：支持POST、自定义Header、手动控制超时取消。","SSE 多模型 适配器 流式","交付层","FrontendDev",3);
+  $("Web Speech API语音输入","浏览器原生语音识别API：new SpeechRecognition()支持中文(zh-CN)，continuous连续模式，interimResults实时获取中间结果。Chrome139+支持端侧离线识别processLocally。关键事件：onresult获取识别文本、onerror处理无语音/网络错误/权限拒绝。语音识别后可选接入LLM做NLU，形成完整语音助手链路。","语音 WebSpeech STT 浏览器","交付层","MobileDev",1);
+  $("Browser Use浏览器自动化","2025-2026增长最快的开源AI项目之一，50K+GitHub Star。LLM通过Agent循环获得浏览器完整控制权。两种架构：DOM驱动(BrowserUse/Stagehand解析页面元素点击)和视觉驱动(Skyvern截图发给视觉模型点击像素)。生产模式两者并用：DOM为主路径(90%)，视觉作为canvas/iframe等不可靠场景fallback。","BrowserUse 自动化 浏览器 AI","交付层","DevOpsCICD",3);
+  $("AI Agent框架2026全景","11大开源框架：LangGraph(最完整生态)、AutoGen(微软多Agent协作)、CrewAI(最易上手)、OpenAI Agents SDK(通用标杆)、Smolagents(HuggingFace)、Semantic Kernel(微软)、LlamaIndex Agents、Strands Agents、Pydantic AI、Atomic Agents、Botpress。选型看任务复杂度+团队经验+调试需求+部署方式。","Agent 框架 开源 全景","编排层","MultiAgentCoord",1);
+  $("A2A跨Agent通信协议","Google A2A Protocol定义标准化Agent间通信方式。Agent通过Agent Card声明能力和端点，Task对象追踪任务生命周期，SSE实现流式通信，支持多模态(文本/图片/音频)。与MCP互补：MCP连接Agent到工具，A2A连接Agent到Agent。150+组织已采用，Python/JS/Java/Go四语言SDK。","A2A 通信 Google 协议","编排层","MultiAgentCoord",3);
+  $("Claude Code AI编程Agent","Anthropic的Claude Code是2026最成功的专业Agent产品，年化收入63亿美元，AI编程Agent赛道54%市场份额。核心能力：自主代码审查、Bug修复、重构、完整Git工作流集成、代码库级理解。Anthropic内部超80%生产代码由其生成。通过MCP协议可扩展连接外部工具和数据源。","ClaudeCode Anthropic 编程 Agent","交付层","FrontendDev",2);
+  $("RAG七大范式演进2026","SimpleRAG(向量检索+LLM)已降至基线地位。主流进阶：CorrectiveRAG(评估器+网络搜索回退)、SelfRAG(反思Token+自我批评)、AgenticRAG(Agent循环+动态路由)、GraphRAG(知识图谱+社区摘要)、SpeculativeRAG(多路生成+评分选择)、FusionRAG(多源检索+信息整合)。趋势代理化+轻量化+多模态融合。","RAG 范式 演进 2026","底座层","RAGVectorSearch",2);
+  $("Dify低代码Agent平台","字节跳动开源的Dify在2026年成为国内最流行低代码AI应用平台，GitHub Star超8万。可视化Agent编排(拖拽工作流)、内置RAG管道、LLMOps监控、应用模板市场。支持多种LLM：OpenAI/Claude/DeepSeek/通义千问。适合非技术人员快速搭建AI应用，复杂逻辑可通过代码节点扩展。","Dify 低代码 Agent 平台","交付层","DevOpsCICD",1);
+
   // ── 统计与接口 ──
   E.forEach(function(e,i){
     e.i = 'K' + String(i+1).padStart(4,'0');
