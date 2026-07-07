@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import {
   Search,
   BookOpen,
@@ -15,7 +15,10 @@ import {
   CheckCircle,
   Github,
   Code2,
-  User
+  User,
+  RefreshCw,
+  AlertTriangle,
+  Database
 } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -24,7 +27,6 @@ import { useKnowledgeStore } from '@/store/useKnowledgeStore'
 import { fetchOpenSourceKnowledge, fetchCodeSnippets, fetchMyProjects } from '@/services/knowledgeFetcher'
 import { syncToHopeAI, getSyncConfig } from '@/services/hopeaiSyncService'
 import type { KnowledgeEntry } from '@/types'
-import { RefreshCw } from 'lucide-react'
 
 const categories = [
   { id: 'all', name: '全部' },
@@ -255,7 +257,7 @@ function DetailView({
 }
 
 export default function Knowledge() {
-  const { entries, searchQuery, setSearch, selectEntry, selectedEntry, addEntry } = useKnowledgeStore()
+  const { entries, searchQuery, setSearch, selectEntry, selectedEntry, addEntry, loadFromBackend, isLoadingBackend, backendTotal, backendError } = useKnowledgeStore()
   const [activeCategory, setActiveCategory] = useState('all')
   const [activeTag, setActiveTag] = useState<string | null>(null)
   const [showFilters, setShowFilters] = useState(false)
@@ -265,6 +267,11 @@ export default function Knowledge() {
   const [syncConfig, setSyncConfig] = useState(() => getSyncConfig())
   const [syncing, setSyncing] = useState(false)
   const [syncResult, setSyncResult] = useState<string | null>(null)
+
+  // 组件挂载时从后端加载知识库
+  useEffect(() => {
+    loadFromBackend()
+  }, [loadFromBackend])
 
   const allTags = useMemo(() => {
     const tags = new Set<string>()
@@ -555,6 +562,26 @@ export default function Knowledge() {
                 <X className="w-3.5 h-3.5 flex-shrink-0" />
               )}
               <span className="truncate">{syncResult}</span>
+            </div>
+          )}
+
+          {/* 后端知识库加载状态 */}
+          {isLoadingBackend && (
+            <div className="mt-2 p-2 rounded-lg bg-blue-900/20 border border-blue-700/40 flex items-center gap-1.5">
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-400 flex-shrink-0" />
+              <span className="text-[11px] font-mono text-blue-400">正在从后端同步知识库...</span>
+            </div>
+          )}
+          {backendError && !isLoadingBackend && (
+            <div className="mt-2 p-2 rounded-lg bg-red-900/20 border border-red-700/40 flex items-center gap-1.5">
+              <AlertTriangle className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />
+              <span className="text-[11px] font-mono text-red-400">{backendError}</span>
+            </div>
+          )}
+          {backendTotal > 0 && !isLoadingBackend && (
+            <div className="mt-2 p-2 rounded-lg bg-green-900/20 border border-green-700/40 flex items-center gap-1.5">
+              <Database className="w-3.5 h-3.5 text-green-400 flex-shrink-0" />
+              <span className="text-[11px] font-mono text-green-400">后端知识库已同步: {backendTotal} 条</span>
             </div>
           )}
 

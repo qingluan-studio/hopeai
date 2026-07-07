@@ -7,6 +7,120 @@ import { useKnowledgeStore } from '@/store/useKnowledgeStore'
 
 const KIMI_API_URL = 'https://api.moonshot.cn/v1/chat/completions'
 
+export interface AgentInfo {
+  id: string
+  name: string
+  emoji: string
+  role: string
+  layer: string
+  layerName: string
+  tools: string[]
+}
+
+export const agents: AgentInfo[] = [
+  { id: 'chief-orchestrator', name: 'Chief Orchestrator', emoji: '🎯', role: '统一调度与任务编排', layer: 'L1', layerName: '编排', tools: ['语义意图分类', 'DAG任务图', 'Token计量', '记忆检索'] },
+  { id: 'ui-flow-designer', name: 'UI Flow Designer', emoji: '🎨', role: '界面流程设计', layer: 'L1', layerName: '编排', tools: ['Vue3/Svelte', 'shadcn/ui', '动画库', 'PWA'] },
+  { id: 'deputy-orchestrator', name: 'Deputy Orchestrator', emoji: '🤝', role: '副调度与并发监控', layer: 'L1', layerName: '编排', tools: ['并发控制', '任务队列', '状态监控'] },
+  { id: 'token-gatekeeper', name: 'Token Gatekeeper', emoji: '💰', role: 'Token配额管理', layer: 'L1', layerName: '编排', tools: ['配额计量', '断路器', '免费模型路由'] },
+  { id: 'ab-experimenter', name: 'A/B Experimenter', emoji: '🔬', role: '实验设计与策略评估', layer: 'L1', layerName: '编排', tools: ['实验框架', '统计分析', '报告生成'] },
+  { id: 'intent-analyst', name: 'Intent Analyst', emoji: '🔍', role: '深度语义分析与用户画像', layer: 'L1', layerName: '编排', tools: ['NLU引擎', '用户画像', '消歧树'] },
+  { id: 'code-artisan', name: 'Code Artisan', emoji: '💻', role: '全栈代码编写与审查', layer: 'L2', layerName: '交付', tools: ['Node/Python/Bun', 'Vitest/pytest', 'CI/CD', '版本控制'] },
+  { id: 'copy-master', name: 'Copy Master', emoji: '✍️', role: '高级文案写作', layer: 'L2', layerName: '交付', tools: ['风格库', '可读性检查', 'AI检测规避', 'GEO优化'] },
+  { id: 'mobile-architect', name: 'Mobile Architect', emoji: '📱', role: '移动端UI设计', layer: 'L2', layerName: '交付', tools: ['VitePWA', '触摸手势', 'Lighthouse性能'] },
+  { id: 'frontend-designer', name: 'Frontend Designer', emoji: '🖼️', role: '高保真UI设计', layer: 'L2', layerName: '交付', tools: ['Figma插件', '组件库', '动画引擎', 'CSS框架'] },
+  { id: 'backend-engineer', name: 'Backend Engineer', emoji: '⚙️', role: '后端架构设计', layer: 'L2', layerName: '交付', tools: ['Express/FastAPI', 'DB ORM', '消息队列', '缓存'] },
+  { id: 'devops-deployer', name: 'DevOps Deployer', emoji: '🚀', role: 'CI/CD与容器化部署', layer: 'L2', layerName: '交付', tools: ['Docker', 'K8s', 'GitHub Actions', '监控'] },
+  { id: 'api-architect', name: 'API Architect', emoji: '🔌', role: 'RESTful/GraphQL设计', layer: 'L2', layerName: '交付', tools: ['OpenAPI', 'GraphQL', 'API网关', '限流'] },
+  { id: 'test-engineer', name: 'Test Engineer', emoji: '🧪', role: '单元/集成/E2E测试', layer: 'L2', layerName: '交付', tools: ['Vitest', 'Playwright', 'Cypress', '覆盖率工具'] },
+  { id: 'security-auditor', name: 'Security Auditor', emoji: '🔐', role: '代码安全审查', layer: 'L2', layerName: '交付', tools: ['SAST', 'DAST', '依赖扫描', '渗透测试'] },
+  { id: 'performance-optimizer', name: 'Performance Optimizer', emoji: '⚡', role: '性能优化', layer: 'L2', layerName: '交付', tools: ['Lighthouse', 'Bundle分析', 'Profiler', '缓存策略'] },
+  { id: 'microservices-architect', name: 'Microservices Architect', emoji: '🏗️', role: '微服务架构设计', layer: 'L2', layerName: '交付', tools: ['服务网格', '注册中心', '配置中心', '链路追踪'] },
+  { id: 'dataviz-designer', name: 'Dataviz Designer', emoji: '📊', role: '数据可视化设计', layer: 'L2', layerName: '交付', tools: ['D3/ECharts', 'Canvas/SVG', '动画', '响应式图表'] },
+  { id: 'animation-designer', name: 'Animation Designer', emoji: '✨', role: '微交互与动效设计', layer: 'L2', layerName: '交付', tools: ['GSAP', 'Framer Motion', 'Lottie', 'Three.js'] },
+  { id: 'media-processor', name: 'Media Processor', emoji: '🎬', role: '音视频处理', layer: 'L2', layerName: '交付', tools: ['ffmpeg', 'WebRTC', 'MediaSource', '音频分析'] },
+  { id: 'game-dev-engineer', name: 'Game Dev Engineer', emoji: '🎮', role: '2D/3D游戏开发', layer: 'L2', layerName: '交付', tools: ['Unity/Godot', 'Phaser', '物理引擎', '游戏AI'] },
+  { id: 'embedded-engineer', name: 'Embedded Engineer', emoji: '🔧', role: '嵌入式开发', layer: 'L2', layerName: '交付', tools: ['C/C++', 'RTOS', '通信协议', '硬件调试'] },
+  { id: 'blockchain-developer', name: 'Blockchain Developer', emoji: '⛓️', role: '智能合约与DApp', layer: 'L2', layerName: '交付', tools: ['Solidity', 'Web3.js', 'Hardhat', '链上索引'] },
+  { id: 'cloud-native-architect', name: 'Cloud Native Architect', emoji: '☁️', role: 'Serverless与多云架构', layer: 'L2', layerName: '交付', tools: ['K8s', 'Serverless框架', '服务网格', 'Terraform'] },
+  { id: 'prompt-engineer', name: 'Prompt Engineer', emoji: '🎯', role: 'Prompt设计与优化', layer: 'L2', layerName: '交付', tools: ['Prompt库', '评估框架', 'A/B测试', '版本控制'] },
+  { id: 'pm-assistant', name: 'PM Assistant', emoji: '📋', role: '产品经理助手', layer: 'L2', layerName: '交付', tools: ['PRD模板', '故事地图', '竞品分析框架'] },
+  { id: 'marketing-strategist', name: 'Marketing Strategist', emoji: '📈', role: '营销策略规划', layer: 'L2', layerName: '交付', tools: ['营销模型', '数据分析', '内容日历'] },
+  { id: 'social-media-operator', name: 'Social Media Operator', emoji: '📱', role: '社交媒体运营', layer: 'L2', layerName: '交付', tools: ['多平台API', '定时发布', '情感分析'] },
+  { id: 'technical-writer', name: 'Technical Writer', emoji: '📝', role: '技术文档写作', layer: 'L2', layerName: '交付', tools: ['Markdown引擎', '代码示例生成', '多语言翻译'] },
+  { id: 'ux-researcher', name: 'UX Researcher', emoji: '🔬', role: '用户研究与可用性测试', layer: 'L2', layerName: '交付', tools: ['热力图', '会话录制', '问卷', 'A/B统计'] },
+  { id: 'illustration-designer', name: 'Illustration Designer', emoji: '🎨', role: '品牌插画设计', layer: 'L2', layerName: '交付', tools: ['SVG/Canvas', '色彩系统', '风格迁移', '图标库'] },
+  { id: '3d-modeler', name: '3D Modeler', emoji: '🧊', role: '3D模型创建', layer: 'L2', layerName: '交付', tools: ['Three.js', 'Babylon.js', 'GLTF', '材质系统'] },
+  { id: 'video-editor', name: 'Video Editor', emoji: '🎥', role: '视频后期制作', layer: 'L2', layerName: '交付', tools: ['ffmpeg', '字幕引擎', '转场效果', '合成'] },
+  { id: 'podcast-producer', name: 'Podcast Producer', emoji: '🎙️', role: '播客制作', layer: 'L2', layerName: '交付', tools: ['音频处理', 'RSS生成', '分发API', '章节'] },
+  { id: 'education-designer', name: 'Education Designer', emoji: '📚', role: '课程设计', layer: 'L2', layerName: '交付', tools: ['课程框架', '评估引擎', '自适应学习'] },
+  { id: 'lakehouse-architect', name: 'Lakehouse Architect', emoji: '🗄️', role: '湖仓一体架构', layer: 'L3', layerName: '底座', tools: ['Cloudflare R2', 'Iceberg表', 'ETL', '多模态索引'] },
+  { id: 'rag-specialist', name: 'RAG Specialist', emoji: '🔎', role: '向量检索与混合搜索', layer: 'L3', layerName: '底座', tools: ['Chroma', '嵌入模型', 'BGE重排序', 'LlamaIndex'] },
+  { id: 'geo-optimizer', name: 'GEO Optimizer', emoji: '🌐', role: 'AI优先SEO优化', layer: 'L3', layerName: '底座', tools: ['JSON-LD生成', 'schema.org', 'AI爬虫监控', '新鲜度'] },
+  { id: 'vector-db-operator', name: 'VectorDB Operator', emoji: '🗃️', role: '向量数据库运维', layer: 'L3', layerName: '底座', tools: ['Milvus/Qdrant运维', '索引策略', '分片', '备份'] },
+  { id: 'etl-engineer', name: 'ETL Engineer', emoji: '🔧', role: '数据抽取与转换', layer: 'L3', layerName: '底座', tools: ['Dagster/Airflow', '数据验证', '增量同步'] },
+  { id: 'data-quality-monitor', name: 'Data Quality Monitor', emoji: '📋', role: '数据质量监控', layer: 'L3', layerName: '底座', tools: ['质量规则引擎', '异常检测', '漂移监控'] },
+  { id: 'knowledge-graph-builder', name: 'Knowledge Graph Builder', emoji: '🕸️', role: '知识图谱构建', layer: 'L3', layerName: '底座', tools: ['NER', '关系抽取', '图数据库', 'SPARQL'] },
+  { id: 'embedding-tuner', name: 'Embedding Tuner', emoji: '🎛️', role: '嵌入模型微调', layer: 'L3', layerName: '底座', tools: ['微调流水线', '评估数据集', '模型压缩', 'ONNX'] },
+  { id: 'fulltext-engineer', name: 'Full-text Engineer', emoji: '📖', role: '全文检索优化', layer: 'L3', layerName: '底座', tools: ['Elasticsearch/Meilisearch', '分词器', 'BM25调优'] },
+  { id: 'cache-strategist', name: 'Cache Strategist', emoji: '⚡', role: '多级缓存策略', layer: 'L3', layerName: '底座', tools: ['Redis/Memcached', 'CDN', '本地缓存', '穿透防护'] },
+  { id: 'log-analyst', name: 'Log Analyst', emoji: '📊', role: '日志分析', layer: 'L3', layerName: '底座', tools: ['日志收集', '模式挖掘', '告警规则', '可视化'] },
+  { id: 'data-annotation-manager', name: 'Data Annotation Manager', emoji: '🏷️', role: '数据标注管理', layer: 'L3', layerName: '底座', tools: ['标注平台', '一致性检查', '主动学习'] },
+  { id: 'model-evaluator', name: 'Model Evaluator', emoji: '📐', role: '模型性能评估', layer: 'L3', layerName: '底座', tools: ['评估框架', '基准数据集', '统计测试'] },
+  { id: 'feature-engineer', name: 'Feature Engineer', emoji: '🔬', role: '特征工程', layer: 'L3', layerName: '底座', tools: ['特征存储', '自动特征工程', '特征重要性'] },
+  { id: 'pipeline-scheduler', name: 'Pipeline Scheduler', emoji: '⏰', role: '任务调度', layer: 'L3', layerName: '底座', tools: ['Cron调度', 'DAG依赖', '告警', '回填'] },
+  { id: 'harness-engineer', name: 'Harness Engineer', emoji: '🛡️', role: '运行时外骨骼', layer: 'L4', layerName: '治理', tools: ['进程沙箱', 'OpenTelemetry', '检查点恢复', '审计'] },
+  { id: 'self-evolution-mentor', name: 'Self-Evolution Mentor', emoji: '🧠', role: '经验蒸馏与终身学习', layer: 'L4', layerName: '治理', tools: ['经验蒸馏', '错误日志', '技能注册表', '自动回归'] },
+  { id: 'compliance-officer', name: 'Compliance Officer', emoji: '🔒', role: 'AI安全护栏', layer: 'L4', layerName: '治理', tools: ['实时语义分析', '审计API', '规则引擎'] },
+  { id: 'privacy-officer', name: 'Privacy Officer', emoji: '🔏', role: '数据隐私合规', layer: 'L4', layerName: '治理', tools: ['脱敏引擎', '差分隐私', 'GDPR工具'] },
+  { id: 'content-moderator', name: 'Content Moderator', emoji: '🕵️', role: '多模态内容审核', layer: 'L4', layerName: '治理', tools: ['文本审核', '图片审核', '水印'] },
+  { id: 'watermark-tracer', name: 'Watermark Tracer', emoji: '💧', role: '隐形水印追踪', layer: 'L4', layerName: '治理', tools: ['水印算法', '可追溯性', '盲检测'] },
+  { id: 'circuit-breaker', name: 'Circuit Breaker', emoji: '⚡', role: '熔断策略', layer: 'L4', layerName: '治理', tools: ['熔断模式', '降级策略', '健康检查'] },
+  { id: 'sandbox-isolator', name: 'Sandbox Isolator', emoji: '📦', role: '代码执行隔离', layer: 'L4', layerName: '治理', tools: ['进程隔离', 'seccomp', '资源限制', '安全策略'] },
+  { id: 'audit-trail-officer', name: 'Audit Trail Officer', emoji: '📋', role: '全链路审计', layer: 'L4', layerName: '治理', tools: ['审计日志', '操作回放', '合规检查', '报告'] },
+  { id: 'error-diagnostician', name: 'Error Diagnostician', emoji: '🔍', role: '根因分析', layer: 'L4', layerName: '治理', tools: ['日志分析', '调用链追踪', '根因定位', '知识图谱'] },
+  { id: 'capacity-planner', name: 'Capacity Planner', emoji: '📈', role: '容量规划', layer: 'L4', layerName: '治理', tools: ['负载预测', '弹性伸缩', '成本模型'] },
+  { id: 'cost-optimizer', name: 'Cost Optimizer', emoji: '💰', role: '云成本优化', layer: 'L4', layerName: '治理', tools: ['成本分析', '资源优化', '预算告警'] },
+  { id: 'sla-monitor', name: 'SLA Monitor', emoji: '📊', role: '服务级别监控', layer: 'L4', layerName: '治理', tools: ['可用性监控', '延迟追踪', 'SLA报告'] },
+  { id: 'disaster-recovery', name: 'Disaster Recovery', emoji: '🔄', role: '灾难恢复', layer: 'L4', layerName: '治理', tools: ['备份策略', '异地灾备', 'RPO/RTO'] },
+  { id: 'vulnerability-scanner', name: 'Vulnerability Scanner', emoji: '🛡️', role: '漏洞扫描', layer: 'L4', layerName: '治理', tools: ['SCA扫描', 'CVE数据库', '修复建议', '自动补丁'] },
+  { id: 'dependency-manager', name: 'Dependency Manager', emoji: '📦', role: '依赖管理', layer: 'L4', layerName: '治理', tools: ['版本矩阵', '兼容性测试', '升级路径', 'SBOM'] },
+  { id: 'license-compliance', name: 'License Compliance', emoji: '📜', role: '开源许可合规', layer: 'L4', layerName: '治理', tools: ['许可扫描', '合规矩阵', '风险评估'] },
+  { id: 'i18n-adapter', name: 'i18n Adapter', emoji: '🌍', role: '多语言适配', layer: 'L4', layerName: '治理', tools: ['i18n框架', '翻译管理', '本地化测试', 'RTL'] },
+  { id: 'accessibility-officer', name: 'Accessibility Officer', emoji: '♿', role: '无障碍合规', layer: 'L4', layerName: '治理', tools: ['a11y检测', 'ARIA标签', '对比度检查', '键盘导航'] },
+  { id: 'carbon-monitor', name: 'Carbon Monitor', emoji: '🌱', role: '碳排放估算', layer: 'L4', layerName: '治理', tools: ['碳模型', '能源分析', '绿色建议'] },
+  { id: 'ux-evaluator', name: 'UX Evaluator', emoji: '⭐', role: 'UX质量评估', layer: 'L4', layerName: '治理', tools: ['体验指标', '用户反馈', '启发式评估'] },
+  { id: 'feedback-loop-manager', name: 'Feedback Loop Manager', emoji: '🔄', role: '反馈闭环管理', layer: 'L4', layerName: '治理', tools: ['反馈收集', '自动分类', '优先级排序'] },
+  { id: 'knowledge-deposition', name: 'Knowledge Deposition', emoji: '📚', role: '知识沉淀', layer: 'L4', layerName: '治理', tools: ['内容捕获', '质量评分', '模板生成', '向量化'] },
+  { id: 'ci-guardian', name: 'CI Guardian', emoji: '🏛️', role: 'CI守护者', layer: 'L4', layerName: '治理', tools: ['CI监控', '质量门禁', '安全扫描', '发布审批'] },
+]
+
+export const layerNames: Record<string, string> = {
+  'L1': '编排',
+  'L2': '交付',
+  'L3': '底座',
+  'L4': '治理',
+}
+
+export function getAgentById(id: string): AgentInfo | undefined {
+  return agents.find(a => a.id === id)
+}
+
+export function getAgentsByLayer(layer: string): AgentInfo[] {
+  return agents.filter(a => a.layer === layer)
+}
+
+export function getAgentPrompt(id: string): string {
+  const agent = getAgentById(id)
+  if (!agent) return '你是一位专业的AI助手。'
+  
+  const toolList = agent.tools.join('、')
+  return `你是一位${agent.role}专家，代号${agent.name}。
+你的专长领域：${toolList}
+
+请根据你的专业知识，为用户提供专业的${agent.role}服务。
+输出格式：先分析需求，然后给出专业的解决方案和具体建议。`
+}
+
 // 每个Agent的系统提示词
 const agentPrompts: Record<string, string> = {
   analyst: `你是一位资深的需求分析师，专长是将模糊的用户需求拆解为可执行的开发任务。
@@ -152,17 +266,38 @@ export function clearLLMConfig() {
 }
 
 /**
- * RAG检索：从知识库中获取相关知识作为上下文
+ * 从后端API搜索知识
  */
-function getRAGContext(command: string, topK: number = 3): string {
+async function searchBackendKnowledge(query: string, topK: number = 3): Promise<Array<{title: string, content: string, score: number}>> {
   try {
-    const entries = useKnowledgeStore.getState().entries
-    if (!entries || entries.length === 0) return ''
+    const response = await fetch(`/api/knowledge/search?q=${encodeURIComponent(query)}&limit=${topK}`)
+    if (!response.ok) return []
+    const data = await response.json()
+    if (!data.success || !Array.isArray(data.data)) return []
+    return data.data.map((item: any) => ({
+      title: item.title || '',
+      content: item.content || '',
+      score: item.score || 0
+    }))
+  } catch {
+    return []
+  }
+}
+
+/**
+ * RAG检索：从本地知识库+后端API获取相关知识作为上下文
+ */
+async function getRAGContext(command: string, topK: number = 3): Promise<string> {
+  try {
+    // 并行：本地检索 + 后端API检索
+    const localEntries = useKnowledgeStore.getState().entries
+    const backendResults = await searchBackendKnowledge(command, topK)
 
     const cmdLower = command.toLowerCase()
     const cmdWords = cmdLower.split(/[\s,，。、！？]+/).filter(w => w.length > 1)
 
-    const scored = entries.map(entry => {
+    // 本地检索打分
+    const localScored = localEntries.map(entry => {
       let score = 0
       const titleLower = entry.title.toLowerCase()
       const contentLower = entry.content.toLowerCase()
@@ -178,18 +313,34 @@ function getRAGContext(command: string, topK: number = 3): string {
         if (cmdLower.includes(tag.toLowerCase()) && tag.length > 1) score += 2
       }
 
-      return { entry, score }
-    })
+      return { title: entry.title, content: entry.content, score }
+    }).filter(s => s.score > 0)
 
-    const relevant = scored
-      .filter(s => s.score > 0)
-      .sort((a, b) => b.score - a.score)
-      .slice(0, topK)
+    // 合并本地和后端结果，去重（按标题）
+    const seen = new Set<string>()
+    const merged: Array<{title: string, content: string, score: number}> = []
 
-    if (relevant.length === 0) return ''
+    // 后端结果优先（通常更精准）
+    for (const item of backendResults) {
+      if (!seen.has(item.title)) {
+        seen.add(item.title)
+        merged.push(item)
+      }
+    }
 
-    const refs = relevant.map((s, i) => {
-      return `参考资料${i + 1}（${s.entry.title}）：\n${s.entry.content.slice(0, 800)}`
+    // 补充本地结果
+    for (const item of localScored.sort((a, b) => b.score - a.score)) {
+      if (!seen.has(item.title) && merged.length < topK * 2) {
+        seen.add(item.title)
+        merged.push(item)
+      }
+    }
+
+    const final = merged.slice(0, topK)
+    if (final.length === 0) return ''
+
+    const refs = final.map((s, i) => {
+      return `参考资料${i + 1}（${s.title}）：\n${s.content.slice(0, 800)}`
     }).join('\n\n')
 
     return `\n\n以下是知识库中的相关资料，供你参考：\n${refs}\n`
@@ -204,18 +355,30 @@ function getRAGContext(command: string, topK: number = 3): string {
 export async function callKimi(
   agentId: string,
   command: string,
-  context?: string
+  context?: string,
+  chatStyle: string = 'professional'
 ): Promise<string> {
   const config = getConfig()
   if (!config || !config.apiKey) {
     throw new Error('未配置Kimi API Key，请在"我的"页面设置')
   }
 
-  const systemPrompt = agentPrompts[agentId] || '你是一位专业的AI助手。'
-  const ragContext = getRAGContext(command, 3)
+  let systemPrompt = agentPrompts[agentId]
+  if (!systemPrompt) {
+    systemPrompt = getAgentPrompt(agentId)
+  }
+  const ragContext = await getRAGContext(command, 3)
+
+  const styleModifiers: Record<string, string> = {
+    professional: '请使用专业、严谨的语气回答，保持技术专业性，语言简练准确。',
+    warm: '请使用亲切、温暖、共情的语气回答，让用户感受到关怀和支持。',
+    humorous: '请使用轻松、幽默、风趣的语气回答，可以适当加入幽默元素和表情。',
+    minimal: '请使用极简、高效的方式回答，直接给出要点和关键信息，避免冗长。',
+    creative: '请使用富有创意和想象力的方式回答，可以提出新颖的思路和方案。',
+  }
 
   const messages = [
-    { role: 'system', content: systemPrompt + ragContext },
+    { role: 'system', content: systemPrompt + '\n\n' + (styleModifiers[chatStyle] || styleModifiers.professional) + ragContext },
   ]
 
   if (context) {

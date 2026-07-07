@@ -88,6 +88,7 @@ export interface WorkflowOptions {
   enabledPhases?: WorkflowPhase[];
   executionMode?: ExecutionMode;
   maxParallelAgents?: number;
+  chatStyle?: string;
 }
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -191,6 +192,7 @@ export class WorkflowEngine {
       speedFactor: 1,
       executionMode: 'mixed',
       maxParallelAgents: 4,
+      chatStyle: 'professional',
       ...options
     };
 
@@ -424,7 +426,7 @@ export class WorkflowEngine {
     try {
       if (useLLM) {
         try {
-          content = await callKimi(agent.id, command, context);
+          content = await callKimi(agent.id, command, context, this.options.chatStyle);
           await delay(Math.min(adjustedDelay, 800));
         } catch (err) {
           const fallbackContent = await agent.generateResponse(command);

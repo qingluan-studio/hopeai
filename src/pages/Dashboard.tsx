@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { Send, Crown, Search, Code2, Shield, Rocket, Package, Sparkles, ChevronLeft, MoreVertical, Users, Zap, Cpu, Palette, ClipboardList, FlaskConical, FileText, Users2, Landmark, Megaphone, Headphones, ShieldAlert, Scale, Settings2, Bot, Lightbulb, BookOpen, Wrench, FileCode, Calculator, FileJson, FileSearch, FileEdit, FolderOpen, Braces, Hash, Database, Loader2, Check, Key, Globe } from 'lucide-react'
+import { Send, Crown, Search, Code2, Shield, Rocket, Package, Sparkles, ChevronLeft, MoreVertical, Users, Zap, Cpu, Palette, ClipboardList, FlaskConical, FileText, Users2, Landmark, Megaphone, Headphones, ShieldAlert, Scale, Settings2, Bot, Lightbulb, BookOpen, Wrench, FileCode, Calculator, FileJson, FileSearch, FileEdit, FolderOpen, Braces, Hash, Database, Loader2, Check, Key, Globe, Sparkles as SparklesIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useChatStore } from '@/store/useChatStore'
+import { useChatStore, chatStyles, type ChatStyle } from '@/store/useChatStore'
 import { useAgentStore } from '@/store/useAgentStore'
 import { useKnowledgeStore } from '@/store/useKnowledgeStore'
 import { useThemeStore } from '@/store/useThemeStore'
@@ -11,6 +11,7 @@ import { templateStore, type Template } from '@/engine/templateStore'
 import { embeddingService } from '@/services/embeddingService'
 import { defaultKnowledgeEngine } from '@/engine/knowledgeEngine'
 import { AgentConsoleView } from '@/components/AgentConsole'
+import { agents as llmAgents } from '@/services/llmService'
 
 const roleConfig: Record<string, { name: string; color: string; bg: string; border: string; icon: any }> = {
   user: { name: '董事长', color: 'text-yellow-400', bg: 'bg-yellow-900/30', border: 'border-yellow-700/50', icon: Crown },
@@ -93,9 +94,69 @@ function MobileMessage({ message }: { message: any }) {
   )
 }
 
-// 消息内容渲染（支持简单markdown）
+function CodePreviewModal({ code, language, onClose }: { code: string; language: string; onClose: () => void }) {
+  const [rendered, setRendered] = useState(false)
+
+  useEffect(() => {
+    setRendered(true)
+    return () => setRendered(false)
+  }, [code])
+
+  const isHTML = language === 'html' || language === 'svg'
+  const isMarkdown = language === 'markdown' || language === 'md'
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4" onClick={onClose}>
+      <div className="w-full max-w-4xl max-h-[85vh] bg-gray-950 border border-gray-800 rounded-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-800 bg-gray-900/50">
+          <div className="flex items-center gap-2">
+            <span className="text-lg">📄</span>
+            <span className="text-sm font-mono text-gray-300">代码预览</span>
+            <span className="text-[10px] font-mono text-gray-500 px-2 py-0.5 rounded bg-gray-800/50">{language.toUpperCase()}</span>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-2 rounded-lg hover:bg-gray-800/50 text-gray-400 hover:text-gray-200 transition-all"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        
+        <div className="flex-1 overflow-auto p-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-3">
+              <div className="text-[10px] font-mono text-gray-500 mb-2">📝 源代码</div>
+              <pre className="text-[11px] font-mono text-green-300 overflow-x-auto max-h-[60vh] whitespace-pre-wrap">
+                {code}
+              </pre>
+            </div>
+            
+            <div className="bg-white/5 border border-gray-800 rounded-xl p-3">
+              <div className="text-[10px] font-mono text-gray-500 mb-2">👁️ 渲染结果</div>
+              <div className="h-[60vh] overflow-auto bg-white/5 rounded-lg p-2">
+                {isHTML ? (
+                  <div dangerouslySetInnerHTML={{ __html: code }} />
+                ) : isMarkdown ? (
+                  <div className="text-[13px] text-gray-200 whitespace-pre-wrap">
+                    {code}
+                  </div>
+                ) : (
+                  <pre className="text-[11px] font-mono text-gray-300">{code}</pre>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function MessageContent({ content }: { content: string }) {
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null)
+  const [previewModal, setPreviewModal] = useState<{ code: string; language: string } | null>(null)
   const parts = content.split(/(```[\s\S]*?```)/g)
 
   const handleCopy = async (text: string, index: number) => {
@@ -115,40 +176,72 @@ function MessageContent({ content }: { content: string }) {
     }
   }
 
+  const getLanguage = (part: string) => {
+    const match = part.match(/^```(\w+)/)
+    return match ? match[1] : 'text'
+  }
+
+  const canPreview = (language: string) => {
+    return ['html', 'svg', 'markdown', 'md'].includes(language.toLowerCase())
+  }
+
   return (
     <div className="whitespace-pre-wrap">
       {parts.map((part, i) => {
         if (part.startsWith('```')) {
           const code = part.replace(/^```\w*\n?/, '').replace(/```$/, '')
+          const language = getLanguage(part)
           return (
             <div key={i} className="my-1.5 relative group">
               <pre className="my-0 p-3 bg-gray-950/90 border border-gray-800 rounded-xl overflow-x-auto text-[11px] font-mono text-green-300">
                 <code>{code}</code>
               </pre>
-              <button
-                onClick={() => handleCopy(code, i)}
-                className={cn(
-                  'absolute top-2 right-2 p-1.5 rounded-lg bg-gray-800/80 hover:bg-gray-700/80 transition-all',
-                  copiedIndex === i 
-                    ? 'opacity-100 text-green-400 bg-green-900/30' 
-                    : 'opacity-0 group-hover:opacity-100 text-gray-400 hover:text-green-400'
+              <div className="absolute top-2 right-2 flex gap-1">
+                {canPreview(language) && (
+                  <button
+                    onClick={() => setPreviewModal({ code, language })}
+                    className="p-1.5 rounded-lg bg-gray-800/80 hover:bg-purple-900/50 transition-all opacity-0 group-hover:opacity-100 text-gray-400 hover:text-purple-400"
+                    title="预览"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                  </button>
                 )}
-              >
-                {copiedIndex === i ? (
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                ) : (
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                  </svg>
-                )}
-              </button>
+                <button
+                  onClick={() => handleCopy(code, i)}
+                  className={cn(
+                    'p-1.5 rounded-lg bg-gray-800/80 hover:bg-gray-700/80 transition-all',
+                    copiedIndex === i 
+                      ? 'opacity-100 text-green-400 bg-green-900/30' 
+                      : 'opacity-0 group-hover:opacity-100 text-gray-400 hover:text-green-400'
+                  )}
+                >
+                  {copiedIndex === i ? (
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  ) : (
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                  )}
+                </button>
+              </div>
             </div>
           )
         }
         return <span key={i}>{part}</span>
       })}
+
+      {previewModal && (
+        <CodePreviewModal
+          code={previewModal.code}
+          language={previewModal.language}
+          onClose={() => setPreviewModal(null)}
+        />
+      )}
     </div>
   )
 }
@@ -298,8 +391,15 @@ function DashboardView() {
   const tools = toolEngine.getAllTools()
   const templates = templateStore.getAll()
   
+  const layerCounts = {
+    L1: llmAgents.filter(a => a.layer === 'L1').length,
+    L2: llmAgents.filter(a => a.layer === 'L2').length,
+    L3: llmAgents.filter(a => a.layer === 'L3').length,
+    L4: llmAgents.filter(a => a.layer === 'L4').length,
+  }
+  
   const stats = [
-    { label: '团队成员', value: totalAgents, unit: '人', color: 'text-green-400', bg: 'bg-green-900/20', border: 'border-green-800/40' },
+    { label: 'AI角色', value: llmAgents.length, unit: '个', color: 'text-green-400', bg: 'bg-green-900/20', border: 'border-green-800/40' },
     { label: '活跃中', value: activeAgents, unit: '人', color: 'text-yellow-400', bg: 'bg-yellow-900/20', border: 'border-yellow-800/40' },
     { label: '知识库', value: entries.length, unit: '条', color: 'text-purple-400', bg: 'bg-purple-900/20', border: 'border-purple-800/40' },
     { label: '部门数', value: departments.length, unit: '个', color: 'text-blue-400', bg: 'bg-blue-900/20', border: 'border-blue-800/40' },
@@ -424,6 +524,32 @@ function DashboardView() {
           </div>
         </div>
 
+        {/* 四层架构概览 */}
+        <div>
+          <div className="text-[11px] font-mono text-gray-400 px-1 mb-2 flex items-center gap-2">
+            <SparklesIcon className="w-3 h-3" />
+            AI 架构层次
+          </div>
+          <div className="grid grid-cols-4 gap-2">
+            <div className="p-3 rounded-xl bg-blue-900/30 border border-blue-800/40 text-center">
+              <div className="text-xl font-mono font-bold text-blue-400">{layerCounts.L1}</div>
+              <div className="text-[9px] font-mono text-blue-300/70 mt-1">L1 编排</div>
+            </div>
+            <div className="p-3 rounded-xl bg-purple-900/30 border border-purple-800/40 text-center">
+              <div className="text-xl font-mono font-bold text-purple-400">{layerCounts.L2}</div>
+              <div className="text-[9px] font-mono text-purple-300/70 mt-1">L2 交付</div>
+            </div>
+            <div className="p-3 rounded-xl bg-green-900/30 border border-green-800/40 text-center">
+              <div className="text-xl font-mono font-bold text-green-400">{layerCounts.L3}</div>
+              <div className="text-[9px] font-mono text-green-300/70 mt-1">L3 底座</div>
+            </div>
+            <div className="p-3 rounded-xl bg-amber-900/30 border border-amber-800/40 text-center">
+              <div className="text-xl font-mono font-bold text-amber-400">{layerCounts.L4}</div>
+              <div className="text-[9px] font-mono text-amber-300/70 mt-1">L4 治理</div>
+            </div>
+          </div>
+        </div>
+
         {/* 向量检索配置 */}
         <VectorSearchPanel />
 
@@ -513,7 +639,7 @@ function DashboardMiniView({ onStartChat }: { onStartChat: () => void }) {
   const departments = [...new Set(agents.map(a => a.department).filter(Boolean))]
 
   const stats = [
-    { label: '团队成员', value: totalAgents, unit: '人', color: 'text-green-400', bg: 'bg-green-900/20', border: 'border-green-800/40' },
+    { label: 'AI角色', value: llmAgents.length, unit: '个', color: 'text-green-400', bg: 'bg-green-900/20', border: 'border-green-800/40' },
     { label: '活跃中', value: activeAgents, unit: '人', color: 'text-yellow-400', bg: 'bg-yellow-900/20', border: 'border-yellow-800/40' },
     { label: '知识库', value: entries.length, unit: '条', color: 'text-purple-400', bg: 'bg-purple-900/20', border: 'border-purple-800/40' },
     { label: '部门数', value: departments.length, unit: '个', color: 'text-blue-400', bg: 'bg-blue-900/20', border: 'border-blue-800/40' },
@@ -605,7 +731,7 @@ function DashboardMiniView({ onStartChat }: { onStartChat: () => void }) {
 
 // 聊天主页
 function ChatView() {
-  const { messages, isStreaming, addMessage, setStreaming } = useChatStore()
+  const { messages, isStreaming, addMessage, setStreaming, chatStyle, setChatStyle } = useChatStore()
   const { resetAllAgents, updateAgentStatus, setAgentProgress } = useAgentStore()
   const { workflowSpeed } = useThemeStore()
   const { addEntry } = useKnowledgeStore()
@@ -621,8 +747,8 @@ function ChatView() {
   }, [messages, isStreaming])
 
   useEffect(() => {
-    workflowEngineRef.current = new WorkflowEngine({ speedFactor: workflowSpeed })
-  }, [workflowSpeed])
+    workflowEngineRef.current = new WorkflowEngine({ speedFactor: workflowSpeed, chatStyle })
+  }, [workflowSpeed, chatStyle])
 
   const agentIdToStoreId: Record<string, string> = {
     analyst: 'analyst',
@@ -787,11 +913,15 @@ ${allOutputs.slice(0, 2000)}
     }
   }
 
-  const quickCommands = [
-    { label: '分析', cmd: '分析一下用户管理系统的需求' },
-    { label: '开发', cmd: '开发一个待办清单应用' },
-    { label: '优化', cmd: '优化现有代码的性能' },
-    { label: '部署', cmd: '部署到GitHub Pages' },
+  const quickActions = [
+    { label: '建网站首页', cmd: '创建一个现代化的企业官网首页，使用React + Tailwind CSS，包含导航、Hero区域、产品展示、团队介绍和联系表单', icon: '🌐' },
+    { label: '产品文案', cmd: '为一款AI助手产品撰写产品介绍文案，包括核心卖点、功能特点、使用场景和CTA文案', icon: '✍️' },
+    { label: '性能优化', cmd: '分析并优化前端应用性能，包括代码分割、懒加载、缓存策略、图片优化和首屏加载优化', icon: '⚡' },
+    { label: '数据库设计', cmd: '设计一个电商平台的数据库架构，包括用户表、商品表、订单表、购物车表和支付表', icon: '🗄️' },
+    { label: '安全审计', cmd: '对Web应用进行安全审计，包括SQL注入、XSS攻击、CSRF防护、敏感数据保护和权限控制', icon: '🔐' },
+    { label: 'API设计', cmd: '设计一套RESTful API接口，包括用户认证、数据CRUD、分页查询、权限控制和错误处理', icon: '🔌' },
+    { label: '代码审查', cmd: '审查一段代码的质量，包括代码规范、性能问题、安全隐患、可读性和可维护性', icon: '🔍' },
+    { label: '技术文档', cmd: '编写一份完整的技术文档，包括架构设计、API文档、部署指南和运维手册', icon: '📖' },
   ]
 
   return (
@@ -810,9 +940,24 @@ ${allOutputs.slice(0, 2000)}
               <p className="text-[9px] font-mono text-gray-500 -mt-0.5">清鸢AI公司</p>
             </div>
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2">
             <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
             <span className="text-[10px] font-mono text-green-400">在线</span>
+            
+            <div className="flex items-center gap-1 ml-2">
+              <SparklesIcon className="w-3 h-3 text-purple-400" />
+              <select
+                value={chatStyle}
+                onChange={(e) => setChatStyle(e.target.value as ChatStyle)}
+                className="text-[10px] font-mono bg-gray-900/80 border border-gray-800 rounded-lg px-2 py-1 text-gray-300 focus:outline-none focus:border-purple-600/50"
+              >
+                {chatStyles.map(style => (
+                  <option key={style.id} value={style.id}>
+                    {style.emoji} {style.name}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
 
@@ -874,13 +1019,14 @@ ${allOutputs.slice(0, 2000)}
                   分析 → 编码 → 审查 → 扩展 → 打包 → 部署
                 </p>
                 <div className="mt-6 grid grid-cols-2 gap-2 w-full max-w-xs">
-                  {quickCommands.map((q) => (
+                  {quickActions.map((action) => (
                     <button
-                      key={q.label}
-                      onClick={() => setInput(q.cmd)}
-                      className="px-3 py-2 rounded-lg bg-gray-900/60 border border-gray-800 hover:border-green-700/50 text-[11px] font-mono text-gray-400 hover:text-green-400 transition-all"
+                      key={action.label}
+                      onClick={() => setInput(action.cmd)}
+                      className="flex flex-col items-center gap-1.5 px-3 py-3 rounded-xl bg-gray-900/60 border border-gray-800 hover:border-purple-700/50 text-[11px] font-mono text-gray-400 hover:text-purple-400 transition-all active:scale-95"
                     >
-                      {q.label}
+                      <span className="text-lg">{action.icon}</span>
+                      <span className="text-center line-clamp-1">{action.label}</span>
                     </button>
                   ))}
                 </div>

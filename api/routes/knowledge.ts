@@ -1,4 +1,5 @@
 import { Router, type Request, type Response } from 'express'
+import { INITIAL_KNOWLEDGE } from './chat'
 
 interface KnowledgeEntry {
   id: string
@@ -12,44 +13,25 @@ interface KnowledgeEntry {
 
 const router = Router()
 
-let knowledgeBase: KnowledgeEntry[] = [
-  {
-    id: 'kb_001',
-    title: 'React最佳实践',
-    content: 'React开发中的性能优化、组件设计模式、状态管理等最佳实践。包括使用React.memo、useMemo、useCallback进行性能优化，采用组合而非继承的组件设计模式，以及使用Zustand/Redux等状态管理方案。',
-    tags: ['react', 'frontend', 'performance', 'best-practices'],
-    category: '前端开发',
-    createdAt: Date.now() - 86400000 * 7,
-    source: 'manual'
-  },
-  {
-    id: 'kb_002',
-    title: 'TypeScript高级类型',
-    content: '条件类型、映射类型、模板字面量类型等高级TypeScript特性。深入理解infer关键字、分布式条件类型、键重映射等高级用法，提升类型安全性和代码可维护性。',
-    tags: ['typescript', 'typing', 'advanced', 'tutorial'],
-    category: '编程语言',
-    createdAt: Date.now() - 86400000 * 5,
-    source: 'manual'
-  },
-  {
-    id: 'kb_003',
-    title: 'Node.js部署指南',
-    content: 'PM2进程管理、Nginx反向代理、Docker容器化部署。涵盖生产环境部署的完整流程，包括日志管理、监控告警、滚动更新等最佳实践。',
-    tags: ['nodejs', 'deployment', 'devops', 'docker'],
-    category: '后端开发',
-    createdAt: Date.now() - 86400000 * 3,
-    source: 'auto'
-  },
-  {
-    id: 'kb_004',
-    title: '数据库优化策略',
-    content: '索引优化、查询优化、分库分表策略。讲解SQL和NoSQL数据库的性能调优技巧，包括执行计划分析、连接池配置、缓存策略等内容。',
-    tags: ['database', 'performance', 'optimization', 'sql'],
-    category: '数据库',
-    createdAt: Date.now() - 86400000 * 1,
-    source: 'manual'
-  },
-]
+let knowledgeBase: KnowledgeEntry[] = []
+
+// 从 chat.ts 的 INITIAL_KNOWLEDGE 初始化
+function initializeKnowledgeBase() {
+  if (knowledgeBase.length > 0) return
+  for (const item of INITIAL_KNOWLEDGE) {
+    knowledgeBase.push({
+      id: `kb_${Date.now().toString(36)}_${Math.random().toString(36).substring(2, 8)}`,
+      title: item.title,
+      content: item.content,
+      tags: item.tags,
+      category: item.category,
+      createdAt: Date.now(),
+      source: 'kimi_search_curated'
+    })
+  }
+  console.log(`[knowledge.ts] 知识库已初始化: ${knowledgeBase.length} 条`)
+}
+initializeKnowledgeBase()
 
 const generateId = (): string => {
   return `kb_${Date.now().toString(36)}_${Math.random().toString(36).substring(2, 8)}`

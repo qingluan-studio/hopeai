@@ -2929,19 +2929,26 @@ interface KnowledgeState {
   entries: KnowledgeEntry[]
   selectedEntry: string | null
   searchQuery: string
+  isLoadingBackend: boolean
+  backendTotal: number
+  backendError: string | null
   addEntry: (entry: KnowledgeEntry) => void
   deleteEntry: (id: string) => void
   selectEntry: (id: string | null) => void
   setSearch: (query: string) => void
   resetToDefault: () => void
+  loadFromBackend: () => Promise<void>
 }
 
 export const useKnowledgeStore = create<KnowledgeState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       entries: sampleEntries,
       selectedEntry: null,
       searchQuery: '',
+      isLoadingBackend: false,
+      backendTotal: 0,
+      backendError: null,
       addEntry: (entry) =>
         set((state) => {
           // 避免重复ID
@@ -2958,6 +2965,54 @@ export const useKnowledgeStore = create<KnowledgeState>()(
       setSearch: (query) => set({ searchQuery: query }),
       // 重置为默认知识（清空导入的数据）
       resetToDefault: () => set({ entries: sampleEntries }),
+      // 从后端API加载知识库
+      loadFromBackend: async () => {
+        set({ isLoadingBackend: true, backendError: null })
+        try {
+          const response = await fetch('/api/knowledge')
+          if (!response.ok) {
+            throw new Error(`后端知识库加载失败: ${response.status}`)
+          }
+          const data = await response.json()
+          if (!data.success) {
+            throw new Error('后端返回数据格式错误')
+          }
+
+          // 适配两种可能的返回格式
+          const rawItems = Array.isArray(data.data)
+            ? data.data
+            : data.data?.entries || []
+          const total = Array.isArray(data.data)
+            ? data.data.length
+            : data.data?.total || rawItems.length
+
+          const backendItems: KnowledgeEntry[] = rawItems.map((item: any) => ({
+            id: item.id || Date.now().toString(36) + Math.random().toString(36).slice(2, 9),
+            title: item.title || '未命名',
+            content: item.content || '',
+            category: item.category || '未分类',
+            tags: Array.isArray(item.tags) ? item.tags : [],
+            importance: typeof item.importance === 'number' ? item.importance : 5,
+            source: item.source || 'backend',
+            createdAt: typeof item.createdAt === 'number' ? item.createdAt : new Date(item.createdAt || Date.now()).getTime(),
+          }))
+
+          // 合并：后端知识 + 现有本地知识（基于ID去重）
+          const existingIds = new Set(get().entries.map(e => e.id))
+          const newItems = backendItems.filter(item => !existingIds.has(item.id))
+
+          set((state) => ({
+            entries: [...state.entries, ...newItems],
+            backendTotal: total,
+            isLoadingBackend: false,
+          }))
+        } catch (err) {
+          set({
+            isLoadingBackend: false,
+            backendError: err instanceof Error ? err.message : '未知错误',
+          })
+        }
+      },
     }),
     {
       name: 'hopeai-knowledge-store',
