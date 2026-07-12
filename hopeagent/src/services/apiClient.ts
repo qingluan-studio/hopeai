@@ -272,3 +272,28 @@ export const healthApi = {
     }
   },
 }
+
+// ============ 文件上传 API ============
+export interface FileUploadResult {
+  url?: string
+  path?: string
+  filename?: string
+  size?: number
+  mimeType?: string
+}
+
+export const filesApi = {
+  /** 上传文件到后端 */
+  async upload(file: File): Promise<FileUploadResult> {
+    const formData = new FormData()
+    formData.append('file', file)
+    const res = await fetch(getApiBase() + '/api/files/upload', {
+      method: 'POST',
+      body: formData,
+    })
+    if (!res.ok) {
+      throw new Error(`文件上传失败: HTTP ${res.status}`)
+    }
+    return res.json()
+  },
+}

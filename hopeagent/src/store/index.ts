@@ -55,6 +55,7 @@ interface ChatState {
   deleteConversation: (id: string) => void
   addMessage: (convId: string, message: ChatMessage) => void
   updateMessage: (convId: string, msgId: string, updates: Partial<ChatMessage> | ((prev: ChatMessage) => Partial<ChatMessage>)) => void
+  deleteMessage: (convId: string, msgId: string) => void
   setStreamingContent: (content: string) => void
   setIsStreaming: (streaming: boolean) => void
   setActiveAgent: (agentId: string) => void
@@ -152,6 +153,17 @@ export const useChatStore = create<ChatState>()(
       setStreamingContent: (content) => set({ streamingContent: content }),
       setIsStreaming: (streaming) => set({ isStreaming: streaming }),
       setActiveAgent: (agentId) => set({ activeAgentId: agentId }),
+
+      deleteMessage: (convId, msgId) => set((s) => ({
+        conversations: s.conversations.map(c => {
+          if (c.id !== convId) return c
+          return {
+            ...c,
+            messages: c.messages.filter(m => m.id !== msgId),
+            updatedAt: new Date().toISOString(),
+          }
+        }),
+      })),
       
       addThoughtStep: (step) => set((s) => ({
         thoughtSteps: [...s.thoughtSteps, step],

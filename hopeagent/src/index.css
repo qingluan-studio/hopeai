@@ -245,3 +245,43 @@ body {
   0% { background-color: rgba(0,255,136,0.2); }
   50%, 100% { background-color: #00ff88; }
 }
+
+/* 流式光标：消息未完成时末尾闪烁的 ▌ */
+.streaming-cursor::after {
+  content: '▌';
+  animation: blink 1s step-end infinite;
+  color: #00ff88;
+  margin-left: 1px;
+  font-weight: bold;
+}
+
+/* 消息操作栏 hover 渐显 */
+.message-actions {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.group:hover .message-actions {
+  opacity: 1;
+}
+
+/* 线条截断工具类 */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* 拖拽高亮 */
+.drag-over {
+  border: 2px dashed #00ff88 !important;
+  background: rgba(0, 255, 136, 0.05);
+}

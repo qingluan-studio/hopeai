@@ -22,6 +22,7 @@ export default function ChatPage() {
     createConversation,
     addMessage,
     updateMessage,
+    deleteMessage,
     setStreamingContent,
     setIsStreaming,
     addThoughtStep,
@@ -197,6 +198,83 @@ export default function ChatPage() {
     }
   }
 
+  /** 命令处理：/clear /export /help 等 */
+  const handleCommand = (cmd: string, _args: string) => {
+    switch (cmd) {
+      case 'clear':
+        // 清空当前对话所有消息
+        if (activeConversationId && conv) {
+          [...conv.messages].forEach(m => deleteMessage(activeConversationId, m.id))
+        }
+        break
+      case 'export':
+        // 导出对话为 Markdown 文件
+        if (conv && conv.messages.length > 0) {
+          const md = conv.messages.map(m =>
+            `## ${m.role === 'user' ? '董事长' : m.agentName || '智能助手'}\n\n${m.content}\n`
+          ).join('\n---\n\n')
+          const blob = new Blob([md], { type: 'text/markdown' })
+          const url = URL.createObjectURL(blob)
+          const a = document.createElement('a')
+          a.href = url
+          a.download = `${conv.title || '对话'}.md`
+          a.click()
+          URL.revokeObjectURL(url)
+        }
+        break
+      case 'help':
+        // 显示帮助信息为系统消息
+        if (activeConversationId) {
+          addMessage(activeConversationId, {
+            id: uid(),
+            role: 'system',
+            content: '可用命令：/clear 清空对话 · /export 导出为MD · /agent 切换Agent · /model 切换模型 · /search 搜索知识库 · /help 帮助',
+            timestamp: new Date().toISOString(),
+            isComplete: true,
+          })
+        }
+        break
+      default:
+        break
+    }
+  }
+
+  /** 删除消息 */
+  const handleDeleteMessage = (msgId: string) => {
+    if (activeConversationId) {
+      deleteMessage(activeConversationId, msgId)
+    }
+  }
+
+  /** 重新生成：删除最后的助手回复，重新发送最后的用户消息 */
+  const handleRegenerate = async () => {
+    if (isStreaming || !activeConversationId || !conv) return
+    const msgs = conv.messages
+    if (msgs.length === 0) return
+    // 找到最后一条用户消息
+    const lastUserMsg = [...msgs].reverse().find(m => m.role === 'user')
+    if (!lastUserMsg) return
+    // 删除最后一条助手消息（如果有）
+    const lastMsg = msgs[msgs.length - 1]
+    if (lastMsg.role === 'assistant') {
+      deleteMessage(activeConversationId, lastMsg.id)
+    }
+    // 重新发送（不添加新的用户消息）
+    clearThoughts()
+    abortRef.current = new AbortController()
+    const useBackendMode = useBackend && backendOnline
+    if (useBackendMode) {
+      await sendViaBackend(lastUserMsg.content, activeConversationId)
+    } else {
+      await sendViaLocal(lastUserMsg.content, activeConversationId)
+    }
+  }
+
+  /** 引用回复：通过自定义事件设置输入框内容 */
+  const handleReply = (content: string) => {
+    window.dispatchEvent(new CustomEvent('inputbox-reply', { detail: content }))
+  }
+
   const quickPrompts = [
     { icon: Code, text: '写一个React组件', color: 'text-cyan-400' },
     { icon: BarChart3, text: '分析销售数据趋势', color: 'text-green-400' },
@@ -309,11 +387,15 @@ export default function ChatPage() {
           </div>
         ) : (
           <div className="py-2">
-            {conv!.messages.map(msg => (
+            {conv!.messages.map((msg, i) => (
               <ChatMessage
                 key={msg.id}
                 message={msg}
+                index={i + 1}
                 streamingContent={msg.id === conv!.messages[conv!.messages.length - 1]?.id && isStreaming ? streamingContent : undefined}
+                onDelete={handleDeleteMessage}
+                onRegenerate={msg.role === 'assistant' ? handleRegenerate : undefined}
+                onReply={handleReply}
               />
             ))}
             <div ref={messagesEndRef} />
@@ -321,7 +403,7 @@ export default function ChatPage() {
         )}
       </div>
 
-      <InputBox onSend={handleSend} disabled={isStreaming} />
+      <InputBox onSend={handleSend} disabled={isStreaming} onCommand={handleCommand} />
     </div>
   )
 }
