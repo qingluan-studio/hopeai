@@ -69,8 +69,8 @@ class ReflectEngine {
 
     try {
       scores = computeCognitiveInvariants(output)
-      tier = scores.tier || 'C'
-      passed = scores.composite >= this.config.qualityThreshold
+      tier = scores.grade || 'C'
+      passed = scores.overallScore >= this.config.qualityThreshold
 
       if (scores.itc < 0.6) suggestions.push('信息结构不够紧凑，建议加强逻辑关联')
       if (scores.scs < 0.6) suggestions.push('推理路径不够顺畅，建议优化论证顺序')
@@ -193,7 +193,7 @@ ${suggestions.map((s, i) => `${i + 1}. ${s}`).join('\n')}
   ): string {
     if (!initial || !final) return '无法生成洞察'
 
-    const delta = final.composite - initial.composite
+    const delta = final.overallScore - initial.overallScore
     if (delta > 0.1) return `经过 ${retries} 轮优化，质量提升 ${(delta * 100).toFixed(1)}%，效果显著`
     if (delta > 0.05) return `经过 ${retries} 轮优化，质量有一定提升`
     if (delta > 0) return `优化后质量略有提升，已接近上限`
@@ -240,7 +240,7 @@ ${suggestions.map((s, i) => `${i + 1}. ${s}`).join('\n')}
     const total = this.history.length
     const optimized = this.history.filter(h => h.optimized).length
     const avgScore = total > 0
-      ? this.history.reduce((s, h) => s + (h.scores?.composite || 0), 0) / total
+      ? this.history.reduce((s, h) => s + (h.scores?.overallScore || 0), 0) / total
       : 0
     const tierCounts: Record<string, number> = {}
     for (const h of this.history) {

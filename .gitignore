@@ -23,3 +23,16 @@ dist-ssr
 *.sln
 *.sw?
 .vite
+
+# 后端运行时数据
+hopeagent/server/data/
+
+# 构建缓存
+*.tsbuildinfo
+
+# 部署临时目录
+deploy-tmp
+deploy-company
+
+# pnpm store
+.pnpm-store

@@ -1,0 +1,247 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: #0a0e14;
+  color: #e0e6ed;
+  overflow: hidden;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 255, 136, 0.2);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 255, 136, 0.4);
+}
+
+.cyber-border {
+  border: 1px solid rgba(0, 255, 136, 0.15);
+  position: relative;
+}
+
+.cyber-border::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(0,255,136,0.5), transparent);
+}
+
+.glow-text {
+  text-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+}
+
+.glow-box {
+  box-shadow: 0 0 20px rgba(0, 255, 136, 0.1), inset 0 0 20px rgba(0, 255, 136, 0.05);
+}
+
+.typing-cursor::after {
+  content: '▋';
+  animation: blink 1s step-end infinite;
+  color: #00ff88;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.scan-line {
+  position: relative;
+  overflow: hidden;
+}
+
+.scan-line::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(0,255,136,0.6), transparent);
+  animation: scanMove 3s linear infinite;
+}
+
+@keyframes scanMove {
+  0% { top: 0; opacity: 1; }
+  100% { top: 100%; opacity: 0; }
+}
+
+.code-block-wrapper {
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.code-block-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.4);
+  border-bottom: 1px solid rgba(0, 255, 136, 0.1);
+}
+
+.code-block-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.code-block-btn {
+  padding: 4px 8px;
+  font-size: 12px;
+  background: rgba(0, 255, 136, 0.1);
+  border: 1px solid rgba(0, 255, 136, 0.3);
+  color: #00ff88;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.code-block-btn:hover {
+  background: rgba(0, 255, 136, 0.2);
+}
+
+.thought-block {
+  background: rgba(0, 212, 255, 0.05);
+  border-left: 3px solid rgba(0, 212, 255, 0.3);
+  border-radius: 0 8px 8px 0;
+  margin: 8px 0;
+  overflow: hidden;
+}
+
+.thought-header {
+  padding: 8px 12px;
+  background: rgba(0, 212, 255, 0.1);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #00d4ff;
+}
+
+.thought-content {
+  padding: 12px;
+  font-size: 13px;
+  color: #9ca3af;
+  line-height: 1.6;
+}
+
+.tool-call-block {
+  background: rgba(255, 0, 170, 0.05);
+  border-left: 3px solid rgba(255, 0, 170, 0.3);
+  border-radius: 0 8px 8px 0;
+  margin: 8px 0;
+}
+
+.tool-call-header {
+  padding: 8px 12px;
+  background: rgba(255, 0, 170, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #ff00aa;
+}
+
+.tool-call-content {
+  padding: 12px;
+  font-family: monospace;
+  font-size: 12px;
+  color: #d1d5db;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.message-enter {
+  animation: messageEnter 0.3s ease-out;
+}
+
+@keyframes messageEnter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dot-flashing {
+  position: relative;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #00ff88;
+  animation: dotFlashing 1s infinite linear alternate;
+  animation-delay: .5s;
+}
+
+.dot-flashing::before, .dot-flashing::after {
+  content: '';
+  display: inline-block;
+  position: absolute;
+  top: 0;
+}
+
+.dot-flashing::before {
+  left: -10px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #00ff88;
+  animation: dotFlashing 1s infinite alternate;
+  animation-delay: 0s;
+}
+
+.dot-flashing::after {
+  left: 10px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #00ff88;
+  animation: dotFlashing 1s infinite alternate;
+  animation-delay: 1s;
+}
+
+@keyframes dotFlashing {
+  0% { background-color: rgba(0,255,136,0.2); }
+  50%, 100% { background-color: #00ff88; }
+}
