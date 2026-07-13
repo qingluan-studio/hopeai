@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>希望AI - 智能对话助手</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      min-height: 100vh;
+      color: #fff;
+    }
+    
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    header {
+      text-align: center;
+      padding: 20px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    
+    header h1 {
+      font-size: 2em;
+      color: #4ecca3;
+      letter-spacing: 2px;
+    }
+    
+    header p {
+      color: rgba(255,255,255,0.6);
+      margin-top: 8px;
+      font-size: 14px;
+    }
+    
+    .features {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+    
+    .feature-badge {
+      background: rgba(78, 204, 163, 0.15);
+      border: 1px solid rgba(78, 204, 163, 0.3);
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      color: #4ecca3;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .chat-area {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    
+    .message {
+      max-width: 85%;
+      padding: 14px 18px;
+      border-radius: 18px;
+      animation: fadeIn 0.3s ease;
+      position: relative;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .message.user {
+      background: linear-gradient(135deg, #4ecca3, #45b7aa);
+      align-self: flex-end;
+      color: #fff;
+    }
+    
+    .message.ai {
+      background: rgba(255,255,255,0.08);
+      align-self: flex-start;
+      border: 1px solid rgba(255,255,255,0.15);
+    }
+    
+    .message.ai .thinking {
+      background: rgba(78, 204, 163, 0.1);
+      border-left: 3px solid #4ecca3;
+      padding: 10px 14px;
+      margin-bottom: 12px;
+      border-radius: 0 8px 8px 0;
+      font-size: 14px;
+      color: rgba(255,255,255,0.9);
+      font-style: italic;
+    }
+    
+    .message.ai .thinking .label {
+      color: #4ecca3;
+      font-weight: bold;
+      margin-right: 8px;
+    }
+    
+    .message.ai .reflection {
+      background: rgba(255, 193, 7, 0.1);
+      border-left: 3px solid #ffc107;
+      padding: 10px 14px;
+      margin-top: 12px;
+      border-radius: 0 8px 8px 0;
+      font-size: 13px;
+      color: rgba(255,255,255,0.8);
+    }
+    
+    .message.ai .reflection .label {
+      color: #ffc107;
+      font-weight: bold;
+      margin-right: 8px;
+    }
+    
+    .message.ai .sources {
+      background: rgba(99, 102, 241, 0.1);
+      border: 1px solid rgba(99, 102, 241, 0.2);
+      padding: 12px;
+      margin-top: 12px;
+      border-radius: 10px;
+      font-size: 12px;
+    }
+    
+    .message.ai .sources .label {
+      color: #6366f1;
+      font-weight: bold;
+      display: block;
+      margin-bottom: 8px;
+    }
+    
+    .message.ai .sources ul {
+      list-style: none;
+      padding: 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    
+    .message.ai .sources li {
+      background: rgba(99, 102, 241, 0.2);
+      padding: 4px 10px;
+      border-radius: 12px;
+      color: rgba(255,255,255,0.9);
+    }
+    
+    .loading {
+      display: flex;
+      gap: 4px;
+      padding: 14px 18px;
+    }
+    
+    .loading span {
+      width: 8px;
+      height: 8px;
+      background: #4ecca3;
+      border-radius: 50%;
+      animation: bounce 1s infinite;
+    }
+    
+    .loading span:nth-child(2) { animation-delay: 0.2s; }
+    .loading span:nth-child(3) { animation-delay: 0.4s; }
+    
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+    
+    .input-area {
+      padding: 20px;
+      border-top: 1px solid rgba(255,255,255,0.1);
+    }
+    
+    .input-wrapper {
+      display: flex;
+      gap: 12px;
+      background: rgba(255,255,255,0.05);
+      padding: 12px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    
+    .input-wrapper input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: #fff;
+      font-size: 16px;
+      outline: none;
+    }
+    
+    .input-wrapper input::placeholder {
+      color: rgba(255,255,255,0.4);
+    }
+    
+    .input-wrapper button {
+      background: linear-gradient(135deg, #4ecca3, #45b7aa);
+      border: none;
+      color: #fff;
+      padding: 12px 28px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .input-wrapper button:hover {
+      transform: scale(1.05);
+      box-shadow: 0 4px 20px rgba(78, 204, 163, 0.3);
+    }
+    
+    .input-wrapper button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    .settings {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+    
+    .setting-toggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255,255,255,0.05);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .setting-toggle.active {
+      background: rgba(78, 204, 163, 0.2);
+      color: #4ecca3;
+    }
+    
+    .setting-toggle.inactive {
+      color: rgba(255,255,255,0.5);
+    }
+    
+    .setting-toggle input {
+      display: none;
+    }
+    
+    .stats {
+      text-align: center;
+      padding: 10px;
+      color: rgba(255,255,255,0.4);
+      font-size: 12px;
+    }
+    
+    .markdown code {
+      background: rgba(255,255,255,0.1);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 14px;
+      font-family: 'Fira Code', monospace;
+    }
+    
+    .markdown pre {
+      background: rgba(0,0,0,0.3);
+      padding: 14px;
+      border-radius: 10px;
+      overflow-x: auto;
+      margin: 10px 0;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    
+    .markdown pre code {
+      background: transparent;
+      padding: 0;
+    }
+    
+    .markdown h1, .markdown h2, .markdown h3 {
+      color: #4ecca3;
+      margin: 12px 0 6px;
+    }
+    
+    .markdown ul, .markdown ol {
+      padding-left: 24px;
+      margin: 8px 0;
+    }
+    
+    .markdown li {
+      margin: 4px 0;
+    }
+    
+    .markdown strong {
+      color: #4ecca3;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🤖 希望AI</h1>
+      <p>智能对话助手 · 知识库增强 · Kimi API驱动</p>
+      <div class="features">
+        <span class="feature-badge">🧠 思维链推理</span>
+        <span class="feature-badge">🔍 自我反思</span>
+        <span class="feature-badge">📚 RAG检索</span>
+        <span class="feature-badge">🗺️ 知识图谱</span>
+        <span class="feature-badge">🌐 联网搜索</span>
+      </div>
+    </header>
+    
+    <div class="chat-area" id="chatArea">
+      <div class="message ai">
+        <div class="thinking">
+          <span class="label">思考：</span>用户第一次进入，需要友好地介绍自己的能力。我具备思维链推理、自我反思、RAG检索和知识图谱等能力，可以帮助用户解决技术问题、写代码、分析需求等。
+        </div>
+        你好！我是希望AI，一个具备深度思考能力的智能对话助手。我可以：<br><br>
+        <strong>🧠 思维链推理</strong> - 把复杂问题拆解成一步步来思考<br>
+        <strong>🔍 自我反思</strong> - 回答后自动检查是否准确<br>
+        <strong>📚 知识库检索</strong> - 从知识库中查找相关知识增强回答<br>
+        <strong>🗺️ 知识图谱</strong> - 理解知识点之间的关联<br>
+        <strong>🌐 联网搜索</strong> - 实时搜索互联网获取最新信息<br><br>
+        有什么想问的吗？
+      </div>
+    </div>
+    
+    <div class="stats" id="stats">
+      知识库: 0 条 | 图谱关系: 0 | RAG检索: 已启用
+    </div>
+    
+    <div class="input-area">
+      <div class="settings">
+        <label class="setting-toggle active">
+          <input type="checkbox" id="cotToggle" checked onchange="toggleSetting(this)">
+          <span>🧠 思维链</span>
+        </label>
+        <label class="setting-toggle active">
+          <input type="checkbox" id="reflectionToggle" checked onchange="toggleSetting(this)">
+          <span>🔍 自我反思</span>
+        </label>
+        <label class="setting-toggle active">
+          <input type="checkbox" id="webSearchToggle" checked onchange="toggleSetting(this)">
+          <span>🌐 联网搜索</span>
+        </label>
+      </div>
+      <div class="input-wrapper">
+        <input type="text" id="input" placeholder="输入你的问题..." autocomplete="off">
+        <button id="sendBtn" onclick="sendMessage()">发送</button>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    const chatArea = document.getElementById('chatArea');
+    const input = document.getElementById('input');
+    const sendBtn = document.getElementById('sendBtn');
+    const stats = document.getElementById('stats');
+    const cotToggle = document.getElementById('cotToggle');
+    const reflectionToggle = document.getElementById('reflectionToggle');
+    const webSearchToggle = document.getElementById('webSearchToggle');
+    
+    let messages = [
+      { role: 'assistant', content: '你好！我是希望AI，一个具备深度思考能力的智能对话助手...' }
+    ];
+    
+    async function loadStats() {
+      try {
+        const res = await fetch('/api/chat/knowledge/stats');
+        const data = await res.json();
+        if (data.success) {
+          stats.textContent = `知识库: ${data.data.total} 条 | 图谱关系: ${data.data.graphEdges} | RAG检索: 已启用`;
+        }
+      } catch (e) {
+        stats.textContent = '知识库: 0 条 | 图谱关系: 0 | RAG检索: 已启用';
+      }
+    }
+    
+    loadStats();
+    
+    function toggleSetting(el) {
+      el.parentElement.classList.toggle('active');
+      el.parentElement.classList.toggle('inactive');
+    }
+    
+    function parseResponse(content) {
+      let html = content;
+      
+      html = html.replace(/```(\w+)?\n([\s\S]*?)```/g, (match, lang, code) => {
+        return `<pre><code class="language-${lang || ''}">${code.trim()}</code></pre>`;
+      });
+      
+      html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+      
+      html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+      
+      html = html.replace(/思考：([\s\S]*?)(答案：|$)/g, (match, thinking, end) => {
+        return `<div class="thinking"><span class="label">思考：</span>${thinking}</div>` + (end === '答案：' ? '<span class="label">答案：</span>' : '');
+      });
+      
+      html = html.replace(/反思：([\s\S]*)$/g, '<div class="reflection"><span class="label">反思：</span>$1</div>');
+      
+      html = html.replace(/\n/g, '<br>');
+      
+      return html;
+    }
+    
+    function addMessage(content, isUser, sources = [], isThinking = false) {
+      const div = document.createElement('div');
+      div.className = `message ${isUser ? 'user' : 'ai'}`;
+      
+      if (isUser) {
+        div.textContent = content;
+      } else {
+        div.innerHTML = `<div class="markdown">${parseResponse(content)}</div>`;
+        
+        if (sources && sources.length > 0) {
+          const sourcesDiv = document.createElement('div');
+          sourcesDiv.className = 'sources';
+          sourcesDiv.innerHTML = `
+            <span class="label">📚 引用来源</span>
+            <ul>${sources.map(s => `<li>${s.title}</li>`).join('')}</ul>
+          `;
+          div.appendChild(sourcesDiv);
+        }
+      }
+      
+      chatArea.appendChild(div);
+      chatArea.scrollTop = chatArea.scrollHeight;
+    }
+    
+    function addLoading() {
+      const div = document.createElement('div');
+      div.className = 'message ai loading';
+      div.id = 'loadingMsg';
+      div.innerHTML = '<span></span><span></span><span></span>';
+      chatArea.appendChild(div);
+      chatArea.scrollTop = chatArea.scrollHeight;
+    }
+    
+    function removeLoading() {
+      const loading = document.getElementById('loadingMsg');
+      if (loading) loading.remove();
+    }
+    
+    async function sendMessage() {
+      const text = input.value.trim();
+      if (!text) return;
+      
+      addMessage(text, true);
+      input.value = '';
+      sendBtn.disabled = true;
+      
+      addLoading();
+      
+      messages.push({ role: 'user', content: text });
+      
+      try {
+        const res = await fetch('/api/chat/hopeai', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            messages,
+            useChainOfThought: cotToggle.checked,
+            useReflection: reflectionToggle.checked,
+            useWebSearch: webSearchToggle.checked
+          })
+        });
+        
+        const data = await res.json();
+        
+        removeLoading();
+        
+        if (data.success && data.data.choices) {
+          const aiContent = data.data.choices[0].message.content;
+          const sources = data.sources || [];
+          addMessage(aiContent, false, sources);
+          messages.push({ role: 'assistant', content: aiContent });
+          
+          loadStats();
+        } else {
+          addMessage('抱歉，出现了错误：' + (data.error || '未知错误'), false);
+        }
+      } catch (e) {
+        removeLoading();
+        addMessage('网络错误，请稍后重试', false);
+      }
+      
+      sendBtn.disabled = false;
+      input.focus();
+    }
+    
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') sendMessage();
+    });
+  </script>
+</body>
+</html>
