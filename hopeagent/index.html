@@ -4,7 +4,25 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
     <title>HopeAgent Pro - 智能体协作平台</title>
+    <script>
+      (function() {
+        var currentVersion = '2026.07.13.v4';
+        var storedVersion = localStorage.getItem('hopeagent_version');
+        
+        if (storedVersion && storedVersion !== currentVersion) {
+          if (confirm('发现新版本！是否立即刷新获取最新功能？')) {
+            localStorage.removeItem('hopeagent_version');
+            window.location.reload();
+          }
+        }
+        
+        localStorage.setItem('hopeagent_version', currentVersion);
+      })();
+    </script>
   </head>
   <body class="bg-cyber-bg text-cyber-text">
     <div id="root"></div>

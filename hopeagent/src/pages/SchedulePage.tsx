@@ -142,7 +142,7 @@ const generateMockEvents = (): ScheduleEvent[] => {
       category,
       color,
       location: locations[i % locations.length],
-      repeat: i % 7 === 0 ? repeatOptions[(i % 5) + 1].value : 'none',
+      repeat: i % 7 === 0 ? repeatOptions[(i % 4) + 1].value : 'none',
       reminder: reminderOptions[i % reminderOptions.length].value,
       attendees: attendees.slice(0, Math.floor(Math.random() * 4) + 1),
       createdAt: new Date(now.getTime() - i * 86400000).toISOString(),
