@@ -18,6 +18,7 @@
     "noUncheckedSideEffectImports": false,
     "forceConsistentCasingInFileNames": false,
     "ignoreDeprecations": "5.0",
+    "types": ["react", "react-dom", "node"],
     "baseUrl": "./",
     "paths": {
       "@/*": ["./src/*"]

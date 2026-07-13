@@ -2,6 +2,35 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ============ 主题 CSS 变量（默认 cyber 主题） ============ */
+:root {
+  --color-bg: #0a0e14;
+  --color-bg-secondary: #0d1117;
+  --color-bg-panel: #161b22;
+  --color-text-primary: #e0e6ed;
+  --color-text-secondary: #9ca3af;
+  --color-text-muted: #6b7280;
+  --color-accent: #00ff88;
+  --color-accent-hover: #00cc6a;
+  --color-border: rgba(0, 255, 136, 0.15);
+  --color-border-light: rgba(0, 255, 136, 0.08);
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+  --color-info: #3b82f6;
+
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --font-size-base: 14px;
+
+  --radius-base: 12px;
+
+  --effect-intensity: 0.5;
+  --effect-scanline: 0;
+  --effect-glow: 1;
+  --effect-glass: 0;
+}
+
 @layer utilities {
   .scrollbar-hide {
     -ms-overflow-style: none;
@@ -23,10 +52,42 @@ html, body, #root {
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
-  background: #0a0e14;
-  color: #e0e6ed;
+  font-family: var(--font-sans);
+  background: var(--color-bg);
+  color: var(--color-text-primary);
+  font-size: var(--font-size-base);
   overflow: hidden;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* 背景图案 - 网格 */
+[data-bg-pattern="grid"] body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image:
+    linear-gradient(rgba(56, 189, 248, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(56, 189, 248, 0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* 背景图案 - 点阵 */
+[data-bg-pattern="dots"] body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: radial-gradient(rgba(0, 255, 136, 0.1) 1px, transparent 1px);
+  background-size: 20px 20px;
+  pointer-events: none;
+  z-index: 0;
 }
 
 ::-webkit-scrollbar {
@@ -39,17 +100,20 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(0, 255, 136, 0.2);
+  background: color-mix(in srgb, var(--color-accent) 20%, transparent);
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 255, 136, 0.4);
+  background: color-mix(in srgb, var(--color-accent) 40%, transparent);
 }
 
+/* ============ 主题化的基础样式 ============ */
+
 .cyber-border {
-  border: 1px solid rgba(0, 255, 136, 0.15);
+  border: 1px solid var(--color-border);
   position: relative;
+  border-radius: var(--radius-base);
 }
 
 .cyber-border::before {
@@ -59,21 +123,53 @@ body {
   left: 0;
   right: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(0,255,136,0.5), transparent);
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--color-accent) 50%, transparent), transparent);
+  border-radius: var(--radius-base) var(--radius-base) 0 0;
 }
 
 .glow-text {
-  text-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+  text-shadow: 0 0 calc(10px * var(--effect-intensity)) color-mix(in srgb, var(--color-accent) 50%, transparent);
 }
 
 .glow-box {
-  box-shadow: 0 0 20px rgba(0, 255, 136, 0.1), inset 0 0 20px rgba(0, 255, 136, 0.05);
+  box-shadow:
+    0 0 calc(20px * var(--effect-intensity)) color-mix(in srgb, var(--color-accent) 10%, transparent),
+    inset 0 0 calc(20px * var(--effect-intensity)) color-mix(in srgb, var(--color-accent) 5%, transparent);
 }
 
+/* 毛玻璃效果 */
+.glass-panel {
+  background: color-mix(in srgb, var(--color-bg-panel) 80%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--color-border);
+}
+
+/* 扫描线效果 - 全局 */
+[data-effect-scanline="1"] body::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.15),
+    rgba(0, 0, 0, 0.15) 1px,
+    transparent 1px,
+    transparent 2px
+  );
+  pointer-events: none;
+  z-index: 9999;
+  opacity: var(--effect-intensity);
+}
+
+/* 打字光标 */
 .typing-cursor::after {
   content: '▋';
   animation: blink 1s step-end infinite;
-  color: #00ff88;
+  color: var(--color-accent);
 }
 
 @keyframes blink {
@@ -81,6 +177,7 @@ body {
   50% { opacity: 0; }
 }
 
+/* 扫描线动画 */
 .scan-line {
   position: relative;
   overflow: hidden;
@@ -93,7 +190,7 @@ body {
   left: 0;
   right: 0;
   height: 2px;
-  background: linear-gradient(90deg, transparent, rgba(0,255,136,0.6), transparent);
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--color-accent) 60%, transparent), transparent);
   animation: scanMove 3s linear infinite;
 }
 
@@ -102,9 +199,10 @@ body {
   100% { top: 100%; opacity: 0; }
 }
 
+/* 代码块包装器 */
 .code-block-wrapper {
   position: relative;
-  border-radius: 8px;
+  border-radius: var(--radius-base);
   overflow: hidden;
 }
 
@@ -114,7 +212,7 @@ body {
   align-items: center;
   padding: 8px 12px;
   background: rgba(0, 0, 0, 0.4);
-  border-bottom: 1px solid rgba(0, 255, 136, 0.1);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .code-block-actions {
@@ -125,54 +223,56 @@ body {
 .code-block-btn {
   padding: 4px 8px;
   font-size: 12px;
-  background: rgba(0, 255, 136, 0.1);
-  border: 1px solid rgba(0, 255, 136, 0.3);
-  color: #00ff88;
+  background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-accent) 30%, transparent);
+  color: var(--color-accent);
   border-radius: 4px;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .code-block-btn:hover {
-  background: rgba(0, 255, 136, 0.2);
+  background: color-mix(in srgb, var(--color-accent) 20%, transparent);
 }
 
+/* 思考块 */
 .thought-block {
-  background: rgba(0, 212, 255, 0.05);
-  border-left: 3px solid rgba(0, 212, 255, 0.3);
-  border-radius: 0 8px 8px 0;
+  background: color-mix(in srgb, var(--color-info) 5%, transparent);
+  border-left: 3px solid color-mix(in srgb, var(--color-info) 30%, transparent);
+  border-radius: 0 var(--radius-base) var(--radius-base) 0;
   margin: 8px 0;
   overflow: hidden;
 }
 
 .thought-header {
   padding: 8px 12px;
-  background: rgba(0, 212, 255, 0.1);
+  background: color-mix(in srgb, var(--color-info) 10%, transparent);
   cursor: pointer;
   display: flex;
   align-items: center;
   gap: 8px;
   font-size: 13px;
-  color: #00d4ff;
+  color: var(--color-info);
 }
 
 .thought-content {
   padding: 12px;
   font-size: 13px;
-  color: #9ca3af;
+  color: var(--color-text-secondary);
   line-height: 1.6;
 }
 
+/* 工具调用块 */
 .tool-call-block {
-  background: rgba(255, 0, 170, 0.05);
-  border-left: 3px solid rgba(255, 0, 170, 0.3);
-  border-radius: 0 8px 8px 0;
+  background: color-mix(in srgb, #ff00aa 5%, transparent);
+  border-left: 3px solid color-mix(in srgb, #ff00aa 30%, transparent);
+  border-radius: 0 var(--radius-base) var(--radius-base) 0;
   margin: 8px 0;
 }
 
 .tool-call-header {
   padding: 8px 12px;
-  background: rgba(255, 0, 170, 0.1);
+  background: color-mix(in srgb, #ff00aa 10%, transparent);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -182,13 +282,14 @@ body {
 
 .tool-call-content {
   padding: 12px;
-  font-family: monospace;
+  font-family: var(--font-mono);
   font-size: 12px;
-  color: #d1d5db;
+  color: var(--color-text-secondary);
   white-space: pre-wrap;
   word-break: break-all;
 }
 
+/* 消息进入动画 */
 .message-enter {
   animation: messageEnter 0.3s ease-out;
 }
@@ -204,12 +305,13 @@ body {
   }
 }
 
+/* 加载点动画 */
 .dot-flashing {
   position: relative;
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background-color: #00ff88;
+  background-color: var(--color-accent);
   animation: dotFlashing 1s infinite linear alternate;
   animation-delay: .5s;
 }
@@ -226,7 +328,7 @@ body {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background-color: #00ff88;
+  background-color: var(--color-accent);
   animation: dotFlashing 1s infinite alternate;
   animation-delay: 0s;
 }
@@ -236,21 +338,21 @@ body {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background-color: #00ff88;
+  background-color: var(--color-accent);
   animation: dotFlashing 1s infinite alternate;
   animation-delay: 1s;
 }
 
 @keyframes dotFlashing {
-  0% { background-color: rgba(0,255,136,0.2); }
-  50%, 100% { background-color: #00ff88; }
+  0% { background-color: color-mix(in srgb, var(--color-accent) 20%, transparent); }
+  50%, 100% { background-color: var(--color-accent); }
 }
 
-/* 流式光标：消息未完成时末尾闪烁的 ▌ */
+/* 流式光标 */
 .streaming-cursor::after {
   content: '▌';
   animation: blink 1s step-end infinite;
-  color: #00ff88;
+  color: var(--color-accent);
   margin-left: 1px;
   font-weight: bold;
 }
@@ -282,6 +384,315 @@ body {
 
 /* 拖拽高亮 */
 .drag-over {
-  border: 2px dashed #00ff88 !important;
-  background: rgba(0, 255, 136, 0.05);
+  border: 2px dashed var(--color-accent) !important;
+  background: color-mix(in srgb, var(--color-accent) 5%, transparent);
+}
+
+/* ============ Tailwind 自定义工具类（主题色） ============ */
+
+@layer utilities {
+  .bg-cyber-bg {
+    background-color: var(--color-bg);
+  }
+  .bg-cyber-bg-secondary {
+    background-color: var(--color-bg-secondary);
+  }
+  .bg-cyber-panel {
+    background-color: var(--color-bg-panel);
+  }
+  .bg-cyber-accent {
+    background-color: var(--color-accent);
+  }
+  .bg-cyber-accent\/10 {
+    background-color: color-mix(in srgb, var(--color-accent) 10%, transparent);
+  }
+  .bg-cyber-accent\/20 {
+    background-color: color-mix(in srgb, var(--color-accent) 20%, transparent);
+  }
+  .bg-cyber-accent\/5 {
+    background-color: color-mix(in srgb, var(--color-accent) 5%, transparent);
+  }
+  .bg-cyber-border\/50 {
+    background-color: color-mix(in srgb, var(--color-border) 50%, transparent);
+  }
+
+  .text-cyber-text {
+    color: var(--color-text-primary);
+  }
+  .text-cyber-accent {
+    color: var(--color-accent);
+  }
+  .text-cyber-secondary {
+    color: var(--color-text-secondary);
+  }
+  .text-cyber-muted {
+    color: var(--color-text-muted);
+  }
+
+  .border-cyber-border {
+    border-color: var(--color-border);
+  }
+  .border-cyber-border\/50 {
+    border-color: color-mix(in srgb, var(--color-border) 50%, transparent);
+  }
+  .border-cyber-accent {
+    border-color: var(--color-accent);
+  }
+  .border-cyber-accent\/30 {
+    border-color: color-mix(in srgb, var(--color-accent) 30%, transparent);
+  }
+  .border-cyber-accent\/50 {
+    border-color: color-mix(in srgb, var(--color-accent) 50%, transparent);
+  }
+  .border-cyber-accent\/20 {
+    border-color: color-mix(in srgb, var(--color-accent) 20%, transparent);
+  }
+
+  .accent-cyber-accent {
+    accent-color: var(--color-accent);
+  }
+
+  .hover\:bg-cyber-accent\/90:hover {
+    background-color: color-mix(in srgb, var(--color-accent) 90%, transparent);
+  }
+  .hover\:bg-cyber-accent\/20:hover {
+    background-color: color-mix(in srgb, var(--color-accent) 20%, transparent);
+  }
+  .hover\:text-cyber-accent:hover {
+    color: var(--color-accent);
+  }
+  .hover\:border-cyber-accent\/30:hover {
+    border-color: color-mix(in srgb, var(--color-accent) 30%, transparent);
+  }
+
+  .font-mono-cyber {
+    font-family: var(--font-mono);
+  }
+
+  .rounded-cyber {
+    border-radius: var(--radius-base);
+  }
+  .rounded-cyber-lg {
+    border-radius: calc(var(--radius-base) + 4px);
+  }
+}
+
+/* ============ UI 组件库动画 ============ */
+
+/* 波纹效果（按钮点击） */
+@keyframes ripple {
+  from {
+    transform: scale(0);
+    opacity: 1;
+  }
+  to {
+    transform: scale(30);
+    opacity: 0;
+  }
+}
+
+.animate-ripple {
+  animation: ripple 0.6s ease-out forwards;
+}
+
+/* 淡入 */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.2s ease-out forwards;
+}
+
+/* 淡出 */
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.animate-fadeOut {
+  animation: fadeOut 0.2s ease-out forwards;
+}
+
+/* 缩放进入 */
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-scaleIn {
+  animation: scaleIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* 从下方滑入 */
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slideUp {
+  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* 从上方滑入 */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slideDown {
+  animation: slideDown 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* 从左侧滑入（用于抽屉右侧弹出） */
+@keyframes slideLeft {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-slideLeft {
+  animation: slideLeft 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* 从右侧滑入（用于抽屉左侧弹出） */
+@keyframes slideRight {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-slideRight {
+  animation: slideRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* 脉冲发光 */
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 5px color-mix(in srgb, var(--color-accent) 30%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 20px color-mix(in srgb, var(--color-accent) 60%, transparent);
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulseGlow 2s ease-in-out infinite;
+}
+
+/* 骨架屏闪烁 */
+@keyframes skeletonPulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-skeleton {
+  animation: skeletonPulse 1.5s ease-in-out infinite;
+}
+
+/* 打字机光标闪烁 */
+@keyframes typingBlink {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+
+.animate-typing-blink {
+  animation: typingBlink 1s step-end infinite;
+}
+
+/* 旋转加载 */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* 弹跳 */
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-25%);
+  }
+}
+
+.animate-bounce {
+  animation: bounce 1s infinite;
+}
+
+/* 进度条流动光效 */
+@keyframes progressShine {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.animate-progress-shine {
+  animation: progressShine 2s ease-in-out infinite;
+}
+
+/* 闪烁 */
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.animate-blink {
+  animation: blink 1s step-end infinite;
 }

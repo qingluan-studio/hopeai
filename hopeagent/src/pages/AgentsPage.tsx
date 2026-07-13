@@ -45,9 +45,10 @@ export default function AgentsPage() {
   const superStats = getSuperStats(agents as any)
   const layerCounts: Record<string, number> = {
     'L1 编排调度': categories['L1 编排调度']?.length || 3,
-    'L2 交付执行': categories['L2 交付执行']?.length || 5,
+    'L2 交付执行': categories['L2 交付执行']?.length || 7,
     'L3 数据底座': categories['L3 数据底座']?.length || 4,
     'L4 治理安全': categories['L4 治理安全']?.length || 6,
+    'L5 行业专家': categories['L5 行业专家']?.length || 10,
     'SP 特殊智能': categories['SP 特殊智能']?.length || 3,
   }
 
@@ -60,7 +61,7 @@ export default function AgentsPage() {
           {superOn ? '超级大脑' : 'Agent团队'}
         </h1>
         <p className="text-[11px] text-gray-500 mt-0.5 font-mono">
-          {agents.length} 个Agent · 5层能力 · {superOn ? '融合模式' : '独立模式'}
+          {agents.length} 个Agent · 6层能力 · {superOn ? '融合模式' : '独立模式'}
         </p>
       </div>
 
@@ -83,7 +84,7 @@ export default function AgentsPage() {
               <div>
                 <h2 className="text-sm font-bold text-cyber-text">超级大脑</h2>
                 <p className="text-[10px] font-mono text-gray-500">
-                  {superOn ? '已激活 · 23 Agent融合' : '未激活'}
+                  {superOn ? `已激活 · ${agents.length} Agent融合` : '未激活'}
                 </p>
               </div>
             </div>
@@ -133,7 +134,7 @@ export default function AgentsPage() {
                   <div className="w-20 h-1 bg-gray-800 rounded-full overflow-hidden">
                     <div
                       className="h-full bg-cyber-accent rounded-full"
-                      style={{ width: `${(count / 6) * 100}%` }}
+                      style={{ width: `${(count / 10) * 100}%` }}
                     />
                   </div>
                   <span className="text-cyber-accent font-mono w-4 text-right">{count}</span>

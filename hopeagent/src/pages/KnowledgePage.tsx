@@ -4,10 +4,10 @@ import { useKnowledgeStore, useAppStore } from '@/store'
 import type { KnowledgeEntry } from '@/types'
 import { knowledgeApi } from '@/services/apiClient'
 import { batchImportKnowledge, getKnowledgeCount } from '@/services/knowledgeService'
-import { aiCodingKnowledge } from '@/data/knowledgeSeed'
+import { allExpandedKnowledge } from '@/data/knowledgeSeed'
 import { cn } from '@/lib/utils'
 
-const aiCodingKnowledgeTyped = aiCodingKnowledge as unknown as Omit<KnowledgeEntry, 'id' | 'createdAt'>[]
+const allKnowledgeTyped = allExpandedKnowledge as unknown as Omit<KnowledgeEntry, 'id' | 'createdAt'>[]
 
 export default function KnowledgePage() {
   const { entries, setEntries, addEntry, deleteEntry, searchEntries } = useKnowledgeStore()
@@ -107,10 +107,10 @@ export default function KnowledgePage() {
     setImporting(true)
     setImportResult('')
     try {
-      const count = batchImportKnowledge(aiCodingKnowledgeTyped)
+      const count = batchImportKnowledge(allKnowledgeTyped)
       // 后端模式：批量推送到后端
       if (useBackend && backendOnline) {
-        for (const item of aiCodingKnowledgeTyped) {
+        for (const item of allKnowledgeTyped) {
           try {
             await knowledgeApi.add({
               title: item.title,

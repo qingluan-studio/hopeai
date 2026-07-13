@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import {
   Settings as SettingsIcon,
   Brain,
@@ -21,8 +21,13 @@ import {
   Wifi,
   WifiOff,
   RefreshCw,
+  Shield,
+  Plus,
+  TestTube,
+  Lock,
 } from 'lucide-react'
 import { useSettingsStore, useChatStore, useKnowledgeStore, useAppStore } from '@/store'
+import { getThemes, type ThemeConfig } from '@/services/themeService'
 import { callLLM, isLLMEnabled } from '@/services/llmService'
 import { saveLLMConfig } from '@/services/llmService'
 import { getSearchConfig, saveSearchConfig, webSearch } from '@/services/searchService'
@@ -36,9 +41,30 @@ import {
 } from '@/services/superAgentService'
 import { agents as agentsList } from '@/engine/agents'
 import { getApiBase, setApiBase, healthApi } from '@/services/apiClient'
+import {
+  listCredentials,
+  storeCredential,
+  getCredential,
+  deleteCredential,
+  rotateCredential,
+  testCredential,
+  getVaultStatus,
+  exportVault,
+  importVault,
+  CREDENTIAL_TYPES,
+  RECOMMENDED_CREDENTIALS,
+  getTypeMeta,
+  isRecommendedKey,
+  formatVaultTime,
+  downloadBlob,
+  type VaultCredential,
+  type VaultStatus,
+  type CredentialType,
+  type TestResult,
+} from '@/services/vaultService'
 
 export default function SettingsPage() {
-  const { llmConfig, setLLMConfig, fontSize, setFontSize, animationsEnabled, toggleAnimations, autoLearn, setAutoLearn, theme, setTheme } = useSettingsStore()
+  const { llmConfig, setLLMConfig, fontSize, setFontSize, animationsEnabled, toggleAnimations, autoLearn, setAutoLearn, theme, setTheme, effectIntensity, setEffectIntensity } = useSettingsStore()
   const { conversations } = useChatStore()
   const { entries } = useKnowledgeStore()
   const { backendOnline, setBackendOnline, useBackend, setUseBackend } = useAppStore()
@@ -227,11 +253,7 @@ export default function SettingsPage() {
     }
   }
 
-  const themes = [
-    { id: 'cyber', name: '赛博绿', color: '#00ff88' },
-    { id: 'matrix', name: '矩阵蓝', color: '#00d4ff' },
-    { id: 'sunset', name: '日落紫', color: '#c084fc' },
-  ]
+  const allThemes = getThemes()
 
   return (
     <div className="h-full overflow-y-auto">
@@ -326,6 +348,11 @@ export default function SettingsPage() {
               <p className="text-xs text-center text-gray-500 font-mono">地址已保存</p>
             )}
           </div>
+        </SettingSection>
+
+        {/* 凭证保险库 */}
+        <SettingSection icon={Shield} title="凭证保险库" description="加密存储 API Key / 密码等敏感凭证">
+          <VaultSection />
         </SettingSection>
 
         <SettingSection icon={Brain} title="大模型配置" description="Kimi / Moonshot API 设置">
@@ -570,31 +597,101 @@ export default function SettingsPage() {
           </div>
         </SettingSection>
 
-        <SettingSection icon={Palette} title="外观设置" description="主题和显示效果">
-          <div className="space-y-4">
+        <SettingSection icon={Palette} title="主题设置" description="8 套精美主题，打造专属终端风格">
+          <div className="space-y-5">
+            {/* 主题卡片网格 */}
             <div>
-              <p className="text-sm text-gray-300 mb-2">主题配色</p>
-              <div className="grid grid-cols-3 gap-2">
-                {themes.map(t => (
+              <p className="text-sm text-gray-300 mb-2">选择主题</p>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {allThemes.map((t: ThemeConfig) => (
                   <button
                     key={t.id}
-                    onClick={() => setTheme(t.id as any)}
-                    className={`p-3 rounded-xl border transition-all ${
+                    onClick={() => setTheme(t.id)}
+                    className={`relative p-2 rounded-xl border transition-all ${
                       theme === t.id
-                        ? 'border-white/30 bg-white/10'
-                        : 'border-cyber-border hover:border-white/20'
+                        ? 'border-white/40 bg-white/5 scale-[1.02]'
+                        : 'border-cyber-border hover:border-white/20 hover:bg-white/5'
                     }`}
                   >
-                    <div 
-                      className="w-8 h-8 rounded-lg mx-auto mb-1.5"
-                      style={{ background: `linear-gradient(135deg, ${t.color}, ${t.color}80)` }}
-                    />
-                    <p className="text-xs text-center text-gray-400">{t.name}</p>
+                    <div
+                      className="w-full h-12 rounded-lg mb-1.5 overflow-hidden relative"
+                      style={{
+                        background: `linear-gradient(135deg, ${t.colors.bg} 0%, ${t.colors.bgPanel} 50%, ${t.colors.accent}20 100%)`,
+                        border: `1px solid ${t.colors.border}`,
+                      }}
+                    >
+                      <div
+                        className="absolute bottom-1 left-1 right-1 h-1 rounded-full"
+                        style={{ background: t.colors.accent, opacity: 0.6 }}
+                      />
+                      <div
+                        className="absolute top-1.5 left-1.5 w-2 h-2 rounded-full"
+                        style={{ background: t.colors.accent }}
+                      />
+                    </div>
+                    <p className="text-[11px] text-center font-medium" style={{ color: t.colors.textPrimary }}>
+                      {t.name}
+                    </p>
+                    {theme === t.id && (
+                      <div className="absolute top-1 right-1">
+                        <Check className="w-3 h-3 text-cyber-accent" />
+                      </div>
+                    )}
                   </button>
                 ))}
               </div>
             </div>
 
+            {/* 当前主题描述 */}
+            <div className="p-3 rounded-xl bg-cyber-accent/5 border border-cyber-accent/20">
+              <div className="flex items-start gap-2">
+                <Info className="w-4 h-4 text-cyber-accent flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-xs text-cyber-accent font-medium mb-0.5">
+                    {allThemes.find(t => t.id === theme)?.name || '赛博朋克'}
+                  </p>
+                  <p className="text-[11px] text-gray-400 leading-relaxed">
+                    {allThemes.find(t => t.id === theme)?.description || '经典绿色赛博朋克风格'}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* 字体大小 */}
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-sm text-gray-300">字体大小</label>
+                <span className="text-sm text-cyber-accent font-mono">{fontSize}px</span>
+              </div>
+              <input
+                type="range"
+                min="12"
+                max="20"
+                step="1"
+                value={fontSize}
+                onChange={(e) => setFontSize(parseInt(e.target.value))}
+                className="w-full h-2 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-cyber-accent"
+              />
+            </div>
+
+            {/* 特效强度 */}
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-sm text-gray-300">特效强度</label>
+                <span className="text-sm text-cyber-accent font-mono">{Math.round(effectIntensity * 100)}%</span>
+              </div>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.1"
+                value={effectIntensity}
+                onChange={(e) => setEffectIntensity(parseFloat(e.target.value))}
+                className="w-full h-2 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-cyber-accent"
+              />
+            </div>
+
+            {/* 动画开关 */}
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-300">动画效果</p>
@@ -612,20 +709,39 @@ export default function SettingsPage() {
               </button>
             </div>
 
+            {/* 主题特效标签 */}
             <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="text-sm text-gray-300">字体大小</label>
-                <span className="text-sm text-cyber-accent font-mono">{fontSize}px</span>
+              <p className="text-sm text-gray-300 mb-2">主题特效</p>
+              <div className="flex flex-wrap gap-2">
+                {allThemes.find(t => t.id === theme)?.effects.scanline && (
+                  <span className="px-2 py-1 text-[11px] rounded-lg bg-cyber-accent/10 border border-cyber-accent/30 text-cyber-accent font-mono">
+                    扫描线
+                  </span>
+                )}
+                {allThemes.find(t => t.id === theme)?.effects.glow && (
+                  <span className="px-2 py-1 text-[11px] rounded-lg bg-cyber-accent/10 border border-cyber-accent/30 text-cyber-accent font-mono">
+                    发光
+                  </span>
+                )}
+                {allThemes.find(t => t.id === theme)?.effects.glassmorphism && (
+                  <span className="px-2 py-1 text-[11px] rounded-lg bg-cyber-accent/10 border border-cyber-accent/30 text-cyber-accent font-mono">
+                    毛玻璃
+                  </span>
+                )}
+                {allThemes.find(t => t.id === theme)?.backgroundPattern === 'grid' && (
+                  <span className="px-2 py-1 text-[11px] rounded-lg bg-cyber-accent/10 border border-cyber-accent/30 text-cyber-accent font-mono">
+                    网格背景
+                  </span>
+                )}
+                {!allThemes.find(t => t.id === theme)?.effects.scanline &&
+                 !allThemes.find(t => t.id === theme)?.effects.glow &&
+                 !allThemes.find(t => t.id === theme)?.effects.glassmorphism &&
+                 allThemes.find(t => t.id === theme)?.backgroundPattern === 'none' && (
+                  <span className="px-2 py-1 text-[11px] rounded-lg bg-gray-800 border border-gray-700 text-gray-500 font-mono">
+                    简洁无特效
+                  </span>
+                )}
               </div>
-              <input
-                type="range"
-                min="12"
-                max="20"
-                step="1"
-                value={fontSize}
-                onChange={(e) => setFontSize(parseInt(e.target.value))}
-                className="w-full h-2 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-cyber-accent"
-              />
             </div>
           </div>
         </SettingSection>
@@ -817,6 +933,794 @@ function SuperAgentSection() {
             </div>
           )}
         </>
+      )}
+    </div>
+  )
+}
+
+// ============ 凭证保险库分区 ============
+
+/** 凭证状态灯颜色映射 */
+function statusDotClass(hasValue: boolean, isMissing: boolean): string {
+  if (isMissing) return 'bg-red-500'
+  return hasValue ? 'bg-cyber-accent' : 'bg-gray-600'
+}
+
+function VaultSection() {
+  const [credentials, setCredentials] = useState<VaultCredential[]>([])
+  const [status, setStatus] = useState<VaultStatus | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+
+  // 添加凭证表单状态
+  const [showAddForm, setShowAddForm] = useState(false)
+  const [formKey, setFormKey] = useState('')
+  const [formKeyCustom, setFormKeyCustom] = useState(false)
+  const [formName, setFormName] = useState('')
+  const [formType, setFormType] = useState<CredentialType>('llm_api_key')
+  const [formValue, setFormValue] = useState('')
+  const [formDesc, setFormDesc] = useState('')
+  const [showFormValue, setShowFormValue] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [formError, setFormError] = useState('')
+
+  // 查看明文弹窗：先二次确认，再显示明文，3 秒后自动隐藏
+  const [viewModal, setViewModal] = useState<{
+    open: boolean
+    key: string
+    name: string
+    loading: boolean
+    confirmed: boolean
+    value: string
+    remaining: number
+  }>({ open: false, key: '', name: '', loading: false, confirmed: false, value: '', remaining: 0 })
+  const viewTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  // 轮换弹窗
+  const [rotateModal, setRotateModal] = useState<{ open: boolean; key: string; name: string; value: string; show: boolean; saving: boolean }>(
+    { open: false, key: '', name: '', value: '', show: false, saving: false }
+  )
+
+  // 每个凭证的测试结果
+  const [testResults, setTestResults] = useState<Record<string, TestResult | 'testing'>>({})
+
+  // 导出 / 导入
+  const [exportPassword, setExportPassword] = useState('')
+  const [exporting, setExporting] = useState(false)
+  const [importPassword, setImportPassword] = useState('')
+  const [importing, setImporting] = useState(false)
+  const importFileRef = useRef<HTMLInputElement>(null)
+  const importFileRef2 = useRef<File | null>(null)
+
+  // 全局提示
+  const [toast, setToast] = useState<{ type: 'success' | 'error' | 'info'; msg: string } | null>(null)
+
+  const showToast = (type: 'success' | 'error' | 'info', msg: string) => {
+    setToast({ type, msg })
+    setTimeout(() => setToast(null), 3000)
+  }
+
+  /** 拉取凭证列表与状态 */
+  const refresh = async () => {
+    setLoading(true)
+    setError('')
+    try {
+      const [list, st] = await Promise.all([listCredentials(), getVaultStatus()])
+      setCredentials(list)
+      setStatus(st)
+    } catch (err: any) {
+      setError(err?.message || '加载失败')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    refresh()
+    return () => {
+      if (viewTimerRef.current) clearInterval(viewTimerRef.current)
+    }
+  }, [])
+
+  /** 判断某个 key 是否在推荐缺失列表中 */
+  const isMissingKey = (key: string): boolean => !!status?.missing?.includes(key)
+
+  // ============ 添加 / 保存凭证 ============
+
+  const resetForm = () => {
+    setFormKey('')
+    setFormKeyCustom(false)
+    setFormName('')
+    setFormType('llm_api_key')
+    setFormValue('')
+    setFormDesc('')
+    setShowFormValue(false)
+    setFormError('')
+  }
+
+  const handleSelectRecommended = (key: string) => {
+    const rec = RECOMMENDED_CREDENTIALS.find(r => r.key === key)
+    if (rec) {
+      setFormKey(rec.key)
+      setFormName(rec.name)
+      setFormType(rec.type)
+    }
+  }
+
+  const handleSaveCredential = async () => {
+    setFormError('')
+    if (!formKey.trim()) {
+      setFormError('请填写凭证 Key')
+      return
+    }
+    if (!/^[a-zA-Z0-9_\-\.]+$/.test(formKey.trim())) {
+      setFormError('Key 仅允许字母、数字、下划线、连字符、点')
+      return
+    }
+    if (!formName.trim()) {
+      setFormError('请填写凭证名称')
+      return
+    }
+    if (!formValue.trim()) {
+      setFormError('请填写凭证值')
+      return
+    }
+    setSaving(true)
+    try {
+      const metadata = formDesc.trim() ? { description: formDesc.trim() } : undefined
+      await storeCredential(formKey.trim(), formName.trim(), formValue, formType, metadata)
+      showToast('success', '凭证已保存')
+      resetForm()
+      setShowAddForm(false)
+      await refresh()
+    } catch (err: any) {
+      setFormError(err?.message || '保存失败')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  // ============ 查看明文 ============
+
+  const openViewModal = (cred: VaultCredential) => {
+    if (viewTimerRef.current) {
+      clearInterval(viewTimerRef.current)
+      viewTimerRef.current = null
+    }
+    setViewModal({ open: true, key: cred.key, name: cred.name, loading: false, confirmed: false, value: '', remaining: 0 })
+  }
+
+  const closeViewModal = () => {
+    if (viewTimerRef.current) {
+      clearInterval(viewTimerRef.current)
+      viewTimerRef.current = null
+    }
+    setViewModal({ open: false, key: '', name: '', loading: false, confirmed: false, value: '', remaining: 0 })
+  }
+
+  /** 二次确认后拉取明文，并启动 3 秒倒计时自动隐藏 */
+  const confirmViewPlaintext = async () => {
+    setViewModal(m => ({ ...m, loading: true, confirmed: true }))
+    try {
+      const data = await getCredential(viewModal.key)
+      const value = data?.value || ''
+      setViewModal(m => ({ ...m, value, loading: false, remaining: 3 }))
+      viewTimerRef.current = setInterval(() => {
+        setViewModal(m => {
+          const next = m.remaining - 1
+          if (next <= 0) {
+            if (viewTimerRef.current) {
+              clearInterval(viewTimerRef.current)
+              viewTimerRef.current = null
+            }
+            return { ...m, value: '', remaining: 0 }
+          }
+          return { ...m, remaining: next }
+        })
+      }, 1000)
+    } catch (err: any) {
+      setViewModal(m => ({ ...m, loading: false, value: '', remaining: 0 }))
+      showToast('error', err?.message || '获取明文失败（可能需要管理员权限）')
+    }
+  }
+
+  // ============ 删除 ============
+
+  const handleDelete = async (cred: VaultCredential) => {
+    if (!confirm(`确定删除凭证「${cred.name}」吗？此操作不可撤销。`)) return
+    try {
+      await deleteCredential(cred.key)
+      showToast('success', '凭证已删除')
+      await refresh()
+    } catch (err: any) {
+      showToast('error', err?.message || '删除失败')
+    }
+  }
+
+  // ============ 轮换 ============
+
+  const openRotateModal = (cred: VaultCredential) => {
+    setRotateModal({ open: true, key: cred.key, name: cred.name, value: '', show: false, saving: false })
+  }
+
+  const handleRotate = async () => {
+    if (!rotateModal.value.trim()) {
+      showToast('error', '请输入新值')
+      return
+    }
+    setRotateModal(m => ({ ...m, saving: true }))
+    try {
+      await rotateCredential(rotateModal.key, rotateModal.value)
+      showToast('success', '凭证已轮换')
+      setRotateModal({ open: false, key: '', name: '', value: '', show: false, saving: false })
+      await refresh()
+    } catch (err: any) {
+      showToast('error', err?.message || '轮换失败')
+    } finally {
+      setRotateModal(m => ({ ...m, saving: false }))
+    }
+  }
+
+  // ============ 测试 ============
+
+  const handleTest = async (cred: VaultCredential) => {
+    setTestResults(r => ({ ...r, [cred.key]: 'testing' }))
+    try {
+      const result = await testCredential(cred.key)
+      setTestResults(r => ({ ...r, [cred.key]: result }))
+      if (!result.success) {
+        showToast('error', result.message || '测试失败')
+      } else {
+        showToast('success', result.message || '测试通过')
+      }
+    } catch (err: any) {
+      setTestResults(r => ({ ...r, [cred.key]: { success: false, message: err?.message || '测试失败' } }))
+      showToast('error', err?.message || '测试失败')
+    }
+  }
+
+  // ============ 导出 / 导入 ============
+
+  const handleExport = async () => {
+    if (!exportPassword.trim()) {
+      showToast('error', '请输入导出密码')
+      return
+    }
+    setExporting(true)
+    try {
+      const blob = await exportVault(exportPassword)
+      downloadBlob(blob, `hopeagent-vault-${Date.now()}.enc`)
+      showToast('success', '保险库已导出（加密）')
+      setExportPassword('')
+    } catch (err: any) {
+      showToast('error', err?.message || '导出失败')
+    } finally {
+      setExporting(false)
+    }
+  }
+
+  const handleImportClick = () => {
+    importFileRef.current?.click()
+  }
+
+  const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      importFileRef2.current = file
+      setImportPassword('')
+      showToast('info', `已选择文件：${file.name}，请输入密码后导入`)
+    }
+    // 重置 input 以便重复选择同一文件
+    if (importFileRef.current) importFileRef.current.value = ''
+  }
+
+  const handleImport = async () => {
+    const file = importFileRef2.current
+    if (!file) {
+      showToast('error', '请先选择导出文件')
+      return
+    }
+    if (!importPassword.trim()) {
+      showToast('error', '请输入导入密码')
+      return
+    }
+    setImporting(true)
+    try {
+      await importVault(file, importPassword)
+      showToast('success', '保险库已导入')
+      importFileRef2.current = null
+      setImportPassword('')
+      await refresh()
+    } catch (err: any) {
+      showToast('error', err?.message || '导入失败，密码可能错误')
+    } finally {
+      setImporting(false)
+    }
+  }
+
+  // ============ 渲染 ============
+
+  const configuredCount = status?.configured?.length ?? credentials.filter(c => c.hasValue).length
+  const missingCount = status?.missing?.length ?? 0
+  const totalCount = configuredCount + missingCount
+  const progress = totalCount > 0 ? Math.round((configuredCount / totalCount) * 100) : 0
+
+  return (
+    <div className="space-y-4">
+      {/* 安全提示 */}
+      <div className="flex items-start gap-2 p-2.5 rounded-xl bg-cyber-accent/5 border border-cyber-accent/20">
+        <Lock className="w-3.5 h-3.5 text-cyber-accent flex-shrink-0 mt-0.5" />
+        <p className="text-[11px] text-gray-400 leading-relaxed">
+          凭证在后端加密存储，前端不缓存明文。查看明文需管理员权限并经二次确认，3 秒后自动隐藏。
+        </p>
+      </div>
+
+      {/* 状态总览卡片 */}
+      <div className="p-3 rounded-xl bg-cyber-bg/60 border border-cyber-border">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-xs font-mono text-gray-400">配置进度</span>
+          <span className="text-xs font-mono text-cyber-accent">{progress}%</span>
+        </div>
+        <div className="w-full h-2 bg-gray-800 rounded-full overflow-hidden mb-3">
+          <div
+            className="h-full bg-gradient-to-r from-cyber-accent/60 to-cyber-accent rounded-full transition-all"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+        <div className="grid grid-cols-3 gap-2">
+          <div className="p-2 rounded-lg bg-cyber-accent/5 border border-cyber-accent/20 text-center">
+            <p className="text-base font-bold text-cyber-accent font-mono leading-tight">{configuredCount}</p>
+            <p className="text-[10px] text-gray-500">已配置</p>
+          </div>
+          <div className="p-2 rounded-lg bg-red-500/5 border border-red-500/20 text-center">
+            <p className="text-base font-bold text-red-400 font-mono leading-tight">{missingCount}</p>
+            <p className="text-[10px] text-gray-500">缺失</p>
+          </div>
+          <div className="p-2 rounded-lg bg-gray-500/5 border border-gray-500/20 text-center">
+            <p className="text-base font-bold text-gray-300 font-mono leading-tight">{totalCount}</p>
+            <p className="text-[10px] text-gray-500">推荐总数</p>
+          </div>
+        </div>
+      </div>
+
+      {/* 添加凭证按钮 */}
+      <button
+        onClick={() => { resetForm(); setShowAddForm(s => !s) }}
+        className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-cyber-accent/10 border border-cyber-accent/30 text-cyber-accent text-sm font-mono hover:bg-cyber-accent/20 transition-all"
+      >
+        <Plus className="w-4 h-4" />
+        {showAddForm ? '收起表单' : '添加凭证'}
+      </button>
+
+      {/* 添加凭证表单 */}
+      {showAddForm && (
+        <div className="p-3 rounded-xl bg-cyber-bg/50 border border-cyber-border space-y-3">
+          {/* Key 选择 / 自定义 */}
+          <div>
+            <label className="text-xs font-mono text-gray-400 block mb-1.5">凭证 Key</label>
+            {!formKeyCustom ? (
+              <select
+                value={formKey}
+                onChange={e => {
+                  if (e.target.value === '__custom__') {
+                    setFormKeyCustom(true)
+                    setFormKey('')
+                  } else {
+                    handleSelectRecommended(e.target.value)
+                  }
+                }}
+                className="w-full px-3 py-2 bg-cyber-bg/80 border border-cyber-border rounded-xl text-xs font-mono text-gray-200 focus:outline-none focus:border-cyber-accent/50"
+              >
+                <option value="">— 选择推荐凭证 —</option>
+                {RECOMMENDED_CREDENTIALS.map(r => (
+                  <option key={r.key} value={r.key}>{r.name}（{r.key}）</option>
+                ))}
+                <option value="__custom__">✏️ 自定义 Key…</option>
+              </select>
+            ) : (
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={formKey}
+                  onChange={e => setFormKey(e.target.value)}
+                  placeholder="my_custom_key"
+                  className="flex-1 px-3 py-2 bg-cyber-bg/80 border border-cyber-border rounded-xl text-xs font-mono text-gray-200 focus:outline-none focus:border-cyber-accent/50"
+                />
+                <button
+                  onClick={() => { setFormKeyCustom(false); setFormKey('') }}
+                  className="px-3 py-2 rounded-xl bg-gray-800 border border-gray-700 text-gray-400 text-xs hover:text-gray-200"
+                >
+                  返回
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* 名称 */}
+          <div>
+            <label className="text-xs font-mono text-gray-400 block mb-1.5">名称</label>
+            <input
+              type="text"
+              value={formName}
+              onChange={e => setFormName(e.target.value)}
+              placeholder="OpenAI API Key"
+              className="w-full px-3 py-2 bg-cyber-bg/80 border border-cyber-border rounded-xl text-xs font-mono text-gray-200 focus:outline-none focus:border-cyber-accent/50"
+            />
+          </div>
+
+          {/* 类型 */}
+          <div>
+            <label className="text-xs font-mono text-gray-400 block mb-1.5">类型</label>
+            <select
+              value={formType}
+              onChange={e => setFormType(e.target.value as CredentialType)}
+              className="w-full px-3 py-2 bg-cyber-bg/80 border border-cyber-border rounded-xl text-xs font-mono text-gray-200 focus:outline-none focus:border-cyber-accent/50"
+            >
+              {CREDENTIAL_TYPES.map(t => (
+                <option key={t.type} value={t.type}>{t.label}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* 值 */}
+          <div>
+            <label className="text-xs font-mono text-gray-400 block mb-1.5">凭证值</label>
+            <div className="relative">
+              <input
+                type={showFormValue ? 'text' : 'password'}
+                value={formValue}
+                onChange={e => setFormValue(e.target.value)}
+                placeholder={getTypeMeta(formType).placeholder || '输入凭证值'}
+                className="w-full px-3 py-2 bg-cyber-bg/80 border border-cyber-border rounded-xl text-xs font-mono text-gray-200 focus:outline-none focus:border-cyber-accent/50 pr-10"
+              />
+              <button
+                onClick={() => setShowFormValue(s => !s)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-500 hover:text-gray-300"
+              >
+                {showFormValue ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+              </button>
+            </div>
+          </div>
+
+          {/* 描述 */}
+          <div>
+            <label className="text-xs font-mono text-gray-400 block mb-1.5">备注（可选）</label>
+            <input
+              type="text"
+              value={formDesc}
+              onChange={e => setFormDesc(e.target.value)}
+              placeholder="用途说明…"
+              className="w-full px-3 py-2 bg-cyber-bg/80 border border-cyber-border rounded-xl text-xs font-mono text-gray-200 focus:outline-none focus:border-cyber-accent/50"
+            />
+          </div>
+
+          {formError && (
+            <p className="text-xs text-red-400 flex items-center gap-1">
+              <AlertTriangle className="w-3 h-3" />
+              {formError}
+            </p>
+          )}
+
+          <div className="flex gap-2">
+            <button
+              onClick={handleSaveCredential}
+              disabled={saving}
+              className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-cyber-accent text-black text-xs font-mono hover:bg-cyber-accent/90 disabled:opacity-50"
+            >
+              {saving ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+              {saving ? '保存中' : '保存'}
+            </button>
+            <button
+              onClick={() => { resetForm(); setShowAddForm(false) }}
+              className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-gray-800 border border-gray-700 text-gray-400 text-xs font-mono hover:text-gray-200"
+            >
+              <X className="w-3.5 h-3.5" />
+              取消
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 凭证列表 */}
+      {loading ? (
+        <div className="flex items-center justify-center py-6 text-xs text-gray-500 font-mono">
+          <RefreshCw className="w-3.5 h-3.5 animate-spin mr-2" />
+          加载中…
+        </div>
+      ) : error ? (
+        <div className="flex items-center gap-2 p-2.5 rounded-xl bg-red-500/10 border border-red-500/30">
+          <X className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />
+          <span className="text-xs text-red-400">{error}</span>
+        </div>
+      ) : credentials.length === 0 ? (
+        <div className="text-center py-6 text-xs text-gray-500 font-mono">
+          暂无凭证，点击「添加凭证」开始配置
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {credentials.map(cred => {
+            const meta = getTypeMeta(cred.type)
+            const missing = isMissingKey(cred.key)
+            const testRes = testResults[cred.key]
+            const rec = isRecommendedKey(cred.key)
+            return (
+              <div key={cred.key} className="p-2.5 rounded-xl bg-cyber-bg/50 border border-cyber-border">
+                {/* 顶部：状态灯 + 名称 + 类型标签 */}
+                <div className="flex items-center gap-2 mb-1.5">
+                  <span className={`w-2 h-2 rounded-full flex-shrink-0 ${statusDotClass(cred.hasValue, missing)}`} />
+                  <span className="text-sm text-gray-200 font-medium truncate flex-1">{cred.name}</span>
+                  <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-cyber-accent/10 border border-cyber-accent/20 text-cyber-accent flex-shrink-0">
+                    {meta.label}
+                  </span>
+                </div>
+                {/* Key + 时间 */}
+                <div className="text-[11px] font-mono text-gray-500 mb-1 truncate">key: {cred.key}</div>
+                <div className="flex items-center justify-between text-[10px] font-mono text-gray-600 mb-2">
+                  <span>创建: {formatVaultTime(cred.createdAt)}</span>
+                  <span>更新: {formatVaultTime(cred.updatedAt)}</span>
+                </div>
+                {rec && (
+                  <div className="text-[10px] text-gray-500 mb-2">推荐：{rec.description}</div>
+                )}
+                {/* 测试结果 */}
+                {testRes && testRes !== 'testing' && (
+                  <div className={`flex items-center gap-1.5 px-2 py-1 rounded-lg mb-2 text-[11px] ${
+                    testRes.success
+                      ? 'bg-green-500/10 border border-green-500/30 text-green-400'
+                      : 'bg-red-500/10 border border-red-500/30 text-red-400'
+                  }`}>
+                    {testRes.success ? <Check className="w-3 h-3" /> : <X className="w-3 h-3" />}
+                    <span className="truncate">{testRes.message}</span>
+                  </div>
+                )}
+                {/* 操作按钮 */}
+                <div className="grid grid-cols-4 gap-1.5">
+                  <button
+                    onClick={() => openViewModal(cred)}
+                    disabled={!cred.hasValue}
+                    title="查看明文"
+                    className="flex items-center justify-center py-1.5 rounded-lg bg-cyber-bg border border-cyber-border text-gray-400 hover:text-cyber-accent hover:border-cyber-accent/30 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => openRotateModal(cred)}
+                    title="轮换"
+                    className="flex items-center justify-center py-1.5 rounded-lg bg-cyber-bg border border-cyber-border text-gray-400 hover:text-cyber-accent2 hover:border-cyber-accent2/30 transition-all"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => handleTest(cred)}
+                    disabled={!cred.hasValue || testRes === 'testing'}
+                    title="测试"
+                    className="flex items-center justify-center py-1.5 rounded-lg bg-cyber-bg border border-cyber-border text-gray-400 hover:text-purple-400 hover:border-purple-400/30 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                  >
+                    {testRes === 'testing' ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <TestTube className="w-3.5 h-3.5" />}
+                  </button>
+                  <button
+                    onClick={() => handleDelete(cred)}
+                    title="删除"
+                    className="flex items-center justify-center py-1.5 rounded-lg bg-cyber-bg border border-cyber-border text-gray-400 hover:text-red-400 hover:border-red-400/30 transition-all"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {/* 导出 / 导入区 */}
+      <div className="pt-3 border-t border-cyber-border/50 space-y-3">
+        <p className="text-xs font-mono text-gray-400">备份与迁移</p>
+
+        {/* 导出 */}
+        <div className="space-y-1.5">
+          <div className="flex gap-2">
+            <input
+              type="password"
+              value={exportPassword}
+              onChange={e => setExportPassword(e.target.value)}
+              placeholder="导出加密密码"
+              className="flex-1 px-3 py-2 bg-cyber-bg/80 border border-cyber-border rounded-xl text-xs font-mono text-gray-200 focus:outline-none focus:border-cyber-accent/50"
+            />
+            <button
+              onClick={handleExport}
+              disabled={exporting}
+              className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-blue-600/20 border border-blue-500/30 text-blue-400 text-xs font-mono hover:bg-blue-600/30 disabled:opacity-50"
+            >
+              {exporting ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+              导出
+            </button>
+          </div>
+        </div>
+
+        {/* 导入 */}
+        <div className="space-y-1.5">
+          <div className="flex gap-2">
+            <input
+              type="password"
+              value={importPassword}
+              onChange={e => setImportPassword(e.target.value)}
+              placeholder="导入解密密码"
+              className="flex-1 px-3 py-2 bg-cyber-bg/80 border border-cyber-border rounded-xl text-xs font-mono text-gray-200 focus:outline-none focus:border-cyber-accent/50"
+            />
+            <button
+              onClick={handleImportClick}
+              className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-purple-600/20 border border-purple-500/30 text-purple-400 text-xs font-mono hover:bg-purple-600/30"
+            >
+              <Upload className="w-3.5 h-3.5" />
+              选文件
+            </button>
+            <button
+              onClick={handleImport}
+              disabled={importing}
+              className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-cyber-accent/10 border border-cyber-accent/30 text-cyber-accent text-xs font-mono hover:bg-cyber-accent/20 disabled:opacity-50"
+            >
+              {importing ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+              导入
+            </button>
+          </div>
+          <input
+            ref={importFileRef}
+            type="file"
+            accept=".enc,.json,.bin"
+            onChange={handleImportFile}
+            className="hidden"
+          />
+        </div>
+      </div>
+
+      {/* Toast 提示 */}
+      {toast && (
+        <div className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs ${
+          toast.type === 'success'
+            ? 'bg-green-500/10 border border-green-500/30 text-green-400'
+            : toast.type === 'error'
+            ? 'bg-red-500/10 border border-red-500/30 text-red-400'
+            : 'bg-cyber-accent/10 border border-cyber-accent/30 text-cyber-accent'
+        }`}>
+          {toast.type === 'success' ? <Check className="w-3.5 h-3.5" /> : toast.type === 'error' ? <X className="w-3.5 h-3.5" /> : <Info className="w-3.5 h-3.5" />}
+          <span>{toast.msg}</span>
+        </div>
+      )}
+
+      {/* 查看明文弹窗 */}
+      {viewModal.open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={closeViewModal}>
+          <div
+            className="w-full max-w-sm bg-cyber-panel border border-cyber-accent/30 rounded-2xl p-4 space-y-3"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 rounded-lg bg-cyber-accent/10 border border-cyber-accent/30">
+                <Key className="w-4 h-4 text-cyber-accent" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-sm font-bold text-cyber-text">查看凭证明文</h3>
+                <p className="text-[11px] text-gray-500">{viewModal.name}</p>
+              </div>
+              <button onClick={closeViewModal} className="text-gray-500 hover:text-gray-300">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {!viewModal.confirmed ? (
+              <>
+                <div className="flex items-start gap-2 p-2.5 rounded-xl bg-red-500/10 border border-red-500/30">
+                  <AlertTriangle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
+                  <p className="text-xs text-red-300 leading-relaxed">
+                    明文仅在屏幕上显示 3 秒后自动隐藏。请确保周围无人且无屏幕录制。继续？
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={confirmViewPlaintext}
+                    disabled={viewModal.loading}
+                    className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-red-500/20 border border-red-500/40 text-red-300 text-xs font-mono hover:bg-red-500/30 disabled:opacity-50"
+                  >
+                    {viewModal.loading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Eye className="w-3.5 h-3.5" />}
+                    确认查看
+                  </button>
+                  <button
+                    onClick={closeViewModal}
+                    className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-gray-800 border border-gray-700 text-gray-400 text-xs font-mono hover:text-gray-200"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                    取消
+                  </button>
+                </div>
+              </>
+            ) : viewModal.loading ? (
+              <div className="flex items-center justify-center py-4 text-xs text-gray-500 font-mono">
+                <RefreshCw className="w-3.5 h-3.5 animate-spin mr-2" />
+                正在获取明文…
+              </div>
+            ) : (
+              <>
+                <div className="p-2.5 rounded-xl bg-cyber-bg border border-cyber-border">
+                  <p className="text-[10px] font-mono text-gray-500 mb-1">明文值</p>
+                  <p className="text-xs font-mono text-cyber-accent break-all min-h-[1.5em]">
+                    {viewModal.value || '（空）'}
+                  </p>
+                </div>
+                <div className="flex items-center justify-between text-[11px] font-mono">
+                  <span className="text-gray-500">将在 {viewModal.remaining} 秒后自动隐藏</span>
+                  <button
+                    onClick={closeViewModal}
+                    className="text-cyber-accent hover:underline"
+                  >
+                    立即关闭
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* 轮换弹窗 */}
+      {rotateModal.open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={() => !rotateModal.saving && setRotateModal({ open: false, key: '', name: '', value: '', show: false, saving: false })}>
+          <div
+            className="w-full max-w-sm bg-cyber-panel border border-cyber-accent2/30 rounded-2xl p-4 space-y-3"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 rounded-lg bg-cyber-accent2/10 border border-cyber-accent2/30">
+                <RefreshCw className="w-4 h-4 text-cyber-accent2" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-sm font-bold text-cyber-text">轮换凭证</h3>
+                <p className="text-[11px] text-gray-500">{rotateModal.name}</p>
+              </div>
+              <button
+                onClick={() => !rotateModal.saving && setRotateModal({ open: false, key: '', name: '', value: '', show: false, saving: false })}
+                className="text-gray-500 hover:text-gray-300"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div>
+              <label className="text-xs font-mono text-gray-400 block mb-1.5">新凭证值</label>
+              <div className="relative">
+                <input
+                  type={rotateModal.show ? 'text' : 'password'}
+                  value={rotateModal.value}
+                  onChange={e => setRotateModal(m => ({ ...m, value: e.target.value }))}
+                  placeholder="输入新的凭证值"
+                  className="w-full px-3 py-2 bg-cyber-bg/80 border border-cyber-border rounded-xl text-xs font-mono text-gray-200 focus:outline-none focus:border-cyber-accent2/50 pr-10"
+                />
+                <button
+                  onClick={() => setRotateModal(m => ({ ...m, show: !m.show }))}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-500 hover:text-gray-300"
+                >
+                  {rotateModal.show ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                </button>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={handleRotate}
+                disabled={rotateModal.saving}
+                className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-cyber-accent2/20 border border-cyber-accent2/40 text-cyber-accent2 text-xs font-mono hover:bg-cyber-accent2/30 disabled:opacity-50"
+              >
+                {rotateModal.saving ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                {rotateModal.saving ? '轮换中' : '确认轮换'}
+              </button>
+              <button
+                onClick={() => setRotateModal({ open: false, key: '', name: '', value: '', show: false, saving: false })}
+                disabled={rotateModal.saving}
+                className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-gray-800 border border-gray-700 text-gray-400 text-xs font-mono hover:text-gray-200 disabled:opacity-50"
+              >
+                <X className="w-3.5 h-3.5" />
+                取消
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

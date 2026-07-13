@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
-import type { Conversation, ChatMessage, AppPage, LLMConfig, KnowledgeEntry, ThoughtStep, ToolCall } from '@/types'
+import type { Conversation, ChatMessage, AppPage, LLMConfig, KnowledgeEntry, ThoughtStep, ToolCall, Plugin, Template, ArchivedConversation } from '@/types'
 import { getDefaultAgent } from '@/engine/agents'
 
 interface AppState {
@@ -18,7 +18,7 @@ interface AppState {
 export const useAppStore = create<AppState>()(
   persist(
     (set) => ({
-      currentPage: 'chat',
+      currentPage: 'home',
       setCurrentPage: (page) => set({ currentPage: page }),
       sidebarOpen: true,
       toggleSidebar: () => set((s) => ({ sidebarOpen: !s.sidebarOpen })),
@@ -215,8 +215,10 @@ interface SettingsState {
   toggleAnimations: () => void
   autoLearn: boolean
   setAutoLearn: (enabled: boolean) => void
-  theme: 'cyber' | 'matrix' | 'sunset'
-  setTheme: (theme: 'cyber' | 'matrix' | 'sunset') => void
+  theme: string
+  setTheme: (theme: string) => void
+  effectIntensity: number
+  setEffectIntensity: (intensity: number) => void
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -236,9 +238,11 @@ export const useSettingsStore = create<SettingsState>()(
       animationsEnabled: true,
       toggleAnimations: () => set((s) => ({ animationsEnabled: !s.animationsEnabled })),
       autoLearn: true,
-      setAutoLearn: (enabled) => set({ autoLearn: enabled }),
+      setAutoLearn: (enabled: boolean) => set({ autoLearn: enabled }),
       theme: 'cyber',
       setTheme: (theme) => set({ theme }),
+      effectIntensity: 0.5,
+      setEffectIntensity: (intensity) => set({ effectIntensity: intensity }),
     }),
     {
       name: 'hopeagent-settings',
@@ -299,3 +303,203 @@ export const useKnowledgeStore = create<KnowledgeState>((set, get) => ({
       .map(s => s.entry)
   },
 }))
+
+// 插件状态管理
+interface PluginState {
+  plugins: Plugin[]
+  installedPlugins: string[]
+  enabledPlugins: string[]
+  setPlugins: (plugins: Plugin[]) => void
+  installPlugin: (pluginId: string) => void
+  uninstallPlugin: (pluginId: string) => void
+  enablePlugin: (pluginId: string) => void
+  disablePlugin: (pluginId: string) => void
+  togglePlugin: (pluginId: string) => void
+}
+
+export const usePluginStore = create<PluginState>()(
+  persist(
+    (set, get) => ({
+      plugins: [],
+      installedPlugins: [],
+      enabledPlugins: [],
+
+      setPlugins: (plugins) => set({ plugins }),
+
+      installPlugin: (pluginId) => set((state) => ({
+        installedPlugins: [...state.installedPlugins, pluginId],
+        enabledPlugins: [...state.enabledPlugins, pluginId],
+      })),
+
+      uninstallPlugin: (pluginId) => set((state) => ({
+        installedPlugins: state.installedPlugins.filter(id => id !== pluginId),
+        enabledPlugins: state.enabledPlugins.filter(id => id !== pluginId),
+      })),
+
+      enablePlugin: (pluginId) => set((state) => ({
+        enabledPlugins: state.enabledPlugins.includes(pluginId)
+          ? state.enabledPlugins
+          : [...state.enabledPlugins, pluginId],
+      })),
+
+      disablePlugin: (pluginId) => set((state) => ({
+        enabledPlugins: state.enabledPlugins.filter(id => id !== pluginId),
+      })),
+
+      togglePlugin: (pluginId) => set((state) => ({
+        enabledPlugins: state.enabledPlugins.includes(pluginId)
+          ? state.enabledPlugins.filter(id => id !== pluginId)
+          : [...state.enabledPlugins, pluginId],
+      })),
+    }),
+    {
+      name: 'hopeagent-plugins',
+      storage: createJSONStorage(() => localStorage),
+    }
+  )
+)
+
+// 模板状态管理
+interface TemplateState {
+  templates: Template[]
+  favoriteTemplates: string[]
+  myTemplates: Template[]
+  setTemplates: (templates: Template[]) => void
+  toggleFavorite: (templateId: string) => void
+  addMyTemplate: (template: Template) => void
+  removeMyTemplate: (templateId: string) => void
+}
+
+export const useTemplateStore = create<TemplateState>()(
+  persist(
+    (set, get) => ({
+      templates: [],
+      favoriteTemplates: [],
+      myTemplates: [],
+
+      setTemplates: (templates) => set({ templates }),
+
+      toggleFavorite: (templateId) => set((state) => ({
+        favoriteTemplates: state.favoriteTemplates.includes(templateId)
+          ? state.favoriteTemplates.filter(id => id !== templateId)
+          : [...state.favoriteTemplates, templateId],
+      })),
+
+      addMyTemplate: (template) => set((state) => ({
+        myTemplates: [template, ...state.myTemplates],
+      })),
+
+      removeMyTemplate: (templateId) => set((state) => ({
+        myTemplates: state.myTemplates.filter(t => t.id !== templateId),
+      })),
+    }),
+    {
+      name: 'hopeagent-templates',
+      storage: createJSONStorage(() => localStorage),
+    }
+  )
+)
+
+// 归档状态管理
+interface ArchiveState {
+  archivedConversations: ArchivedConversation[]
+  trashedConversations: ArchivedConversation[]
+  selectedIds: string[]
+  setArchivedConversations: (convs: ArchivedConversation[]) => void
+  archiveConversation: (convId: string) => void
+  unarchiveConversation: (convId: string) => void
+  moveToTrash: (convId: string) => void
+  restoreFromTrash: (convId: string) => void
+  permanentlyDelete: (convId: string) => void
+  toggleSelect: (convId: string) => void
+  selectAll: (ids: string[]) => void
+  clearSelection: () => void
+  batchArchive: (ids: string[]) => void
+  batchDelete: (ids: string[]) => void
+  batchExport: (ids: string[]) => void
+}
+
+export const useArchiveStore = create<ArchiveState>()(
+  persist(
+    (set, get) => ({
+      archivedConversations: [],
+      trashedConversations: [],
+      selectedIds: [],
+
+      setArchivedConversations: (convs) => set({ archivedConversations: convs }),
+
+      archiveConversation: (convId) => {
+        // 实际使用时应从对话列表中移动
+      },
+
+      unarchiveConversation: (convId) => {
+        set((state) => ({
+          archivedConversations: state.archivedConversations.filter(c => c.id !== convId),
+        }))
+      },
+
+      moveToTrash: (convId) => {
+        set((state) => {
+          const conv = state.archivedConversations.find(c => c.id === convId)
+          return {
+            archivedConversations: state.archivedConversations.filter(c => c.id !== convId),
+            trashedConversations: conv
+              ? [...state.trashedConversations, { ...conv, status: 'trash' }]
+              : state.trashedConversations,
+          }
+        })
+      },
+
+      restoreFromTrash: (convId) => {
+        set((state) => {
+          const conv = state.trashedConversations.find(c => c.id === convId)
+          return {
+            trashedConversations: state.trashedConversations.filter(c => c.id !== convId),
+            archivedConversations: conv
+              ? [...state.archivedConversations, { ...conv, status: 'archived' }]
+              : state.archivedConversations,
+          }
+        })
+      },
+
+      permanentlyDelete: (convId) => {
+        set((state) => ({
+          trashedConversations: state.trashedConversations.filter(c => c.id !== convId),
+        }))
+      },
+
+      toggleSelect: (convId) => set((state) => ({
+        selectedIds: state.selectedIds.includes(convId)
+          ? state.selectedIds.filter(id => id !== convId)
+          : [...state.selectedIds, convId],
+      })),
+
+      selectAll: (ids) => set({ selectedIds: ids }),
+
+      clearSelection: () => set({ selectedIds: [] }),
+
+      batchArchive: (ids) => {
+        // 批量归档
+      },
+
+      batchDelete: (ids) => {
+        set((state) => ({
+          trashedConversations: state.trashedConversations.filter(c => !ids.includes(c.id)),
+          selectedIds: [],
+        }))
+      },
+
+      batchExport: (ids) => {
+        // 批量导出
+      },
+    }),
+    {
+      name: 'hopeagent-archive',
+      storage: createJSONStorage(() => localStorage),
+      partialize: (state) => ({
+        archivedConversations: state.archivedConversations,
+        trashedConversations: state.trashedConversations,
+      }),
+    }
+  )
+)
