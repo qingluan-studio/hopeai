@@ -17,6 +17,7 @@ import knowledgeRoutes from './routes/knowledge.js'
 import deployRoutes from './routes/deploy.js'
 import chatRoutes from './routes/chat.js'
 import schedulerRoutes from './routes/scheduler.js'
+import proxyRoutes from './proxy.js'
 
 // for esm mode
 const __filename = fileURLToPath(import.meta.url)
@@ -40,6 +41,7 @@ app.use('/api/knowledge', knowledgeRoutes)
 app.use('/api/deploy', deployRoutes)
 app.use('/api/chat', chatRoutes)
 app.use('/api/scheduler', schedulerRoutes)
+app.use('/api/proxy', proxyRoutes)
 
 /**
  * health
