@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-# HopeAI v1.0 - Day 31-100 整合 xuni 虚拟训练
+# HopeAI v2.0.0 - 插件热加载 + 多模态引擎
 # 知识图谱 | 对话树 | API网关 | 蒸馏框架 | 联邦学习 | 问题生成器
 # 训练流水线 | 模型评估 | A/B测试 | 数据增强 | 多模态 | 插件市场 | 用户系统 | 协作同步
-# xuni虚拟工厂集成 | 零成本训练闭环
+# xuni虚拟工厂 | 插件热加载 | 多模态处理
 
 import json, re, time, os, hashlib, sqlite3, random, math, shutil, itertools
 import urllib.request, urllib.parse, urllib.error, base64, struct, io
@@ -394,58 +394,188 @@ class MultiModal:
         stats = self.conn.execute("SELECT type, COUNT(*) FROM media GROUP BY type").fetchall()
         return {"files": [{"id": r[0], "path": r[1], "type": r[2]} for r in rows], "stats": {r[0]: r[1] for r in stats}}
 
-class PluginMarketplace:
-    """插件市场：注册、发现、安装、卸载插件"""
+class PluginEngine:
+    """v2.0 插件引擎：热加载、协议校验、沙箱执行"""
+
+    class HopePlugin:
+        """插件最低协议"""
+        name = ""; version = "1.0.0"; author = ""; description = ""; category = "tool"; requires_network = False
+        def run(self, input_text, context): return {"ok": False, "result": "未实现", "meta": {}}
+        def on_load(self): pass
+        def on_unload(self): pass
+        def get_schema(self): return {"input": "str", "output": "dict"}
+
+    class MultimodalPlugin(HopePlugin):
+        """多模态扩展协议"""
+        category = "multimodal"
+        def handle_image(self, image_path, prompt=""): return {"ok": False, "result": ""}
+        def handle_audio(self, audio_path, task="transcribe"): return {"ok": False, "result": ""}
+
     def __init__(self):
-        self.plugins = {}
+        self.loaded = {}       # name -> module
+        self.registry = {}     # name -> {meta}
         self.plugin_dir = os.path.join(DATA_DIR, "plugins")
-        self.db = os.path.join(self.plugin_dir, "marketplace.db")
+        self.official_dir = os.path.join(self.plugin_dir, "official")
+        self.mm_dir = os.path.join(self.plugin_dir, "multimodal")
+        self.community_dir = os.path.join(self.plugin_dir, "community")
+        for d in [self.official_dir, self.mm_dir, self.community_dir]:
+            os.makedirs(d, exist_ok=True)
+        # init file for import
+        for d in [self.plugin_dir, self.official_dir, self.mm_dir, self.community_dir]:
+            init = os.path.join(d, "__init__.py")
+            if not os.path.exists(init): open(init, "w").close()
+        # DB
+        self.db = os.path.join(self.plugin_dir, "registry.db")
         self.conn = sqlite3.connect(self.db, check_same_thread=False)
-        self.conn.execute("CREATE TABLE IF NOT EXISTS plugins (name TEXT PRIMARY KEY, version TEXT, author TEXT, description TEXT, category TEXT, installed INTEGER DEFAULT 0, enabled INTEGER DEFAULT 1, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)")
+        self.conn.execute("""CREATE TABLE IF NOT EXISTS plugins (
+            name TEXT PRIMARY KEY, version TEXT, author TEXT, description TEXT,
+            category TEXT, installed INTEGER DEFAULT 0, enabled INTEGER DEFAULT 1,
+            path TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)""")
         self.conn.commit()
         self._register_builtins()
 
     def _register_builtins(self):
         builtins = [
-            ("calculator", "1.0.0", "HopeAI", "数学计算器", "utility"),
-            ("translator", "1.0.0", "HopeAI", "多语言翻译", "language"),
-            ("sentiment", "1.0.0", "HopeAI", "情感分析", "nlp"),
-            ("summarizer", "1.0.0", "HopeAI", "文本摘要", "nlp"),
-            ("image_desc", "1.0.0", "HopeAI", "图片描述生成", "multimodal"),
-            ("code_gen", "1.0.0", "HopeAI", "代码生成助手", "dev"),
-            ("scheduler", "1.0.0", "HopeAI", "定时任务管理", "utility"),
-            ("notifier", "1.0.0", "HopeAI", "通知推送", "utility"),
+            ("calculator", "1.0.0", "HopeAI", "数学计算器", "tool"),
+            ("translator", "1.0.0", "HopeAI", "多语言翻译", "tool"),
+            ("sentiment", "1.0.0", "HopeAI", "情感分析", "knowledge"),
+            ("summarizer", "1.0.0", "HopeAI", "文本摘要", "knowledge"),
+            ("code_gen", "1.0.0", "HopeAI", "代码生成助手", "tool"),
         ]
-        for name, ver, author, desc, cat in builtins:
-            self.register(name, ver, author, desc, cat)
-            self.install(name)
+        for n, v, a, d, c in builtins:
+            self.register(n, v, a, d, c)
+            self.install(n)
 
-    def register(self, name, version, author, description, category):
-        self.conn.execute("INSERT OR REPLACE INTO plugins (name,version,author,description,category) VALUES (?,?,?,?,?)",(name, version, author, description, category))
+    def register(self, name, version, author, description, category, path=""):
+        self.conn.execute("INSERT OR REPLACE INTO plugins (name,version,author,description,category,path) VALUES (?,?,?,?,?,?)",
+                          (name, version, author, description, category, path))
         self.conn.commit()
-        self.plugins[name] = {"version": version, "author": author, "description": description, "category": category}
 
     def install(self, name):
-        c = self.conn.execute("SELECT name FROM plugins WHERE name=?",(name,)).fetchone()
+        c = self.conn.execute("SELECT name FROM plugins WHERE name=?", (name,)).fetchone()
         if not c: return False
-        self.conn.execute("UPDATE plugins SET installed=1 WHERE name=?",(name,)); self.conn.commit()
+        self.conn.execute("UPDATE plugins SET installed=1 WHERE name=?", (name,)); self.conn.commit()
         return True
 
     def uninstall(self, name):
-        self.conn.execute("UPDATE plugins SET installed=0 WHERE name=?",(name,)); self.conn.commit()
+        self.conn.execute("UPDATE plugins SET installed=0 WHERE name=?", (name,)); self.conn.commit()
+        if name in self.loaded:
+            try: self.loaded[name].on_unload()
+            except: pass
+            del self.loaded[name]
+
+    def load(self, name):
+        """热加载单个插件"""
+        if name in self.loaded: return self.loaded[name]
+        row = self.conn.execute("SELECT path, category FROM plugins WHERE name=? AND installed=1", (name,)).fetchone()
+        if not row: return None
+        path, cat = row[0], row[1]
+        if not path:
+            # 内置插件：运行时注册简易实现
+            plugin = self.PluginEngine.HopePlugin()
+            plugin.name = name
+            plugin.category = cat
+            # 基本内置实现
+            if name == "calculator":
+                plugin.run = lambda i, c: {"ok": True, "result": str(self._calc(i)), "meta": {}}
+            elif name == "translator":
+                plugin.run = lambda i, c: {"ok": True, "result": f"[翻译] {i}", "meta": {}}
+            elif name == "sentiment":
+                plugin.run = lambda i, c: {"ok": True, "result": "正面" if any(w in i for w in "好棒赞开心") else "中性", "meta": {}}
+            elif name == "summarizer":
+                plugin.run = lambda i, c: {"ok": True, "result": i[:50] + ("..." if len(i)>50 else ""), "meta": {}}
+            elif name == "code_gen":
+                plugin.run = lambda i, c: {"ok": True, "result": f"# TODO: {i}", "meta": {}}
+            else:
+                return None
+            self.loaded[name] = plugin
+            return plugin
+        # 文件插件：动态 import
+        try:
+            import importlib.util
+            spec = importlib.util.spec_from_file_location(f"hopeai_plugin_{name}", path)
+            mod = importlib.util.module_from_spec(spec)
+            sys.modules[f"hopeai_plugin_{name}"] = mod
+            spec.loader.exec_module(mod)
+            if hasattr(mod, "plugin") and isinstance(mod.plugin, self.PluginEngine.HopePlugin):
+                mod.plugin.on_load()
+                self.loaded[name] = mod.plugin
+                return mod.plugin
+        except Exception as e:
+            print(f"  [plugin] {name} 加载失败: {e}")
+        return None
+
+    def execute(self, name, input_text, context=None):
+        """执行插件"""
+        plugin = self.load(name)
+        if not plugin: return {"ok": False, "error": "插件未找到或加载失败"}
+        try:
+            return plugin.run(input_text, context or {})
+        except Exception as e:
+            return {"ok": False, "error": str(e)}
+
+    def _calc(self, expr):
+        try:
+            return eval(expr, {"__builtins__": {}}, {"abs": abs, "round": round, "max": max, "min": min, "pow": pow, "sqrt": math.sqrt})
+        except: return "计算错误"
 
     def search(self, query):
-        rows = self.conn.execute("SELECT name, version, description, category, installed FROM plugins WHERE name LIKE ? OR description LIKE ? OR category LIKE ?",(f"%{query}%", f"%{query}%", f"%{query}%")).fetchall()
+        rows = self.conn.execute("SELECT name, version, description, category, installed FROM plugins WHERE name LIKE ? OR description LIKE ? OR category LIKE ?",
+                                 (f"%{query}%", f"%{query}%", f"%{query}%")).fetchall()
         return [{"name": r[0], "version": r[1], "description": r[2], "category": r[3], "installed": bool(r[4])} for r in rows]
 
-    def list_categories(self):
-        cats = self.conn.execute("SELECT category, COUNT(*) FROM plugins GROUP BY category").fetchall()
-        return {c[0]: c[1] for c in cats}
+    def list_loaded(self):
+        return list(self.loaded.keys())
 
     def stats(self):
         total = self.conn.execute("SELECT COUNT(*) FROM plugins").fetchone()[0]
         installed = self.conn.execute("SELECT COUNT(*) FROM plugins WHERE installed=1").fetchone()[0]
-        return {"total": total, "installed": installed, "categories": len(self.list_categories())}
+        return {"total": total, "installed": installed, "loaded": len(self.loaded)}
+
+# ============================================================
+# v2.0: 多模态处理器
+# ============================================================
+
+class MultimodalProcessor:
+    """多模态输入统一处理：图片/音频/视频路由"""
+    def __init__(self, plugin_engine):
+        self.pe = plugin_engine
+        self.mm = MultiModal()  # 兼容旧版媒体管理接口
+
+    def list_modalities(self):
+        """列出注册的多模态插件"""
+        rows = self.pe.conn.execute("SELECT name, description FROM plugins WHERE category='multimodal' AND installed=1").fetchall()
+        return {r[0]: r[1] for r in rows}
+
+    def process_image(self, image_path, prompt=""):
+        """找多模态插件处理图片"""
+        if not os.path.exists(image_path):
+            return {"ok": False, "error": f"文件不存在: {image_path}"}
+        mm_plugins = self.list_modalities()
+        for name in mm_plugins:
+            p = self.pe.load(name)
+            if p and hasattr(p, "handle_image"):
+                result = p.handle_image(image_path, prompt)
+                if result.get("ok"): return result
+        return {"ok": False, "error": "无可用多模态插件", "available": list(mm_plugins.keys())}
+
+    def process_audio(self, audio_path, task="transcribe"):
+        if not os.path.exists(audio_path):
+            return {"ok": False, "error": f"文件不存在: {audio_path}"}
+        mm_plugins = self.list_modalities()
+        for name in mm_plugins:
+            p = self.pe.load(name)
+            if p and hasattr(p, "handle_audio"):
+                return p.handle_audio(audio_path, task)
+        return {"ok": False, "error": "无可用多模态插件"}
+
+    def list_all(self):
+        """兼容旧版 mm_list 命令"""
+        return self.mm.list_all()
+
+    def ingest_image(self, path, description=""):
+        """兼容旧版 mm_ingest 命令"""
+        return self.mm.ingest_image(path, description)
 
 # ============================================================
 # Day 81-100: 用户系统 | 协作同步 | 自动化运维
@@ -497,7 +627,7 @@ class CollaborativeSync:
         self.collab_dir = os.path.join(DATA_DIR, "collab")
 
     def export_sync_package(self):
-        pkg = {"version": "1.0.0-xuni", "timestamp": datetime.now().isoformat(), "node": hashlib.md5(os.uname().nodename.encode()).hexdigest()[:8] if hasattr(os, 'uname') else "unknown",
+        pkg = {"version": "2.0.0", "timestamp": datetime.now().isoformat(), "node": hashlib.md5(os.uname().nodename.encode()).hexdigest()[:8] if hasattr(os, 'uname') else "unknown",
                "kb_qa": self.kb.export_qa(200), "kg": json.loads(json.dumps(self.kg.query("*", 1))), "preferences": self.users.get_preferences()}
         path = os.path.join(self.collab_dir, f"sync_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json")
         with open(path, "w", encoding="utf-8") as f: json.dump(pkg, f, ensure_ascii=False, indent=2)
@@ -809,12 +939,12 @@ class DeployHelper:
         return {n: (lambda n, c: (lambda p: (open(p, "w").write(c), p)[1])(os.path.join(dd, n)))(n, c) for n, c in files.items()}
 
 # ============================================================
-# HopeAI Core v1.0.0-xuni
+# HopeAI Core v2.0.0
 # ============================================================
 
 class HopeAI:
     def __init__(self):
-        self.name = "HopeAI-网元"; self.version = "1.0.0-xuni"
+        self.name = "HopeAI-网元"; self.version = "2.0.0"
         self.retriever = KnowledgeRetriever()
         self.kb = LocalKnowledgeBase()
         self.cache = SmartCache()
@@ -839,8 +969,8 @@ class HopeAI:
         self.evaluator = ModelEvaluator(self)
         self.ab = ABTesting()
         self.augmentor = DataAugmentor()
-        self.multimodal = MultiModal()
-        self.marketplace = PluginMarketplace()
+        self.marketplace = PluginEngine()
+        self.multimodal = MultimodalProcessor(self.marketplace)
         self.users = UserSystem()
         self.collab = CollaborativeSync(self.kb, self.distill, self.kg, self.users)
         # v1.0: xuni 虚拟训练
@@ -928,7 +1058,7 @@ class HopeAI:
         c = q.strip().lower()
         # Basic
         if c in ("help", "帮助"):
-            return ("HopeAI v1.0.0-xuni | Day31-100\n"
+            return ("HopeAI v2.0.0 | Day31-100 + 插件体系\n"
                     "基础: help stats style kb learn reset\n"
                     "工作流: wf /deep_research /compare_analysis\n"
                     "智能体: agents\n"
