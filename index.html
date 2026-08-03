@@ -1,22 +1,182 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/hopeai/company/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-    <meta http-equiv="Pragma" content="no-cache" />
-    <meta http-equiv="Expires" content="0" />
-    <title>HopeAI 智能体公司</title>
-    <script type="module" crossorigin src="/hopeai/company/assets/index-CSQvrSvE.js"></script>
-    <link rel="modulepreload" crossorigin href="/hopeai/company/assets/react-vendor-BrMZ_TUQ.js">
-    <link rel="modulepreload" crossorigin href="/hopeai/company/assets/markdown-vendor-QgW8DKCn.js">
-    <link rel="modulepreload" crossorigin href="/hopeai/company/assets/ui-vendor-KtkFPlen.js">
-    <link rel="stylesheet" crossorigin href="/hopeai/company/assets/index-B8i7nSJz.css">
-  </head>
-  <body>
-    <div id="root"></div>
-  
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>HopeAI - 网元智能</title>
+<style>
+:root{--bg:#0d1117;--card:#161b22;--border:#30363d;--text:#c9d1d9;--accent:#58a6ff;--green:#238636;--dim:#8b949e}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--text);max-width:720px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column}
+header{text-align:center;padding:20px 16px 12px;border-bottom:1px solid var(--border)}
+header h1{color:var(--accent);font-size:20px;letter-spacing:1px}
+header p{color:var(--dim);font-size:12px;margin-top:4px}
+.chat{flex:1;padding:12px;display:flex;flex-direction:column;gap:10px;overflow-y:auto;margin-bottom:80px}
+.msg{max-width:88%;padding:10px 14px;border-radius:14px;font-size:14px;line-height:1.65;word-break:break-word;white-space:pre-wrap;animation:fadeIn .3s}
+.msg.user{align-self:flex-end;background:var(--green);color:#fff;border-bottom-right-radius:4px}
+.msg.ai{align-self:flex-start;background:var(--card);border:1px solid var(--border);border-bottom-left-radius:4px}
+.msg .meta{font-size:10px;color:var(--dim);margin-top:5px;display:flex;gap:8px;align-items:center}
+.msg .meta button{font-size:10px;padding:2px 10px;border:1px solid var(--border);border-radius:10px;background:transparent;color:var(--dim);cursor:pointer}
+.msg .meta button:hover{color:var(--accent);border-color:var(--accent)}
+.msg .sources{font-size:10px;color:var(--dim);margin-top:3px}
+.msg.loading{align-self:flex-start;background:var(--card);border:1px solid var(--border);padding:12px 16px}
+.msg.loading .dots{display:flex;gap:4px}
+.msg.loading .dots span{width:6px;height:6px;border-radius:50%;background:var(--accent);animation:bounce 1.4s infinite}
+.msg.loading .dots span:nth-child(2){animation-delay:.2s}
+.msg.loading .dots span:nth-child(3){animation-delay:.4s}
+.bar{position:fixed;bottom:0;left:0;right:0;max-width:720px;margin:0 auto;padding:10px 12px;background:var(--bg);border-top:1px solid var(--border);display:flex;gap:8px;z-index:10}
+.bar input{flex:1;padding:10px 14px;border:1px solid var(--border);border-radius:20px;background:var(--card);color:var(--text);font-size:14px;outline:none;-webkit-appearance:none}
+.bar input:focus{border-color:var(--accent)}
+.bar button{padding:10px 18px;border:none;border-radius:20px;background:var(--green);color:#fff;font-size:14px;cursor:pointer;white-space:nowrap}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+@keyframes bounce{0%,80%,100%{transform:scale(1);opacity:.5}40%{transform:scale(1.3);opacity:1}}
+.stats-bar{display:flex;gap:12px;justify-content:center;padding:6px;font-size:10px;color:var(--dim)}
+.stats-bar span{padding:2px 8px;background:var(--card);border-radius:8px;border:1px solid var(--border)}
+</style>
+</head>
+<body>
+<header>
+  <h1>HopeAI v0.8</h1>
+  <p>网元模型 · 零依赖 · 知识图谱 · 蒸馏训练</p>
+</header>
+<div class="stats-bar" id="stats">查询: 0 | 缓存: 0 | 本地: 0 | 联网: 0</div>
+<div class="chat" id="chat"></div>
+<div class="bar">
+  <input id="q" placeholder="输入问题或命令 (help/统计/stats)..." autofocus onkeydown="if(event.key==='Enter')ask()">
+  <button onclick="ask()">发送</button>
+</div>
+<script>
+const S=self;let qc=0,cc=0,lc=0,rc=0,lk=null;
+
+const INTENTS={
+  compare:['vs','对比','区别','哪个好','比较','优缺点'],
+  howto:['怎么','如何','怎样','步骤','教程','方法'],
+  why:['为什么','原因','为何','原理'],
+  code:['代码','编程','函数','bug'],
+  define:['是什么','定义','含义','概念'],
+  history:['历史','起源','发展'],
+  recommend:['推荐','建议','排行'],
+  future:['未来','趋势','前景']
+};
+
+function classify(q){
+  let s={};for(let[k,v]of Object.entries(INTENTS))s[k]=v.filter(w=>q.includes(w)).length;
+  let b=Object.entries(s).sort((a,b)=>b[1]-a[1])[0];
+  return b[1]?b[0]:'fact';
+}
+
+function render(intent,frags,q){
+  if(!frags.length)return '没找到相关信息。换个关键词试试？';
+  let srcs=[...new Set(frags.filter(f=>f.title).map(f=>f.title||f.source))].slice(0,3);
+  let src=`\n——来源: ${srcs.join('、')||'网络'}`;
+  switch(intent){
+    case'define':return frags[0].snippet+(frags[1]?`\n详细：${frags[1].snippet.slice(0,250)}`:'')+src;
+    case'howto':return'【操作指引】\n'+frags.slice(0,5).map((f,i)=>`${i+1}. ${f.snippet.slice(0,250)}`).join('\n')+'\n建议验证后使用。'+src;
+    case'compare':return'【对比分析】\n'+frags.slice(0,5).map((f,i)=>`${i+1}. ${f.snippet.slice(0,250)}`).join('\n\n')+'\n建议结合实际。'+src;
+    case'history':return'【发展脉络】\n'+frags.slice(0,5).map(f=>`· ${f.snippet.slice(0,250)}`).join('\n')+src;
+    default:return frags[0].snippet+'\n补充：\n'+frags.slice(1,4).filter(f=>f.snippet.length>30).map(f=>`· ${f.snippet.slice(0,200)}`).join('\n')+src;
+  }
+}
+
+async function search(q){
+  let frags=[];
+  let jobs=[];
+  // DDG
+  jobs.push((async()=>{
+    try{
+      let r=await fetch(`https://api.duckduckgo.com/?q=${encodeURIComponent(q)}&format=json&no_html=1`);
+      let d=await r.json();
+      if(d.AbstractText)frags.push({source:'ddg',title:d.Heading,snippet:d.AbstractText,score:.85});
+      (d.RelatedTopics||[]).slice(0,3).forEach(x=>{if(x.Text)frags.push({source:'ddg',title:'',snippet:x.Text,score:.55})});
+    }catch(e){}
+  })());
+  // Wikipedia ZH
+  jobs.push((async()=>{
+    try{
+      let r=await fetch(`https://zh.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(q)}&format=json&origin=*`);
+      let d=await r.json();
+      (d.query?.search||[]).forEach(x=>frags.push({source:'wiki_zh',title:x.title,snippet:x.snippet.replace(/<[^>]+>/g,''),score:.9}));
+    }catch(e){}
+  })());
+
+  await Promise.allSettled(jobs);
+  frags.sort((a,b)=>(b.score||0)-(a.score||0));
+  return [...new Map(frags.map(f=>[f.snippet.slice(0,80),f])).values()].slice(0,8);
+}
+
+function addMsg(role,text,meta=''){
+  let d=document.createElement('div');d.className='msg '+role;
+  d.innerHTML=text.replace(/\n/g,'<br>');
+  if(meta)d.innerHTML+=`<div class="meta">${meta}</div>`;
+  document.getElementById('chat').appendChild(d);
+  window.scrollTo(0,document.body.scrollHeight);
+  return d;
+}
+
+function updateStats(){document.getElementById('stats').innerHTML=`查询: ${qc} | 缓存: ${cc} | 本地: ${lc} | 联网: ${rc}`;}
+
+// 本地知识缓存
+let cache=new Map();
+function cacheGet(q){return cache.get(q)}
+function cacheSet(q,a){cache.set(q,a);if(cache.size>200){let k=cache.keys().next().value;cache.delete(k)}}
+
+// 命令处理
+function handleCmd(q){
+  let c=q.trim().toLowerCase();
+  if(c==='help'||c==='帮助')return `HopeAI v0.8 命令：\n  help/帮助 | stats/统计 | 清除/清记忆\n  /工作流 深度调研/对比分析/快速问答/代码助手`;
+  if(c==='stats'||c==='统计')return `查询: ${qc} | 缓存: ${cc} | 联网: ${rc} | 缓存池: ${cache.size}`;
+  if(c==='清除'||c==='清记忆'){cache.clear();return'记忆已清空。';}
+  // 工作流模拟
+  if(c.startsWith('/')){
+    let[wf,...rest]=c.slice(1).split(' ');
+    let wq=rest.join(' ');
+    if(!wq)return'请提供问题，如 /深度调研 AI的未来';
+    return`[工作流: ${wf}]\n对"${wq}"执行${wf}流程中...\n这将触发多步搜索与分析。当前为静态部署模式，请直接输入问题获得搜索结果。`;
+  }
+  return null;
+}
+
+async function ask(){
+  let inp=document.getElementById('q');let q=inp.value.trim();if(!q)return;
+  addMsg('user',q);
+  inp.value='';inp.focus();
+  qc++;updateStats();
+
+  // 命令
+  let cmd=handleCmd(q);
+  if(cmd){addMsg('ai',cmd);return}
+
+  // 缓存
+  let cached=cacheGet(q);
+  if(cached){cc++;updateStats();addMsg('ai',cached,'缓存命中');return}
+
+  // 加载动画
+  let el=addMsg('ai','<div class="dots"><span></span><span></span><span></span></div>');
+  el.className='msg loading';
+
+  try{
+    // 联网搜索
+    let start=Date.now();
+    let intent=classify(q);
+    let frags=await search(q);
+    rc++;updateStats();
+
+    let answer=render(intent,frags,q);
+    let time=((Date.now()-start)/1000).toFixed(1);
+    cacheSet(q,answer);
+
+    el.className='msg ai';
+    let meta=`${intent} | ${time}s | ${frags.length}源 <button onclick="feedback(1)">有用</button> <button onclick="feedback(0)">没用</button>`;
+    if(frags.length)frags.slice(0,3).forEach(f=>{if(f.title)meta+=`<span class="sources">${f.title}</span>`});
+    el.innerHTML=answer.replace(/\n/g,'<br>')+`<div class="meta">${meta}</div>`;
+  }catch(e){
+    el.className='msg ai';
+    el.innerHTML='网络请求失败，请检查连接。'+`<div class="meta">error</div>`;
+  }
+}
+function feedback(g){console.log('feedback:',g)}
+</script>
+
           <script>
             (function() {
               'use strict';
