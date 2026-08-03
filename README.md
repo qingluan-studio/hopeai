@@ -1,57 +1,34 @@
-# React + TypeScript + Vite
+# HopeAI - 网元模型
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+> 模型不在手机上，整个中文互联网就是权重文件。
+> 手机只跑调度内核，参数分散在互联网上实时获取。
 
-Currently, two official plugins are available:
+## 快速开始（Day 1）
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+### 手机端
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+```bash
+# Termux 中执行
+pkg update && pkg upgrade -y
+pkg install python git -y
+git clone https://github.com/qingluan-studio/hopeai.git
+cd hopeai
+python hopeai.py
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+输入任意问题，即可与网元模型对话。
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## 项目结构
 
-export default tseslint.config({
-  extends: [
-    // other configs...
-    // Enable lint rules for React
-    reactX.configs['recommended-typescript'],
-    // Enable lint rules for React DOM
-    reactDom.configs.recommended,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
 ```
+hopeai/
+├── hopeai.py              # 网元模型内核（<500行）
+├── 三年AI构建计划.md       # 三年五阶段路线图
+├── 虚拟模型架构设计.md     # 完整架构设计文档
+└── README.md              # 本文件
+```
+
+## 核心理念
+
+传统大模型把知识压缩进14GB权重文件，网元模型把知识留在互联网上，
+用检索策略代替参数矩阵——免费、实时更新、可追溯来源。
