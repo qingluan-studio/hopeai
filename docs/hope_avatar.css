@@ -1,0 +1,164 @@
+/* HopeAI 形象 —— "元元" (YuanYuan)
+ * 网元模型的拟人化表达，核心设计理念：抽象几何 + 数据流动 + 虚拟算力可视化
+ * 适用：GitHub Pages / HopeAI Web 界面 / 头像
+ */
+
+/* ===== 基础变量 ===== */
+:root {
+  --hope-primary: #6C5CE7;      /* 主色：紫色，代表虚拟算力 */
+  --hope-secondary: #00CEC9;    /* 辅色：青色，代表数据流 */
+  --hope-glow: #A29BFE;         /* 辉光：浅紫 */
+  --hope-dark: #2D3436;         /* 底色：深灰 */
+  --hope-grid: #636E72;         /* 网格线 */
+}
+
+/* ===== 画布容器 ===== */
+.hope-avatar {
+  width: 200px;
+  height: 200px;
+  background: linear-gradient(135deg, var(--hope-dark) 0%, #0a0a1a 100%);
+  border-radius: 24px;
+  position: relative;
+  overflow: hidden;
+  display: inline-block;
+  box-shadow: 0 0 40px rgba(108, 92, 231, 0.3);
+}
+
+/* ===== 核心图形：六边形节点网格 ===== */
+.hope-avatar .core-hex {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 80px; height: 46px;
+  background: var(--hope-primary);
+  clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
+  animation: hexPulse 2s ease-in-out infinite;
+}
+
+/* ===== 轨道环 ===== */
+.hope-avatar .orbit-ring {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 140px; height: 140px;
+  border: 2px solid rgba(0, 206, 201, 0.3);
+  border-radius: 50%;
+  animation: orbitSpin 8s linear infinite;
+}
+
+.hope-avatar .orbit-ring::before {
+  content: '';
+  position: absolute;
+  width: 8px; height: 8px;
+  background: var(--hope-secondary);
+  border-radius: 50%;
+  top: -4px; left: 50%;
+  box-shadow: 0 0 12px var(--hope-secondary);
+  animation: orbitGlow 2s ease-in-out infinite;
+}
+
+/* ===== 数据粒子 ===== */
+.hope-avatar .data-particle {
+  position: absolute;
+  width: 3px; height: 3px;
+  background: var(--hope-glow);
+  border-radius: 50%;
+  animation: particleFloat 3s ease-in-out infinite;
+}
+
+.hope-avatar .data-particle:nth-child(3) { 
+  top: 20%; left: 30%; 
+  animation-delay: 0.5s; 
+}
+.hope-avatar .data-particle:nth-child(4) { 
+  top: 60%; left: 70%; 
+  animation-delay: 1.5s; 
+}
+.hope-avatar .data-particle:nth-child(5) { 
+  top: 30%; left: 80%; 
+  animation-delay: 2.5s; 
+}
+.hope-avatar .data-particle:nth-child(6) { 
+  top: 70%; left: 20%; 
+  animation-delay: 1s; 
+}
+
+/* ===== 虚拟算力量表 ===== */
+.hope-avatar .vpu-meter {
+  position: absolute;
+  bottom: 8px; left: 50%;
+  transform: translateX(-50%);
+  width: 80%;
+  height: 2px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 1px;
+}
+
+.hope-avatar .vpu-meter::after {
+  content: '';
+  position: absolute;
+  height: 100%;
+  width: 40%;
+  background: linear-gradient(90deg, var(--hope-primary), var(--hope-secondary));
+  border-radius: 1px;
+  animation: vpuFlow 4s ease-in-out infinite;
+}
+
+/* ===== 字号标识 ===== */
+.hope-avatar .avatar-label {
+  position: absolute;
+  bottom: 16px;
+  width: 100%;
+  text-align: center;
+  font-family: 'Courier New', monospace;
+  font-size: 10px;
+  color: rgba(255,255,255,0.5);
+  letter-spacing: 2px;
+}
+
+/* ===== 小尺寸变体（头像用） ===== */
+.hope-avatar.small {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+}
+
+.hope-avatar.small .core-hex {
+  width: 24px; height: 14px;
+}
+
+.hope-avatar.small .orbit-ring {
+  width: 36px; height: 36px;
+  border-width: 1px;
+}
+
+.hope-avatar.small .orbit-ring::before {
+  width: 4px; height: 4px;
+  top: -2px;
+}
+
+/* ===== 动画关键帧 ===== */
+@keyframes hexPulse {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.8; }
+  50% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
+}
+
+@keyframes orbitSpin {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+@keyframes orbitGlow {
+  0%, 100% { box-shadow: 0 0 12px var(--hope-secondary); }
+  50% { box-shadow: 0 0 24px var(--hope-secondary), 0 0 48px rgba(0, 206, 201, 0.3); }
+}
+
+@keyframes particleFloat {
+  0%, 100% { opacity: 0.3; transform: translateY(0); }
+  50% { opacity: 0.8; transform: translateY(-8px); }
+}
+
+@keyframes vpuFlow {
+  0%, 100% { width: 30%; }
+  50% { width: 70%; }
+}
