@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-# HopeAI v4.5 — 网元模型核心 + 在线训练引擎 + 融合压缩引擎
-# 升级: LeanLearner在线训练 + FusionCompressor多属性融合压缩 + Agent工具簇(25工具)
+# HopeAI v4.6 — 网元模型核心 + 在线训练引擎 + 融合压缩引擎 + 代码内核
+# 升级: 代码内核(语法检查/统计/diff) + 意图路由增强(28工具)
 
-import json, os, sys, time, sqlite3, re, hashlib, threading, importlib, traceback, io, struct, math, socket, urllib.request, urllib.error, random, shutil, gzip, tempfile, uuid
+import json, os, sys, time, sqlite3, re, hashlib, threading, importlib, traceback, io, struct, math, socket, urllib.request, urllib.error, random, shutil, gzip, tempfile, uuid, ast, difflib
 import importlib.util  # 显式加载 util 子模块 (部分环境需显式导入)
 from pathlib import Path
 from urllib.parse import quote, unquote
@@ -25,7 +25,7 @@ MULTIMODAL_DIR = PLUGIN_DIR / "multimodal"
 BACKUP_DIR = BASE / "hopeai_data" / "backups"
 BACKUP_DIR.mkdir(parents=True, exist_ok=True)
 
-VERSION = "4.5.0"
+VERSION = "4.6.0"
 NODE_ID = hashlib.sha256(f"hopeai-{time.time()}-{DB_PATH}".encode()).hexdigest()[:12]
 
 
@@ -171,6 +171,7 @@ class InferenceEngine:
             "uuid":     r'(?i)uuid|唯一标识|生成.*uuid|随机.*uuid|guid',
             "random":   r'随机\d+位|随机浮点|随机小数|随机数|随机字符串|随机名字|随机名|抽一个|抽签|随机选',
             "math":     r'平均值|均值|中位数|众数|标准差|方差|求和|排序列表|去重|^[\d\s,]+(求和|平均|排序)$',
+            "code_stats":r'代码统计|统计.*行|多少行|函数.*数|复杂度|代码.*分析|类.*个数|方法.*数|多少.*函数|几个.*函数|函数.*多少|代码.*多少.*行|多少.*类',
             "stats":    r'统计',
             "keyword":  r'关键词提取|提取关键词|关键字提取',
             "url":      r'https?://|打开网址|访问网站|状态码|网页内容|抓取|dns|域名解析|解析域名|ping|首页状态|首页$',
@@ -183,6 +184,10 @@ class InferenceEngine:
             "news":     r'新闻|热点|热搜|头条|最新|报道',
             "timer":    r'分钟.*后|小时.*后|秒后|定时|提醒|倒计时',
             "qrcode":   r'二维码|QR码|条形码',
+            # ── 代码内核 ──
+            "code_check":r'语法检查|语法错误|代码检查|syntax check|lint|代码.*错|编译.*错|检查.*代码|检查.*语法|有没有语法|这段代码.*检查|帮我看看.*代码',
+            "code_stats":r'代码统计|统计.*行|多少行|函数.*数|复杂度|代码.*分析|类.*个数|方法.*数|多少.*函数|几个.*函数|函数.*多少|代码.*多少.*行|多少.*类',
+            "code_diff": r'diff|对比.*代码|代码.*对比|区别.*代码|patch|补丁',
         }
 
     def classify(self, text):
@@ -990,6 +995,10 @@ class SimpleAgent:
                 "web_fetch":    lambda url, **kw: self._http_get(url),
                 "http_status":  lambda url, **kw: self._http_status(url),
                 "dns_lookup":   lambda host, **kw: self._dns_lookup(host),
+                # ── 代码内核 ──
+                "py_check":     lambda code, **kw: self._py_syntax_check(code),
+                "code_stats":   lambda code, lang="auto", **kw: self._code_stats(code, lang),
+                "code_diff":    lambda a, b="", **kw: self._code_diff(a, b),
             }
         return self._tools
 
@@ -1234,6 +1243,100 @@ class SimpleAgent:
         except:
             return {"host": host, "ip": None, "error": "DNS 解析失败"}
 
+    # ════════════════════════════════════════════════
+    # 代码内核工具
+    # ════════════════════════════════════════════════
+
+    def _py_syntax_check(self, code):
+        """Python 语法检查（零依赖 ast），返回错误行号/类型/消息"""
+        code = self._extract_code(code)
+        try:
+            ast.parse(code)
+            return {"ok": True, "errors": [], "message": "语法正确"}
+        except SyntaxError as e:
+            return {"ok": False, "errors": [{
+                "line": e.lineno, "col": e.offset, "msg": e.msg, "text": e.text.strip() if e.text else ""
+            }], "message": f"第{e.lineno}行语法错误: {e.msg}"}
+
+    def _extract_code(self, text):
+        """从混合自然语言中提取纯代码段"""
+        text = text if isinstance(text, str) else str(text)
+        # 优先找代码块
+        m = re.search(r'```(?:\w+)?\n?(.*?)```', text, re.DOTALL)
+        if m:
+            return m.group(1).strip()
+        # 按冒号分割取后半
+        if '：' in text or ':' in text:
+            parts = re.split(r'[：:]', text, maxsplit=1)
+            tail = parts[-1].strip()
+            if len(tail) > 5 and ('def ' in tail or 'import ' in tail or 'class ' in tail or '{' in tail or 'function ' in tail):
+                return tail
+        # 剥离中文自然语言前缀（找到代码关键词后的内容）
+        m = re.search(r'(def\s+\w+|import\s+\w+|class\s+\w+|function\s+\w+|const\s+\w+|let\s+\w+|var\s+\w+|package\s+\w+)', text)
+        if m:
+            start = m.start()
+            # 从该位置往前找到最近的换行或中文边界
+            prefix = text[max(0, start-20):start]
+            nl_idx = max(prefix.rfind('\n'), prefix.rfind('。'), prefix.rfind('，'))
+            return text[nl_idx+1:] if nl_idx >= 0 else text[start:]
+        return text
+
+    def _code_stats(self, code, lang="auto"):
+        """代码统计：行数/空行/注释/函数/类/复杂度"""
+        code = self._extract_code(code)
+        code = code if isinstance(code, str) else str(code)
+        lines = code.split('\n')
+        total = len(lines)
+        blank = sum(1 for l in lines if not l.strip())
+        comment = sum(1 for l in lines if l.strip().startswith('#') or l.strip().startswith('//'))
+        content = total - blank
+
+        # 函数/类统计 (用 finditer 计数避免捕获组问题)
+        funcs = len(list(re.finditer(r'^\s*(def |async def |function |func |fn |sub )', code, re.MULTILINE)))
+        classes = len(list(re.finditer(r'^\s*(class )', code, re.MULTILINE)))
+        imports = len(list(re.finditer(r'^\s*(import |from )', code, re.MULTILINE)))
+
+        # 估算复杂度 (if/for/while/except 数量 / 内容行)
+        branches = len(re.findall(r'^\s*(if |elif |for |while |except\b|with |case )', code, re.MULTILINE))
+        complexity = round(branches / max(content, 1), 3)
+
+        # 检测语言
+        if lang == "auto":
+            if any('def ' in l or 'import ' in l for l in lines):
+                lang = "Python"
+            elif any('function ' in l or 'const ' in l or 'let ' in l or '=>' in l for l in lines):
+                lang = "JavaScript"
+            elif any('class ' in l and ('{' in l or 'public' in l or 'private' in l) for l in lines):
+                lang = "Java/C#"
+            else:
+                lang = "未知"
+
+        return {
+            "lang": lang,
+            "total_lines": total, "blank_lines": blank, "comment_lines": comment,
+            "functions": funcs, "classes": classes, "imports": imports,
+            "branch_points": branches, "complexity": complexity,
+        }
+
+    def _code_diff(self, a, b):
+        """简单 diff：统计增删改行数。支持直接传入两个字符串，或从混合文本解析a=/b="""
+        # 如果 b 为空，尝试从 a 文本中解析 a=... b=...
+        if (not b or b == '') and isinstance(a, str):
+            ma = re.search(r'a=([^\n]+?)\s*b=([^\n]+)', str(a))
+            if ma:
+                a, b = ma.group(1).strip(), ma.group(2).strip()
+        a_lines = (a if isinstance(a, str) else str(a)).splitlines(keepends=True)
+        b_lines = (b if isinstance(b, str) else str(b)).splitlines(keepends=True)
+        d = list(difflib.unified_diff(a_lines, b_lines, lineterm=''))
+        added = sum(1 for l in d if l.startswith('+') and not l.startswith('+++'))
+        removed = sum(1 for l in d if l.startswith('-') and not l.startswith('---'))
+        return {
+            "added": added, "removed": removed, "changed": min(added, removed),
+            "total_changes": added + removed,
+            "diff_lines": len(d),
+            "diff_text": '\n'.join(d[:200])  # 最多200行diff
+        }
+
     def run(self, query, max_steps=5):
         intent = self.hope.inference.classify(query)
         context = {"query": query, "intent": intent, "knowledge": [], "observations": []}
@@ -1312,6 +1415,9 @@ class SimpleAgent:
             "lang": "识别为语言检测任务",
             "table": "识别为表格生成任务",
             "keyword": "识别为关键词提取任务",
+            "code_check": "识别为代码语法检查，将调用AST解析",
+            "code_stats": "识别为代码统计分析，将统计行数/函数/复杂度",
+            "code_diff": "识别为代码差异对比，将计算增删行数",
         }
         return plans.get(intent, f"通用任务(意图={intent})，将先查KB再用最合适的工具链处理")
 
@@ -1416,6 +1522,9 @@ class SimpleAgent:
                 "lang":    ("lang_detect", query),
                 "math":    ("stats_math", query),
                 "chat":    ("answer", None),
+                "code_check": ("py_check", query),
+                "code_stats": ("code_stats", query),
+                "code_diff": ("code_diff", query),
                 "general": ("kb_search", query),
             }
             act, params = INTENT_ACTIONS.get(intent, ("kb_search", query))
@@ -1430,7 +1539,8 @@ class SimpleAgent:
             if last_action in ("calc", "unit_convert", "translate", "hash", "base64_codec",
                                "url_codec", "uuid_gen", "random_gen", "time", "http_status",
                                "dns_lookup", "lang_detect", "md_table", "word_count", "keyword_extract",
-                               "regex_extract", "deduplicate", "sort_filter", "stats_math"):
+                               "regex_extract", "deduplicate", "sort_filter", "stats_math",
+                               "py_check", "code_stats", "code_diff"):
                 return "answer", None
             if last_action == "kb_search":
                 if isinstance(last_result, list) and len(last_result) > 0:
@@ -1621,7 +1731,8 @@ class SimpleAgent:
     # ════════════════════════════════════════════════
 
     def _record_tool_result(self, intent, action, success, confidence=0.5):
-        """更新工具记分板"""
+        """L2 记录工具结果 + 同步到 LeanLearner"""
+        # 更新工具记分板
         if intent not in self._regret_board:
             self._regret_board[intent] = {}
         if action not in self._regret_board[intent]:
@@ -1633,6 +1744,9 @@ class SimpleAgent:
             r["losses"] += 1
         r["conf_sum"] += confidence
         r["count"] += 1
+        # 同步到 LeanLearner 在线训练
+        if hasattr(self.hope, 'learner'):
+            self.hope.learner.log_tool_result(intent, action, success, confidence)
 
     def _select_tool_regret_minimizing(self, intent, available_tools):
         """UCB式工具选择：上置信界 + 历史胜率"""
