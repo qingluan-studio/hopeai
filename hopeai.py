@@ -25,7 +25,7 @@ MULTIMODAL_DIR = PLUGIN_DIR / "multimodal"
 BACKUP_DIR = BASE / "hopeai_data" / "backups"
 BACKUP_DIR.mkdir(parents=True, exist_ok=True)
 
-VERSION = "4.6.0"
+VERSION = "5.0.0"
 NODE_ID = hashlib.sha256(f"hopeai-{time.time()}-{DB_PATH}".encode()).hexdigest()[:12]
 
 
