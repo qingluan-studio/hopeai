@@ -25,7 +25,7 @@ MULTIMODAL_DIR = PLUGIN_DIR / "multimodal"
 BACKUP_DIR = BASE / "hopeai_data" / "backups"
 BACKUP_DIR.mkdir(parents=True, exist_ok=True)
 
-VERSION = "5.0.0"
+VERSION = "5.1.0"
 NODE_ID = hashlib.sha256(f"hopeai-{time.time()}-{DB_PATH}".encode()).hexdigest()[:12]
 
 
@@ -77,6 +77,7 @@ class KnowledgeBase:
 
     def search(self, query, topn=5):
         with self.lock:
+            # 策略1: 精确子串匹配（现有逻辑）
             rows = self.db.execute(
                 """SELECT id,question,answer,confidence,hits FROM knowledge
                    WHERE question LIKE ? ORDER BY confidence*hits DESC LIMIT ?""",
@@ -85,7 +86,49 @@ class KnowledgeBase:
                 best = rows[0]
                 self.db.execute("UPDATE knowledge SET hits=hits+1 WHERE id=?", (best[0],))
                 self.db.commit()
-            return [{"id": r[0], "q": r[1], "a": r[2], "conf": r[3], "hits": r[4]} for r in rows]
+                return [{"id": r[0], "q": r[1], "a": r[2], "conf": r[3], "hits": r[4]} for r in rows]
+
+            # 策略2: 中文/英文分词 + 字符级 n-gram 模糊匹配
+            # 获取全部知识库条目
+            all_rows = self.db.execute(
+                "SELECT id,question,answer,confidence,hits FROM knowledge ORDER BY confidence*hits DESC"
+            ).fetchall()
+            if not all_rows:
+                return []
+
+            # 提取查询词的 token 和 2-gram
+            q_tokens = set(re.findall(r'[\u4e00-\u9fff]+|[a-zA-Z0-9]+', query.lower()))
+            q_chars = set(query.lower())  # 字符集（用于中文模糊匹配）
+
+            scored = []
+            for r in all_rows:
+                q_text = r[1].lower()
+                score = 0
+                # 得分项1: 查询词是存储问题的子串
+                if query.lower() in q_text:
+                    score += 3.0
+                # 得分项2: token 命中率（分词匹配）
+                q_tokens_in = set(re.findall(r'[\u4e00-\u9fff]+|[a-zA-Z0-9]+', q_text))
+                token_overlap = len(q_tokens & q_tokens_in)
+                if q_tokens:
+                    score += token_overlap / len(q_tokens) * 2.0
+                # 得分项3: 字符级 2-gram 重叠率（针对中文短查询）
+                if len(query) >= 2:
+                    q_bigrams = {query[i:i+2] for i in range(len(query)-1)}
+                    t_bigrams = {q_text[i:i+2] for i in range(len(q_text)-1)}
+                    if q_bigrams:
+                        bigram_overlap = len(q_bigrams & t_bigrams) / len(q_bigrams)
+                        score += bigram_overlap * 1.5
+                if score > 0:
+                    scored.append((score * r[3], r))  # 乘以置信度
+
+            scored.sort(reverse=True)
+            best_n = scored[:topn]
+            if best_n:
+                best = best_n[0][1]
+                self.db.execute("UPDATE knowledge SET hits=hits+1 WHERE id=?", (best[0],))
+                self.db.commit()
+            return [{"id": r[0], "q": r[1], "a": r[2], "conf": r[3], "hits": r[4]} for _, r in best_n]
 
     def feedback(self, kid, was_helpful):
         with self.lock:
@@ -200,7 +243,7 @@ class InferenceEngine:
         intent = self.classify(text)
         # 先查本地知识库
         local = self.kb.search(text, topn=3)
-        if local and local[0]["conf"] > 0.6:
+        if local and local[0]["conf"] > 0.45:
             return {"ok": True, "answer": local[0]["a"], "source": "kb", "intent": intent,
                     "kid": local[0]["id"], "confidence": local[0]["conf"]}
         return {"ok": False, "answer": "", "source": "none", "intent": intent, "kid": None, "confidence": 0}
@@ -755,8 +798,8 @@ class HopeAI:
         ok = 0
         for q, a in pairs:
             try:
-                self.kb.add(q, a, source=source, confidence=0.55)
-                self.learner.log_interaction(q, a, source, [], confidence=0.55)
+                self.kb.add(q, a, source=source, confidence=0.65)
+                self.learner.log_interaction(q, a, source, [], confidence=0.65)
                 ok += 1
             except:
                 pass
