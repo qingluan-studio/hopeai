@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# HopeAI v7.0.0 - 五图融合架构：双流|时空|分形|体素|注意环 → 统一基座
+# HopeAI v7.0.2 - 五图融合 + 门控动态加权：双流|时空|分形|体素|注意环 → GatedFusion → 统一基座
 # 基于用户手绘五图融合架构实现
 
 import json, re, time, os, hashlib, sqlite3, random, math, shutil, itertools, sys, threading, queue, struct, io
@@ -13,7 +13,7 @@ ALL_DIRS = ["backups","training","workflows","logs","deploy","graphs","models",
             "multimodal","collab","xuni","sync","evolution"]
 for d in ALL_DIRS: os.makedirs(os.path.join(DATA_DIR, d), exist_ok=True)
 
-VERSION = "7.0.0"
+VERSION = "7.0.2"
 
 # ============================================================
 # 五图融合架构核心
@@ -79,12 +79,13 @@ class SpatiotemporalEncoder:
         self.history.append({"q": q, "answer": answer, "intent": intent, "ts": time.time()})
 
     def encode(self, q):
-        """时空场编码：历史问题与当前问题的关联权重"""
+        """时空场编码：历史问题与当前问题的关联权重。短问句自动挂靠最近历史。"""
         if not self.history: return {"context_weight": 1.0, "related_history": [], "temporal_decay": 1.0}
 
         q_grams = set(self._ngrams(q))
         related = []
         now = time.time()
+        is_short = len(q.strip()) <= 10  # 短跟问句：如"那GIL呢"、"异步编程怎么搞"
 
         for h in reversed(self.history):
             h_grams = set(self._ngrams(h["q"]))
@@ -92,16 +93,21 @@ class SpatiotemporalEncoder:
             age = (now - h["ts"]) / 3600
             decay = self.time_decay ** age
             score = overlap * decay
+            # 短句兜底：最近3条历史自动挂靠(衰减后得分最低0.3→0.2→0.1)
+            if is_short and len(related) < 3:
+                floor = max(0.1, 0.3 - len(related) * 0.1)
+                score = max(score, floor * decay)
             if score > 0.05:
-                related.append({"q": h["q"][:50], "score": round(score, 3), "age_min": round(age*60)})
+                related.append({"q": h["q"][:80], "score": round(score, 3), "age_min": round(age*60)})
 
         if not related:
             return {"context_weight": 1.0, "related_history": [], "temporal_decay": self.time_decay}
 
-        # 时空场总权重
-        context_weight = 1.0 + sum(r["score"] for r in related[:5]) * 0.5
+        # 时空场总权重：短问句放大上下文贡献
+        boost = 1.2 if is_short else 0.5
+        context_weight = 1.0 + sum(r["score"] for r in related[:5]) * boost
         return {
-            "context_weight": min(context_weight, 2.5),
+            "context_weight": min(context_weight, 3.0),
             "related_history": related[:5],
             "temporal_decay": self.time_decay
         }
@@ -287,22 +293,85 @@ class AttentionRing:
                 "shift": shift}
 
 
+class GatedFusion:
+    """门控加权融合层 — 借鉴 paralle12 的 Gated Fusion 思想，动态学习五路权重"""
+
+    def __init__(self, path_names):
+        self.path_names = list(path_names)
+        self.n = len(self.path_names)
+        # 可学习的门控参数：每个路径的 scale + bias
+        self.gate_w = [1.0] * self.n
+        self.gate_bias = [0.0] * self.n
+        self.eps = 1e-8
+        self.call_count = 0
+
+    def _extract_quality(self, encoder_outputs, path):
+        """从编码器输出中提取质量信号，作为门控的输入特征"""
+        out = encoder_outputs.get(path, {})
+        if path == "dual_stream":
+            scores = [v for v in out.values() if isinstance(v, (int, float))]
+            return sum(scores) / max(len(scores), 1)
+        elif path == "spatiotemporal":
+            return out.get("context_weight", 0.5)
+        elif path == "fractal":
+            results = out.get("results", [])
+            depth = out.get("fractal_level", 0)
+            return len(results) * 0.3 + depth * 0.2
+        elif path == "voxel":
+            results = out.get("voxel_results", [])
+            return min(len(results) * 0.15, 2.0)
+        elif path == "attention_ring":
+            heads = out.get("heads", {})
+            vals = [v for v in heads.values() if isinstance(v, (int, float))]
+            return sum(vals) / max(len(vals), 1) if vals else 0.2
+        return 0.1
+
+    def compute_weights(self, encoder_outputs):
+        """输入五路编码器输出，返回 softmax 归一化的动态权重"""
+        raw = []
+        for i, name in enumerate(self.path_names):
+            quality = self._extract_quality(encoder_outputs, name)
+            s = quality * self.gate_w[i] + self.gate_bias[i]
+            raw.append(max(s, 0.01))  # 最低权重保底
+
+        # softmax
+        exp_raw = [math.exp(r) for r in raw]
+        total = sum(exp_raw) + self.eps
+        self.call_count += 1
+        return {self.path_names[i]: exp_raw[i] / total for i in range(self.n)}
+
+    def update_gate(self, path, feedback_delta):
+        """根据反馈微调门控参数（在线学习）"""
+        if path in self.path_names:
+            idx = self.path_names.index(path)
+            self.gate_w[idx] = max(0.1, min(3.0, self.gate_w[idx] + feedback_delta * 0.1))
+            self.gate_bias[idx] += feedback_delta * 0.05
+
+
 class FusionBase:
-    """统一多模态基座：五路特征深度融合 → 全模态对齐输出"""
+    """统一多模态基座：五路特征深度融合 + 门控动态加权 → 全模态对齐输出"""
 
     def __init__(self):
-        self.path_weights = {
+        self.path_names = ["dual_stream", "spatiotemporal", "fractal", "voxel", "attention_ring"]
+        self.base_weights = {
             "dual_stream": 1.0,
             "spatiotemporal": 0.8,
             "fractal": 1.2,
             "voxel": 1.0,
             "attention_ring": 0.9,
         }
+        self.gated_fusion = GatedFusion(self.path_names)
         self.fusion_stats = {"calls": 0, "dominant_paths": Counter()}
 
     def fuse(self, encoder_outputs, kb_results, ext_result):
-        """五路融合：加权投票 + 一致性检查 → 最终输出"""
+        """五路融合：门控动态加权投票 + 一致性检查 → 最终输出"""
         self.fusion_stats["calls"] += 1
+
+        # 计算门控动态权重，与基础权重融合
+        dynamic_weights = self.gated_fusion.compute_weights(encoder_outputs)
+        effective_weights = {}
+        for name in self.path_names:
+            effective_weights[name] = self.base_weights[name] * dynamic_weights[name]
 
         # 提取各路结果
         dual_scores = encoder_outputs.get("dual_stream", {})
@@ -319,27 +388,27 @@ class FusionBase:
         # 融合策略：收集所有来源的候选答案，加权投票
         candidates = {}
 
-        # 双流打分加权
+        # 双流打分加权（使用门控动态权重）
         for idx, score in dual_scores.items():
             if idx < len(kb_results):
-                candidates[idx] = candidates.get(idx, 0) + score * self.path_weights["dual_stream"]
+                candidates[idx] = candidates.get(idx, 0) + score * effective_weights["dual_stream"]
 
         # 分形结果加分
         for row in fractal_results:
             for i, kb_row in enumerate(kb_results):
                 if kb_row[0] == row[0]:
-                    candidates[i] = candidates.get(i, 0) + self.path_weights["fractal"] * 0.5
+                    candidates[i] = candidates.get(i, 0) + effective_weights["fractal"] * 0.5
                     break
 
         # 体素结果加分
         for row in voxel_results:
             for i, kb_row in enumerate(kb_results):
                 if kb_row[0] == row[0]:
-                    candidates[i] = candidates.get(i, 0) + self.path_weights["voxel"] * 0.4
+                    candidates[i] = candidates.get(i, 0) + effective_weights["voxel"] * 0.4
                     break
 
         # 注意力环调制
-        attention_mod = 1.0 + attention.get("heads", {}).get("知识检索", 0.2)
+        attention_mod = 1.0 + effective_weights["attention_ring"] * 0.25
 
         # 时空场上下文加权
         for i in candidates:
@@ -354,7 +423,8 @@ class FusionBase:
             if best_idx < len(kb_results):
                 best_row = kb_results[best_idx]
                 # 用各路编码器元信息丰富答案
-                source_info = f"▸{primary_head} ▸ctx={context_weight:.1f}"
+                dominant = max(effective_weights, key=effective_weights.get)
+                source_info = f"▸{primary_head} ▸gate={dynamic_weights[dominant]:.2f} ▸ctx={context_weight:.1f}"
                 return best_row[1], source_info, fused_kb[:3]
 
         # 降级：用外部搜索结果
@@ -364,17 +434,23 @@ class FusionBase:
         return None, "▸无结果", []
 
     def update_weights(self, path, delta):
-        if path in self.path_weights:
-            self.path_weights[path] = max(0.1, min(3.0, self.path_weights[path] + delta))
+        if path in self.base_weights:
+            self.base_weights[path] = max(0.1, min(3.0, self.base_weights[path] + delta))
+        self.gated_fusion.update_gate(path, delta)
 
     def record_dominant(self, path):
         self.fusion_stats["dominant_paths"][path] += 1
 
     def stats(self):
+        # 获取当前门控权重快照
+        dummy = {p: 0.5 for p in self.path_names}
+        gate = self.gated_fusion.compute_weights(dummy) if self.fusion_stats["calls"] == 0 else {}
         return {
             "calls": self.fusion_stats["calls"],
             "dominant_paths": dict(self.fusion_stats["dominant_paths"].most_common(5)),
-            "weights": self.path_weights
+            "base_weights": self.base_weights,
+            "gate_w": self.gated_fusion.gate_w,
+            "gate_calls": self.gated_fusion.call_count,
         }
 
 
@@ -589,11 +665,11 @@ class PluginEngine:
         except Exception as e: return {"ok":False,"result":str(e)}
     def stats(self):
         return {"total":len(self._plugins),"loaded":len(self._plugins),
-                "categories":list(set(p.category for p in self._plugin_info.values()))}
+                "categories":list(set(p.get("category","") for p in self._plugin_info.values()))}
 
 
 # ============================================================
-# HopeAI v7.0.0 - 五图融合核心
+# HopeAI v7.0.2 - 五图融合核心 + 门控动态加权
 # ============================================================
 
 class HopeAI:
@@ -655,12 +731,19 @@ class HopeAI:
 
     def _search_kb(self, q):
         conn = sqlite3.connect(self.kb_db)
-        words = q.replace("？","").replace("?","").split()
+        # 中文双字符ngram分词 + 英文单词分词
+        words = []
+        i = 0
+        while i < len(q)-1:
+            words.append(q[i:i+2])
+            i += 1
+        eng_words = re.findall(r'[a-zA-Z0-9]+', q)
+        words.extend(eng_words)
+        words = list(set(words))
+        if not words:
+            words = [q[:6]]
         clauses = " OR ".join(["question LIKE ?" for _ in words])
-        params = [f"%{w}%" for w in words if len(w)>=2]
-        if not params:
-            params = [f"%{q[:6]}%"]
-            clauses = "question LIKE ?"
+        params = [f"%{w}%" for w in words]
         rows = conn.execute(
             f"SELECT question,answer,confidence,source FROM knowledge WHERE {clauses} ORDER BY confidence DESC LIMIT 20",
             params).fetchall()
@@ -721,6 +804,18 @@ class HopeAI:
 
         # b. 时空流场
         encoder_outputs["spatiotemporal"] = self.spatiotemporal.encode(q)
+
+        # 上下文补救：短跟问句无结果时，用历史主题扩展 query 重搜
+        ctx = encoder_outputs["spatiotemporal"].get("context_weight", 1.0)
+        if ctx > 1.25 and (not kb_rows or all(r[2] < 0.5 for r in kb_rows)):
+            hist = encoder_outputs["spatiotemporal"].get("related_history", [])
+            if hist:
+                # 拼接多条历史(最多3条)扩展搜索词
+                hist_qs = " ".join(h["q"] for h in hist[:3])
+                expanded = q + " " + hist_qs
+                kb_rows2 = self._search_kb(expanded)
+                if kb_rows2:
+                    kb_rows = kb_rows2
 
         # c. 递归分形
         encoder_outputs["fractal"] = self.fractal.encode(q, lambda qq: self._search_kb(qq))
@@ -797,7 +892,7 @@ class HopeAI:
 
 WEB_HTML = """<!DOCTYPE html>
 <html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>HopeAI v7.0 - 五图融合</title>
+<title>HopeAI v7.0.2 - 五图融合 + 门控加权</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0a0e27;color:#e0e0e0;display:flex;flex-direction:column;min-height:100vh}
@@ -828,11 +923,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .card{background:#16162e;border-radius:8px;padding:16px;margin:8px 0;border:1px solid #222}
 .card h3{color:#a78bfa;font-size:14px;margin-bottom:8px}
 </style></head><body>
-<div class="header"><div class="logo">◈ HopeAI v7.0</div><div class="sub">双流融合 | 时空流场 | 递归分形 | 三维体素 | 注意力环 → 统一基座</div></div>
+<div class="header"><div class="logo">◈ HopeAI v7.0.2</div><div class="sub">双流融合 | 时空流场 | 递归分形 | 三维体素 | 注意力环 → 门控加权 → 统一基座</div></div>
 <div class="layout">
 <div class="sidebar"><h3>导航</h3><button class="btn" onclick="showTab('chat')">对话</button><button class="btn" onclick="showTab('dashboard')">仪表盘</button><h3 style="margin-top:16px">五图通路</h3><button class="btn">a. 双流融合</button><button class="btn">b. 时空流场</button><button class="btn">c. 递归分形</button><button class="btn">d. 三维体素</button><button class="btn">e. 注意力环</button></div>
 <div class="main"><div id="tab-chat" style="display:flex;flex-direction:column;flex:1">
-<div class="chat" id="msgs"><div class="msg ai">欢迎使用 HopeAI v7.0<br><span class="path-tag path-a">a.双流融合</span><span class="path-tag path-b">b.时空流场</span><span class="path-tag path-c">c.递归分形</span><span class="path-tag path-d">d.三维体素</span><span class="path-tag path-e">e.注意力环</span><br>五路并行编码 → 统一基座融合 → 输出</div></div>
+<div class="chat" id="msgs"><div class="msg ai">欢迎使用 HopeAI v7.0.2<br><span class="path-tag path-a">a.双流融合</span><span class="path-tag path-b">b.时空流场</span><span class="path-tag path-c">c.递归分形</span><span class="path-tag path-d">d.三维体素</span><span class="path-tag path-e">e.注意力环</span><br>五路并行编码 → 门控动态加权 → 统一基座输出</div></div>
 <div class="input-area"><input id="q" placeholder="输入问题..." onkeydown="event.key==='Enter'&&send()"><button onclick="send()">发送</button></div></div>
 <div id="tab-dashboard" style="display:none;flex:1;overflow-y:auto;padding:20px"><div id="dash"></div></div></div></div>
 <script>
